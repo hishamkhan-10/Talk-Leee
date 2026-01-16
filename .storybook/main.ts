@@ -1,0 +1,44 @@
+import type { StorybookConfig } from "@storybook/react-webpack5";
+import path from "node:path";
+
+const config: StorybookConfig = {
+    framework: {
+        name: "@storybook/react-webpack5",
+        options: {},
+    },
+    stories: ["../src/**/*.stories.@(ts|tsx)"],
+    addons: ["@storybook/addon-essentials"],
+    webpackFinal: async (cfg) => {
+        cfg.module = cfg.module ?? { rules: [] };
+        cfg.module.rules = cfg.module.rules ?? [];
+        cfg.module.rules.push({
+            test: /\.(ts|tsx)$/,
+            exclude: /node_modules/,
+            use: [
+                {
+                    loader: require.resolve("babel-loader"),
+                    options: {
+                        presets: [
+                            [require.resolve("@babel/preset-env"), { targets: "defaults" }],
+                            [require.resolve("@babel/preset-react"), { runtime: "automatic" }],
+                            require.resolve("@babel/preset-typescript"),
+                        ],
+                    },
+                },
+            ],
+        });
+
+        cfg.resolve = cfg.resolve ?? {};
+        cfg.resolve.extensions = Array.from(new Set([...(cfg.resolve.extensions ?? []), ".ts", ".tsx"]));
+        cfg.resolve.alias = {
+            ...(cfg.resolve.alias ?? {}),
+            "@": path.resolve(__dirname, "../src"),
+            "next/navigation": path.resolve(__dirname, "./mocks/next-navigation"),
+            "next/link": path.resolve(__dirname, "./mocks/next-link"),
+            "next/image": path.resolve(__dirname, "./mocks/next-image"),
+        };
+        return cfg;
+    },
+};
+
+export default config;

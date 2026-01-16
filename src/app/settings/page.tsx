@@ -1,0 +1,414 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Select } from "@/components/ui/select";
+import { useNotificationsActions, useNotificationsState } from "@/lib/notifications-client";
+import type { NotificationPriority, NotificationRouting, NotificationType, ThemePreference } from "@/lib/notifications";
+import { Download, Trash2 } from "lucide-react";
+import Link from "next/link";
+
+function clampNumber(n: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, n));
+}
+
+function downloadTextFile(filename: string, contents: string) {
+    const blob = new Blob([contents], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+const notificationTypes: NotificationType[] = ["success", "warning", "error", "info"];
+const priorities: NotificationPriority[] = ["low", "normal", "high"];
+const routings: NotificationRouting[] = ["inApp", "webhook", "both", "none"];
+
+export default function SettingsPage() {
+    const { settings, hydrated } = useNotificationsState();
+    const { setSettings, setCategory, setPrivacy, exportHistoryJson, clearAll } = useNotificationsActions();
+
+    const [themeLocal, setThemeLocal] = useState<ThemePreference>("system");
+
+    useEffect(() => {
+        setThemeLocal(settings.theme);
+    }, [settings.theme]);
+
+    useEffect(() => {
+        if (!hydrated) return;
+        const root = document.documentElement;
+        if (themeLocal === "dark") root.classList.add("dark");
+        else if (themeLocal === "light") root.classList.remove("dark");
+        else {
+            const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+            if (prefersDark) root.classList.add("dark");
+            else root.classList.remove("dark");
+        }
+        setSettings({ theme: themeLocal });
+    }, [hydrated, setSettings, themeLocal]);
+
+    const retentionDaysLabel = useMemo(() => {
+        const v = settings.historyRetentionDays;
+        if (!settings.privacy.storeHistory) return "History disabled";
+        if (v <= 0) return "No retention limit";
+        return `${v} days`;
+    }, [settings.historyRetentionDays, settings.privacy.storeHistory]);
+
+    return (
+        <DashboardLayout title="Settings" description="Configure notifications, privacy, integrations, and account.">
+            <div className="mx-auto w-full max-w-5xl space-y-6">
+                <div className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                            <div className="text-sm font-semibold text-foreground">Quick links</div>
+                            <div className="text-sm text-muted-foreground">Jump to related settings pages.</div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Link
+                                href="/settings/connectors"
+                                className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground hover:bg-foreground/5 transition-colors"
+                            >
+                                Connectors
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Display Preferences</CardTitle>
+                        <CardDescription>Toast timing, sound, and theme.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="toastDuration">Notification display duration (ms)</Label>
+                                <Input
+                                    id="toastDuration"
+                                    type="number"
+                                    min={1200}
+                                    max={30000}
+                                    value={settings.toastDurationMs}
+                                    onChange={(e) =>
+                                        setSettings({ toastDurationMs: clampNumber(Number(e.target.value) || 0, 1200, 30000) })
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Notification sounds</Label>
+                                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                    <div className="text-sm font-semibold text-gray-900">Enable sounds</div>
+                                    <Switch
+                                        checked={settings.soundsEnabled}
+                                        onCheckedChange={(v) => setSettings({ soundsEnabled: v })}
+                                        ariaLabel="Enable notification sounds"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Theme</Label>
+                                <Select
+                                    value={themeLocal}
+                                    onChange={(v) => setThemeLocal(v as ThemePreference)}
+                                    ariaLabel="Theme preference"
+                                >
+                                    <option value="system">System</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Notification Preferences</CardTitle>
+                        <CardDescription>Enable categories, tune priority, and configure routing.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {notificationTypes.map((type) => (
+                            <div key={type} className="rounded-2xl border border-gray-200 bg-white p-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-semibold capitalize text-gray-900">{type}</div>
+                                        <div className="mt-1 text-sm text-gray-600">Toggle delivery and adjust priority.</div>
+                                    </div>
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 sm:w-[220px]">
+                                            <div className="text-sm font-semibold text-gray-900">Enabled</div>
+                                            <Switch
+                                                checked={settings.category[type].enabled}
+                                                onCheckedChange={(v) => setCategory(type, { enabled: v })}
+                                                ariaLabel={`Enable ${type} notifications`}
+                                            />
+                                        </div>
+                                        <div className="sm:w-[220px]">
+                                            <Select
+                                                value={settings.category[type].priority}
+                                                onChange={(v) => setCategory(type, { priority: v as NotificationPriority })}
+                                                ariaLabel={`${type} priority`}
+                                            >
+                                                {priorities.map((p) => (
+                                                    <option key={p} value={p}>
+                                                        {p}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </div>
+                                        <div className="sm:w-[220px]">
+                                            <Select
+                                                value={settings.category[type].routing}
+                                                onChange={(v) => setCategory(type, { routing: v as NotificationRouting })}
+                                                ariaLabel={`${type} routing`}
+                                            >
+                                                {routings.map((r) => (
+                                                    <option key={r} value={r}>
+                                                        {r}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Data & Privacy</CardTitle>
+                        <CardDescription>Retention, export, clear, and consent.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm font-semibold text-gray-900">Store notification history</div>
+                                        <div className="mt-1 text-sm text-gray-600">Saved locally in your browser.</div>
+                                    </div>
+                                    <Switch
+                                        checked={settings.privacy.storeHistory}
+                                        onCheckedChange={(v) => setPrivacy({ storeHistory: v })}
+                                        ariaLabel="Store notification history"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="retentionDays">History retention (days)</Label>
+                                    <Input
+                                        id="retentionDays"
+                                        type="number"
+                                        min={1}
+                                        max={365}
+                                        value={settings.historyRetentionDays}
+                                        onChange={(e) =>
+                                            setSettings({ historyRetentionDays: clampNumber(Number(e.target.value) || 0, 1, 365) })
+                                        }
+                                        disabled={!settings.privacy.storeHistory}
+                                    />
+                                    <div className="text-xs font-semibold text-gray-600">{retentionDaysLabel}</div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm font-semibold text-gray-900">Third-party consent</div>
+                                        <div className="mt-1 text-sm text-gray-600">Allows sending notifications to integrations.</div>
+                                    </div>
+                                    <Switch
+                                        checked={settings.privacy.consentThirdParty}
+                                        onCheckedChange={(v) => setPrivacy({ consentThirdParty: v })}
+                                        ariaLabel="Consent to third-party integrations"
+                                    />
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            const json = exportHistoryJson();
+                                            const filename = `talklee-notifications-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+                                            downloadTextFile(filename, json);
+                                        }}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Export data
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        onClick={clearAll}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        Clear history
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Integrations</CardTitle>
+                        <CardDescription>Webhook setup and routing rules.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-sm font-semibold text-gray-900">Webhook</div>
+                                    <div className="mt-1 text-sm text-gray-600">Sends JSON payloads to your endpoint.</div>
+                                </div>
+                                <Switch
+                                    checked={settings.integrations.webhook.enabled}
+                                    onCheckedChange={(v) => setSettings({ integrations: { ...settings.integrations, webhook: { ...settings.integrations.webhook, enabled: v } } })}
+                                    ariaLabel="Enable webhook integration"
+                                    disabled={!settings.privacy.consentThirdParty}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="webhookUrl">Webhook URL</Label>
+                                <Input
+                                    id="webhookUrl"
+                                    type="url"
+                                    value={settings.integrations.webhook.url}
+                                    onChange={(e) =>
+                                        setSettings({
+                                            integrations: {
+                                                ...settings.integrations,
+                                                webhook: { ...settings.integrations.webhook, url: e.target.value },
+                                            },
+                                        })
+                                    }
+                                    disabled={!settings.privacy.consentThirdParty || !settings.integrations.webhook.enabled}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                            <div className="text-sm font-semibold text-gray-900">Routing rules</div>
+                            <div className="text-sm text-gray-600">
+                                Webhook routing requires third-party consent and an enabled webhook URL.
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Account</CardTitle>
+                        <CardDescription>Profile, authentication, and account linking.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                                <div className="text-sm font-semibold text-gray-900">Profile</div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="profileName">Name</Label>
+                                    <Input
+                                        id="profileName"
+                                        value={settings.account.profile.name}
+                                        onChange={(e) =>
+                                            setSettings({
+                                                account: {
+                                                    ...settings.account,
+                                                    profile: { ...settings.account.profile, name: e.target.value },
+                                                },
+                                            })
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="profileEmail">Email</Label>
+                                    <Input
+                                        id="profileEmail"
+                                        type="email"
+                                        value={settings.account.profile.email}
+                                        onChange={(e) =>
+                                            setSettings({
+                                                account: {
+                                                    ...settings.account,
+                                                    profile: { ...settings.account.profile, email: e.target.value },
+                                                },
+                                            })
+                                        }
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+                                <div>
+                                    <div className="text-sm font-semibold text-gray-900">Authentication</div>
+                                    <div className="mt-1 text-sm text-gray-600">Security options.</div>
+                                </div>
+                                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                    <div className="text-sm font-semibold text-gray-900">Two-factor authentication</div>
+                                    <Switch
+                                        checked={settings.account.auth.twoFactorEnabled}
+                                        onCheckedChange={(v) =>
+                                            setSettings({
+                                                account: {
+                                                    ...settings.account,
+                                                    auth: { ...settings.account.auth, twoFactorEnabled: v },
+                                                },
+                                            })
+                                        }
+                                        ariaLabel="Enable two-factor authentication"
+                                    />
+                                </div>
+
+                                <div>
+                                    <div className="text-sm font-semibold text-gray-900">Account linking</div>
+                                    <div className="mt-2 space-y-2">
+                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                            <div className="text-sm font-semibold text-gray-900">Google</div>
+                                            <Switch
+                                                checked={settings.account.linking.google}
+                                                onCheckedChange={(v) =>
+                                                    setSettings({
+                                                        account: {
+                                                            ...settings.account,
+                                                            linking: { ...settings.account.linking, google: v },
+                                                        },
+                                                    })
+                                                }
+                                                ariaLabel="Link Google account"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                            <div className="text-sm font-semibold text-gray-900">GitHub</div>
+                                            <Switch
+                                                checked={settings.account.linking.github}
+                                                onCheckedChange={(v) =>
+                                                    setSettings({
+                                                        account: {
+                                                            ...settings.account,
+                                                            linking: { ...settings.account.linking, github: v },
+                                                        },
+                                                    })
+                                                }
+                                                ariaLabel="Link GitHub account"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </DashboardLayout>
+    );
+}
