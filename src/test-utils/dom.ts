@@ -41,6 +41,6 @@ export function ensureDom() {
 
 export function teardownDom() {
     if (!currentDom) return;
-    currentDom.window.close();
+    (currentDom.window as unknown as { close: () => void }).close();
     currentDom = null;
 }

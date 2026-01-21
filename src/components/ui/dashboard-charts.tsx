@@ -142,14 +142,10 @@ export function RealTimeBarChart({
   points,
   maxValue,
   height = 160,
-  aColor = "from-emerald-600 to-emerald-400",
-  bColor = "from-red-500 to-red-400",
 }: {
   points: DualSeriesPoint[];
   maxValue: number;
   height?: number;
-  aColor?: string;
-  bColor?: string;
 }) {
   const tooltip = useHoverTooltip();
   const last = points[points.length - 1];
@@ -1240,7 +1236,7 @@ export function StackedAreaChart({
         : "";
 
     return { topLine, midLine, topD, midD, topArea, midArea, baselineY };
-  }, [aStroke, bStroke, height, paddingX, paddingY, points]);
+  }, [height, paddingX, paddingY, points]);
 
   const indexForClientX = (clientX: number, rect: DOMRect) => {
     const x = ((clientX - rect.left) / Math.max(1, rect.width)) * width;

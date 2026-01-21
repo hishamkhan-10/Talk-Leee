@@ -488,13 +488,25 @@ export const AssistantPlanSchema = z
 export type AssistantPlan = z.infer<typeof AssistantPlanSchema>;
 
 export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(item: T) =>
-    z.union([
-        z.object({ items: z.array(item) }),
-        z.object({ items: z.array(item), total: z.number(), page: z.number(), page_size: z.number() }),
-        z
-            .object({ items: z.array(item), total: z.number(), page: z.number(), pageSize: z.number() })
-            .transform((v) => ({ items: v.items, total: v.total, page: v.page, page_size: v.pageSize })),
-    ]);
+    z
+        .object({
+            items: z.array(item),
+            total: z.number().optional(),
+            page: z.number().optional(),
+            page_size: z.number().optional(),
+            pageSize: z.number().optional(),
+        })
+        .passthrough()
+        .transform((v) => {
+            const out: { items: z.infer<ReturnType<typeof z.array<T>>>; total?: number; page?: number; page_size?: number } = {
+                items: v.items,
+            };
+            if (typeof v.total === "number") out.total = v.total;
+            if (typeof v.page === "number") out.page = v.page;
+            const ps = v.page_size ?? v.pageSize;
+            if (typeof ps === "number") out.page_size = ps;
+            return out;
+        });
 
 export const ListResponseSchema = <T extends z.ZodTypeAny>(item: T) =>
     z.object({

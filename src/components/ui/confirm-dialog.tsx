@@ -110,7 +110,13 @@ export function ConfirmDialog({
                             if (pending) return;
                             setPending(true);
                             setInlineError(undefined);
-                            Promise.resolve(onConfirm())
+                            let p: Promise<void>;
+                            try {
+                                p = Promise.resolve(onConfirm());
+                            } catch (err) {
+                                p = Promise.reject(err);
+                            }
+                            p
                                 .then(() => onOpenChange(false))
                                 .catch((err) => {
                                     const msg = err instanceof Error ? err.message : "Action failed. Please try again.";
@@ -132,19 +138,18 @@ export function ConfirmDialog({
                     <AlertTriangle className="h-4 w-4" aria-hidden />
                 </div>
                 <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white">Warning</div>
-                    <div className="mt-1 text-sm text-gray-200" role="alert">
+                    <div className="text-sm font-semibold text-foreground">Warning</div>
+                    <div className="mt-1 text-sm text-muted-foreground" role="alert">
                         {warningText}
                     </div>
-                    <div className="mt-2 text-xs text-gray-300">Review the details, then confirm to proceed.</div>
-                        {inlineError ? (
-                            <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-100" role="alert">
-                                {inlineError}
-                            </div>
-                        ) : null}
+                    <div className="mt-2 text-xs text-muted-foreground">Review the details, then confirm to proceed.</div>
+                    {inlineError ? (
+                        <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-100" role="alert">
+                            {inlineError}
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </Modal>
     );
-}
 }

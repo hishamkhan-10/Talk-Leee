@@ -53,11 +53,15 @@ export function appEnvironment(): "development" | "staging" | "production" {
 }
 
 export function apiBaseUrl(): string {
-    const url = env.NEXT_PUBLIC_API_URL ?? (appEnvironment() === "production" ? undefined : "http://localhost:8000/api/v1");
-    if (!url) {
-        throw new Error("Missing NEXT_PUBLIC_API_URL");
+    if (env.NEXT_PUBLIC_API_URL) return env.NEXT_PUBLIC_API_URL;
+
+    if (typeof window !== "undefined") {
+        return `${window.location.origin}/api/v1`;
     }
-    return url;
+
+    const fallback = appEnvironment() === "production" ? undefined : "http://localhost:8000/api/v1";
+    if (!fallback) throw new Error("Missing NEXT_PUBLIC_API_URL");
+    return fallback;
 }
 
 export function commitSha(): string | undefined {

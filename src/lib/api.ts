@@ -53,6 +53,7 @@ class ApiClient {
 
     // Auth endpoints - all return dummy data
     async login(_email: string): Promise<AuthResponse> {
+        void _email;
         return {
             id: DUMMY_USER.id,
             email: DUMMY_USER.email,
@@ -64,6 +65,8 @@ class ApiClient {
     }
 
     async verifyOtp(_email: string, _token: string): Promise<VerifyOtpResponse> {
+        void _email;
+        void _token;
         return {
             access_token: "dummy-access-token",
             refresh_token: "dummy-refresh-token",
@@ -79,6 +82,10 @@ class ApiClient {
         _planId: string = "basic",
         _name?: string
     ): Promise<AuthResponse> {
+        void _email;
+        void _businessName;
+        void _planId;
+        void _name;
         return {
             id: DUMMY_USER.id,
             email: DUMMY_USER.email,

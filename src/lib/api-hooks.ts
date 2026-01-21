@@ -57,8 +57,15 @@ export function useConnectorStatuses(options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: queryKeys.connectorStatuses(),
         queryFn: ({ signal }) => backendApi.connectors.status(signal),
-        refetchInterval: 10_000,
+        refetchInterval: () => {
+            if (typeof document === "undefined") return 10_000;
+            if (document.visibilityState === "hidden") return false;
+            return 10_000;
+        },
+        refetchOnReconnect: true,
         refetchOnWindowFocus: true,
+        refetchOnMount: "always",
+        staleTime: 0,
         retry: 2,
         enabled: options?.enabled ?? true,
     });
@@ -139,7 +146,7 @@ export function useMeetings(options?: { enabled?: boolean }) {
 export function useCalendarEvents(options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: queryKeys.calendarEvents(),
-        queryFn: ({ signal }) => backendApi.calendarEvents.list(signal),
+        queryFn: ({ signal }) => backendApi.calendarEvents.list(undefined, signal),
         enabled: options?.enabled ?? true,
     });
 }

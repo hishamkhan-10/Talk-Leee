@@ -14,5 +14,5 @@ test("dashboard layout includes theme toggle and removes global sidebar toggle",
     assert.match(contents, /onClick=\{toggleTheme\}/);
 
     assert.doesNotMatch(contents, /<GlobalSidebarToggle\s*\/>/);
-    assert.match(contents, /<Sidebar\s*\/>/);
+    assert.match(contents, /<Sidebar\b[^>]*\/>/);
 });

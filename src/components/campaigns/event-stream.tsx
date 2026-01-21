@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Campaign } from "@/lib/dashboard-api";
 import {
     eventCategoryIcon,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/campaign-performance";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { cn } from "@/lib/utils";
 
 type TimeGroup = "Today" | "Yesterday" | "Last 7 Days" | "Older";
 
@@ -76,7 +75,6 @@ export function EventStream({
     const [sound, setSound] = useState(false);
     const [desktop, setDesktop] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
-    const [lastId, setLastId] = useState<string | null>(null);
 
     useEffect(() => {
         const saved = fromLocalStorage<{ sound: boolean; desktop: boolean; quick: EventQuickFilter }>("campaigns.performance.eventPrefs", {
@@ -107,7 +105,6 @@ export function EventStream({
         const interval = window.setInterval(() => {
             const next = generateEvent(campaigns);
             setEvents((prev) => [next, ...prev].slice(0, 120));
-            setLastId(next.id);
             if (sound) beep();
             if (desktop && "Notification" in window && Notification.permission === "granted") {
                 try {
@@ -131,8 +128,8 @@ export function EventStream({
         <div className="content-card">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <div className="text-sm font-semibold text-white">Event Stream</div>
-                    <div className="mt-1 text-sm text-gray-400">Realtime operational activity and system signals.</div>
+                    <div className="text-sm font-semibold text-foreground">Event Stream</div>
+                    <div className="mt-1 text-sm text-muted-foreground">Realtime operational activity and system signals.</div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {(["All", "Campaigns", "System", "Alerts", "User Actions"] as EventQuickFilter[]).map((k) => (
@@ -150,121 +147,118 @@ export function EventStream({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                    <div className="text-sm font-semibold text-white">Sound notifications</div>
+                <label className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2">
+                    <div className="text-sm font-semibold text-foreground">Sound notifications</div>
                     <input
                         type="checkbox"
                         checked={sound}
                         onChange={(e) => setSound(e.target.checked)}
-                        className="h-4 w-4 rounded border-white/20 bg-white/5"
+                        className="h-4 w-4 rounded border-input bg-background accent-primary"
                     />
                 </label>
-                <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                    <div className="text-sm font-semibold text-white">Desktop notifications</div>
+                <label className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2">
+                    <div className="text-sm font-semibold text-foreground">Desktop notifications</div>
                     <input
                         type="checkbox"
                         checked={desktop}
                         onChange={(e) => setDesktop(e.target.checked)}
-                        className="h-4 w-4 rounded border-white/20 bg-white/5"
+                        className="h-4 w-4 rounded border-input bg-background accent-primary"
                     />
                 </label>
             </div>
 
-            <div className="mt-4 space-y-5">
-                {(Object.keys(grouped) as TimeGroup[]).map((g) => (
-                    <div key={g}>
-                        <div className="text-xs font-semibold text-gray-300">{g}</div>
-                        <div className="mt-2 space-y-2">
-                            <AnimatePresence initial={false}>
-                                {grouped[g].slice(0, 20).map((e) => (
+            <div className="mt-4 space-y-6">
+                <AnimatePresence initial={false}>
+                    {Object.entries(grouped).map(([grp, items]) => (
+                        <div key={grp} className="space-y-2">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{grp}</div>
+                            <div className="space-y-2">
+                                {items.map((e) => {
+                                    const icon = eventCategoryIcon(e.category);
+                                    return (
                                         <motion.button
                                             key={e.id}
+                                            layout
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 10 }}
                                             type="button"
-                                            className={cn(
-                                                "flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                                                e.id === lastId ? "ring-1 ring-white/15" : ""
-                                            )}
-                                        initial={{ x: 18, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.18 }}
-                                        onClick={() => setDetailsId(e.id)}
-                                    >
-                                        <div className="pt-0.5 text-lg">{eventCategoryIcon(e.category)}</div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div className="truncate text-sm font-semibold text-white">{e.title}</div>
-                                                <div className="text-xs font-semibold text-gray-400 tabular-nums">
-                                                    {new Date(e.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            onClick={() => setDetailsId(e.id)}
+                                        >
+                                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+                                                <span className="text-base leading-none" aria-hidden>
+                                                    {icon}
+                                                </span>
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="truncate text-sm font-semibold text-foreground">{e.title}</div>
+                                                    <div className="text-xs text-muted-foreground tabular-nums">
+                                                        {new Date(e.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground group-hover:text-foreground/80">
+                                                    {e.description}
                                                 </div>
                                             </div>
-                                            <div className="mt-1 line-clamp-2 text-sm text-gray-300">{e.description}</div>
-                                        </div>
-                                    </motion.button>
-                                ))}
-                            </AnimatePresence>
+                                        </motion.button>
+                                    );
+                                })}
+                            </div>
                         </div>
+                    ))}
+                </AnimatePresence>
+                {filtered.length === 0 ? (
+                    <div className="py-8 text-center">
+                        <div className="text-sm font-semibold text-muted-foreground">No events</div>
                     </div>
-                ))}
+                ) : null}
             </div>
 
             <Modal
                 open={detailsId !== null}
                 onOpenChange={(next) => setDetailsId(next ? detailsId : null)}
-                title={details ? details.title : "Event Details"}
+                title={details ? details.title : "Event details"}
                 description={details ? `${details.category} • ${new Date(details.createdAt).toLocaleString()}` : undefined}
                 size="lg"
             >
                 {details ? (
                     <div className="space-y-4">
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                            <div className="text-sm font-semibold text-white">Full description</div>
-                            <div className="mt-2 text-sm text-gray-200 whitespace-pre-wrap">{details.description}</div>
+                        <div className="rounded-xl border border-border bg-muted/50 p-4">
+                            <div className="text-sm text-foreground">{details.description}</div>
                         </div>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                <div className="text-sm font-semibold text-white">Related campaigns</div>
+                        {details.metadata ? (
+                            <div className="rounded-xl border border-border bg-card p-4">
+                                <div className="text-xs font-semibold text-muted-foreground">Metadata</div>
                                 <div className="mt-2 space-y-2">
-                                    {relatedCampaigns.length === 0 ? (
-                                        <div className="text-sm text-gray-400">—</div>
-                                    ) : (
-                                        relatedCampaigns.map((c) => (
-                                            <div key={c.id} className="flex items-center justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="truncate text-sm font-semibold text-white">{c.name}</div>
-                                                    <div className="truncate text-xs font-semibold text-gray-400">{c.id}</div>
-                                                </div>
-                                                <Button type="button" variant="outline" size="sm" asChild>
-                                                    <a href={`/campaigns/${c.id}`}>Open</a>
-                                                </Button>
-                                            </div>
-                                        ))
-                                    )}
+                                    {Object.entries(details.metadata).map(([k, v]) => (
+                                        <div key={k} className="flex items-center justify-between gap-3 border-b border-border/50 pb-1 last:border-0 last:pb-0">
+                                            <div className="text-sm text-muted-foreground">{k}</div>
+                                            <div className="text-sm font-semibold text-foreground font-mono">{String(v)}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                <div className="text-sm font-semibold text-white">Metadata</div>
+                        ) : null}
+                        {relatedCampaigns.length > 0 ? (
+                            <div className="rounded-xl border border-border bg-card p-4">
+                                <div className="text-xs font-semibold text-muted-foreground">Related Campaigns</div>
                                 <div className="mt-2 space-y-2">
-                                    {details.metadata && Object.keys(details.metadata).length > 0 ? (
-                                        Object.entries(details.metadata).map(([k, v]) => (
-                                            <div key={k} className="flex items-center justify-between gap-3">
-                                                <div className="text-sm text-gray-300">{k}</div>
-                                                <div className="text-sm font-semibold text-white tabular-nums">{String(v)}</div>
+                                    {relatedCampaigns.map((c) => (
+                                        <div key={c.id} className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-semibold text-foreground">{c.name}</div>
+                                                <div className="truncate text-xs text-muted-foreground">{c.id}</div>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-sm text-gray-400">—</div>
-                                    )}
+                                            <Button type="button" variant="outline" size="sm" asChild>
+                                                <a href={`/campaigns/${c.id}`}>Open</a>
+                                            </Button>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                            <div className="text-sm font-semibold text-white">Action history</div>
-                            <div className="mt-2 space-y-2 text-sm text-gray-300">
-                                <div>Created • {new Date(details.createdAt).toLocaleString()}</div>
-                                <div>Viewed • {new Date().toLocaleString()}</div>
-                            </div>
-                        </div>
+                        ) : null}
                     </div>
                 ) : null}
             </Modal>

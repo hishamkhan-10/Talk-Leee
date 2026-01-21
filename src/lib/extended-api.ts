@@ -59,6 +59,9 @@ const DUMMY_RECORDINGS: Recording[] = [
 class ExtendedApi {
     // CSV Upload
     async uploadCSV(_campaignId: string, _file: File, _skipDuplicates: boolean = true): Promise<BulkImportResponse> {
+        void _campaignId;
+        void _file;
+        void _skipDuplicates;
         // Simulate successful upload
         return {
             total_rows: 150,
@@ -79,6 +82,9 @@ class ExtendedApi {
         _toDate?: string,
         _groupBy: "day" | "week" | "month" = "day"
     ): Promise<CallAnalyticsResponse> {
+        void _fromDate;
+        void _toDate;
+        void _groupBy;
         return { series: DUMMY_ANALYTICS };
     }
 

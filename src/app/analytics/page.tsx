@@ -54,25 +54,34 @@ export default function AnalyticsPage() {
     const [dateRange, setDateRange] = useState(30);
 
     useEffect(() => {
-        loadAnalytics();
-    }, [groupBy, dateRange]);
+        let cancelled = false;
 
-    async function loadAnalytics() {
-        try {
-            setLoading(true);
-            const toDate = new Date().toISOString().split("T")[0];
-            const fromDate = new Date(Date.now() - dateRange * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0];
+        async function loadAnalytics() {
+            try {
+                setLoading(true);
+                const toDate = new Date().toISOString().split("T")[0];
+                const fromDate = new Date(Date.now() - dateRange * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .split("T")[0];
 
-            const response = await extendedApi.getCallAnalytics(fromDate, toDate, groupBy);
-            setData(response.series);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load analytics");
-        } finally {
-            setLoading(false);
+                const response = await extendedApi.getCallAnalytics(fromDate, toDate, groupBy);
+                if (cancelled) return;
+                setData(response.series);
+            } catch (err) {
+                if (cancelled) return;
+                setError(err instanceof Error ? err.message : "Failed to load analytics");
+            } finally {
+                if (cancelled) return;
+                setLoading(false);
+            }
         }
-    }
+
+        void loadAnalytics();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [groupBy, dateRange]);
 
     const totals = data.reduce(
         (acc, item) => ({

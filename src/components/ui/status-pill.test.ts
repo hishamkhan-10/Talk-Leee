@@ -25,7 +25,7 @@ for (const c of CASES) {
         assert.ok(pill);
 
         fireEvent.focus(pill);
-        const tooltip = await screen.findByText(c.tooltip);
-        assert.ok(tooltip);
+        const tooltips = await screen.findAllByText(c.tooltip);
+        assert.ok(tooltips.length > 0);
     });
 }

@@ -7,9 +7,6 @@ import {
     AIProviderConfig,
     ProviderListResponse,
     VoiceInfo,
-    LLMTestResponse,
-    TTSTestResponse,
-    LatencyBenchmarkResponse,
     DEFAULT_CONFIG
 } from "@/lib/ai-options-api";
 import { apiBaseUrl } from "@/lib/env";
@@ -18,16 +15,13 @@ import {
     Cpu,
     Mic,
     Volume2,
-    Settings,
     Zap,
     Play,
     Send,
     RefreshCw,
     Check,
     AlertCircle,
-    Clock,
     MessageSquare,
-    ChevronDown,
     Save,
     Phone,
     PhoneOff,
@@ -80,9 +74,6 @@ export default function AIOptionsPage() {
     const [latencyMetrics, setLatencyMetrics] = useState<LatencyMetrics>({});
     const [benchmarking, setBenchmarking] = useState(false);
 
-    // Voice preview state
-    const [previewText, setPreviewText] = useState("Hello, I am your AI voice assistant. How can I help you today?");
-    const [previewing, setPreviewing] = useState(false);
     const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
 
     // TTS Provider filter state
@@ -175,54 +166,6 @@ export default function AIOptionsPage() {
         }
     }
 
-    async function handlePreviewVoice() {
-        try {
-            setPreviewing(true);
-            setError("");
-
-            const response = await aiOptionsApi.testTTS({
-                model: config.tts_model,
-                voice_id: config.tts_voice_id,
-                text: previewText,
-                sample_rate: config.tts_sample_rate,
-            });
-
-            setLatencyMetrics(prev => ({
-                ...prev,
-                tts_first_audio_ms: response.first_audio_ms,
-                tts_total_ms: response.latency_ms,
-            }));
-
-            // Play audio
-            const audioData = atob(response.audio_base64);
-            const audioArray = new Float32Array(audioData.length / 4);
-            const dataView = new DataView(new ArrayBuffer(audioData.length));
-            for (let i = 0; i < audioData.length; i++) {
-                dataView.setUint8(i, audioData.charCodeAt(i));
-            }
-            for (let i = 0; i < audioArray.length; i++) {
-                audioArray[i] = dataView.getFloat32(i * 4, true);
-            }
-
-            const audioContext = new AudioContext({ sampleRate: config.tts_sample_rate });
-            const audioBuffer = audioContext.createBuffer(1, audioArray.length, config.tts_sample_rate);
-            audioBuffer.getChannelData(0).set(audioArray);
-
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(audioContext.destination);
-            source.start();
-
-            source.onended = () => {
-                audioContext.close();
-            };
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Voice preview failed");
-        } finally {
-            setPreviewing(false);
-        }
-    }
-
     // Preview a specific voice by ID (for individual voice cards)
     async function handlePreviewVoiceById(voiceId: string) {
         try {
@@ -282,7 +225,7 @@ export default function AIOptionsPage() {
     }
 
     // Dummy Call - WebSocket connection and handlers
-    const startDummyCall = useCallback(() => {
+    function startDummyCall() {
         if (wsRef.current) return;
 
         setDummyCallConnecting(true);
@@ -333,7 +276,7 @@ export default function AIOptionsPage() {
             setError(err instanceof Error ? err.message : "Failed to connect");
             setDummyCallConnecting(false);
         }
-    }, [config]);
+    }
 
     const handleDummyCallMessage = (data: unknown) => {
         if (!data || typeof data !== "object") return;
@@ -587,9 +530,6 @@ export default function AIOptionsPage() {
             }
         };
     }, []);
-
-    // Find current voice name
-    const currentVoiceName = voices.find(v => v.id === config.tts_voice_id)?.name || "Default Voice";
 
     return (
         <DashboardLayout title="AI Options" description="Configure LLM, STT, and TTS providers">

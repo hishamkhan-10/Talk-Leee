@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { api } from "@/lib/api";
-import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
+import { getBrowserAuthToken } from "@/lib/auth-token";
 
 // Prototype user profile used while backend auth endpoints are not wired.
 const DUMMY_USER = {

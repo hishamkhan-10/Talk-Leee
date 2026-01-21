@@ -196,10 +196,6 @@ function downloadBlob(blob: Blob, filename: string) {
     URL.revokeObjectURL(url);
 }
 
-function printCampaigns(campaigns: Campaign[]) {
-    return printCampaignsWithColumns(campaigns, EXPORT_COLUMNS.map((c) => c.key), "All time");
-}
-
 function printCampaignsWithColumns(campaigns: Campaign[], columns: ExportColumnKey[], rangeLabel: string) {
     const w = window.open("", "_blank", "noopener,noreferrer");
     if (!w) return;
@@ -563,29 +559,29 @@ export function CampaignPerformanceTable({
     };
 
     const TableHeader = (
-        <div role="row" className="grid grid-cols-[40px_1.4fr_120px_160px_140px_110px_110px_110px_170px_44px] gap-2 border-b border-white/10 px-3 py-2 text-xs font-semibold text-gray-300">
+        <div role="row" className="grid grid-cols-[40px_1.4fr_120px_160px_140px_110px_110px_110px_170px_44px] gap-2 border-b border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
             <div className="flex items-center justify-center">
                 <input
                     aria-label="Select all visible campaigns"
                     type="checkbox"
                     checked={allVisibleSelected}
                     onChange={(e) => toggleAllVisible(e.target.checked)}
-                    className="h-4 w-4 rounded border-white/20 bg-white/5"
+                    className="h-4 w-4 rounded border-input bg-background accent-primary"
                 />
             </div>
             {COLUMNS.map((c) => (
                 <button
-                    key={c.key}
-                    type="button"
-                    onClick={(e) => onHeaderClick(c.key, e)}
-                    className={cn(
-                        "flex items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                        c.numeric ? "justify-end" : "justify-start"
-                    )}
-                    aria-label={`Sort by ${c.label}`}
-                >
+                                key={c.key}
+                                type="button"
+                                onClick={(e) => onHeaderClick(c.key, e)}
+                                className={cn(
+                                    "flex items-center gap-2 rounded-md px-2 py-1 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                    c.numeric ? "justify-end" : "justify-start"
+                                )}
+                                aria-label={`Sort by ${c.label}`}
+                            >
                     <span className="truncate">{c.label}</span>
-                    <span className="text-gray-400">{sortIndicator(sort, c.key)}</span>
+                    <span className="text-muted-foreground">{sortIndicator(sort, c.key)}</span>
                 </button>
             ))}
             <div />
@@ -594,13 +590,13 @@ export function CampaignPerformanceTable({
 
     return (
         <div className="space-y-4">
-            <div className="content-card">
+            <div className={cn("content-card relative", statusOpen || suggestOpen ? "z-50" : "")}>
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Filters</div>
+                        <div className="text-sm font-semibold text-foreground">Filters</div>
                         <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
                             <div className="relative" ref={suggestRef}>
-                                <label className="text-xs font-semibold text-gray-300">Campaign name</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Campaign name</label>
                                 <Input
                                     value={filters.query}
                                     placeholder="Search campaigns…"
@@ -612,19 +608,20 @@ export function CampaignPerformanceTable({
                                     onFocus={() => {
                                         if (nameSuggestions.length > 0) setSuggestOpen(true);
                                     }}
-                                    className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                                    className="mt-1 border-input bg-background/50 text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
                                 />
                                 {suggestOpen && nameSuggestions.length > 0 ? (
                                     <div
                                         role="listbox"
-                                        className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-gray-950/95 shadow-xl"
+                                        className="absolute left-0 top-full z-50 mt-2 w-full origin-top overflow-hidden rounded-xl border border-border bg-popover shadow-xl animate-in fade-in-0 zoom-in-95"
                                     >
                                         {nameSuggestions.map((n) => (
                                             <button
                                                 key={n}
                                                 type="button"
                                                 role="option"
-                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-white hover:bg-white/5"
+                                                aria-selected={filters.query === n}
+                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
                                                 onClick={() => {
                                                     setFilters((p) => ({ ...p, query: n }));
                                                     setSuggestOpen(false);
@@ -638,31 +635,34 @@ export function CampaignPerformanceTable({
                             </div>
 
                             <div className="relative">
-                                <label className="text-xs font-semibold text-gray-300">Status</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Status</label>
                                 <button
                                     ref={statusButtonRef}
                                     type="button"
                                     onClick={() => setStatusOpen((v) => !v)}
-                                    className="mt-1 flex h-10 w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                    className="mt-1 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     aria-haspopup="listbox"
                                     aria-expanded={statusOpen}
                                 >
                                     <span className="truncate">
                                         {filters.statuses.length === 0 ? "All statuses" : `${filters.statuses.length} selected`}
                                     </span>
-                                    <ChevronDown className="h-4 w-4 text-gray-300" />
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                 </button>
-                                {statusOpen ? (
-                                    <div
-                                        ref={statusPanelRef}
-                                        className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-gray-950/95 p-2 shadow-xl"
-                                    >
+                                <div
+                                    ref={statusPanelRef}
+                                    role="listbox"
+                                    aria-hidden={!statusOpen}
+                                    data-state={statusOpen ? "open" : "closed"}
+                                    className="absolute left-0 top-full z-50 mt-2 w-full origin-top overflow-hidden rounded-xl border border-border bg-popover p-2 shadow-xl invisible opacity-0 scale-95 -translate-y-1 pointer-events-none transition-[opacity,transform] duration-150 ease-out will-change-transform data-[state=open]:visible data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:translate-y-0 data-[state=open]:pointer-events-auto"
+                                >
+                                    <div className="max-h-[240px] overflow-auto">
                                         {ALL_STATUSES.map((s) => {
                                             const checked = filters.statuses.includes(s);
                                             return (
                                                 <label
                                                     key={s}
-                                                    className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-white hover:bg-white/5"
+                                                    className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
                                                 >
                                                     <span className="flex items-center gap-2">
                                                         <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(s))}>
@@ -681,31 +681,31 @@ export function CampaignPerformanceTable({
                                                                 return { ...p, statuses: Array.from(set) };
                                                             });
                                                         }}
-                                                        className="h-4 w-4 rounded border-white/20 bg-white/5"
+                                                        className="h-4 w-4 rounded border-input bg-background accent-primary"
                                                     />
                                                 </label>
                                             );
                                         })}
-                                        <div className="mt-2 flex items-center justify-between gap-2">
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={() => setFilters((p) => ({ ...p, statuses: [] }))}
-                                            >
-                                                Clear
-                                            </Button>
-                                            <Button type="button" variant="outline" size="sm" onClick={() => setStatusOpen(false)}>
-                                                Done
-                                            </Button>
-                                        </div>
                                     </div>
-                                ) : null}
+                                    <div className="mt-2 flex items-center justify-between gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() => setFilters((p) => ({ ...p, statuses: [] }))}
+                                        >
+                                            Clear
+                                        </Button>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => setStatusOpen(false)}>
+                                            Done
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold text-gray-300">Success rate</label>
-                                <div className="mt-1 rounded-md border border-white/10 bg-white/5 p-3">
+                                <label className="text-xs font-semibold text-muted-foreground">Success rate</label>
+                                <div className="mt-1 rounded-md border border-input bg-background/50 p-3">
                                     <div className="flex items-center gap-2">
                                         <input
                                             aria-label="Minimum success rate"
@@ -717,9 +717,9 @@ export function CampaignPerformanceTable({
                                                 const v = Number(e.target.value);
                                                 setFilters((p) => ({ ...p, successMin: Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0 }));
                                             }}
-                                            className="h-9 w-20 rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                                            className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm text-foreground"
                                         />
-                                        <span className="text-sm text-gray-400">to</span>
+                                        <span className="text-sm text-muted-foreground">to</span>
                                         <input
                                             aria-label="Maximum success rate"
                                             type="number"
@@ -730,9 +730,9 @@ export function CampaignPerformanceTable({
                                                 const v = Number(e.target.value);
                                                 setFilters((p) => ({ ...p, successMax: Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 100 }));
                                             }}
-                                            className="h-9 w-20 rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                                            className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm text-foreground"
                                         />
-                                        <div className="flex-1 text-right text-xs font-semibold text-gray-300">
+                                        <div className="flex-1 text-right text-xs font-semibold text-muted-foreground">
                                             {Math.min(filters.successMin, filters.successMax)}–{Math.max(filters.successMin, filters.successMax)}%
                                         </div>
                                     </div>
@@ -744,6 +744,7 @@ export function CampaignPerformanceTable({
                                             max={100}
                                             value={filters.successMin}
                                             onChange={(e) => setFilters((p) => ({ ...p, successMin: Number(e.target.value) }))}
+                                            className="accent-primary"
                                         />
                                         <input
                                             aria-label="Maximum success rate slider"
@@ -752,6 +753,7 @@ export function CampaignPerformanceTable({
                                             max={100}
                                             value={filters.successMax}
                                             onChange={(e) => setFilters((p) => ({ ...p, successMax: Number(e.target.value) }))}
+                                            className="accent-primary"
                                         />
                                     </div>
                                 </div>
@@ -772,7 +774,7 @@ export function CampaignPerformanceTable({
 
             {bulkCount > 0 ? (
                 <div className="content-card flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-foreground">
                         {bulkCount} selected
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -796,12 +798,12 @@ export function CampaignPerformanceTable({
             ) : null}
 
             <div className="content-card overflow-hidden">
-                <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 md:flex-row md:items-center md:justify-between">
-                    <div className="text-sm text-gray-300">
+                <div className="flex flex-col gap-3 border-b border-border px-3 py-3 md:flex-row md:items-center md:justify-between">
+                    <div className="text-sm text-muted-foreground">
                         {paged.start}-{paged.end} of {sorted.length}
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="text-xs font-semibold text-gray-300">Rows</div>
+                        <div className="text-xs font-semibold text-muted-foreground">Rows</div>
                         <select
                             aria-label="Rows per page"
                             value={rowsPerPage}
@@ -811,7 +813,7 @@ export function CampaignPerformanceTable({
                                     v === "All" ? "All" : (Number(v) as RowsPerPage);
                                 setRowsPerPage(next);
                             }}
-                            className="h-9 rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                            className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
                         >
                             <option value={10}>10</option>
                             <option value={25}>25</option>
@@ -826,7 +828,7 @@ export function CampaignPerformanceTable({
                             <Button type="button" variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={paged.page <= 1}>
                                 Prev
                             </Button>
-                            <div className="px-2 text-xs font-semibold text-gray-300">
+                            <div className="px-2 text-xs font-semibold text-muted-foreground">
                                 {paged.page}/{paged.pageCount}
                             </div>
                             <Button type="button" variant="outline" size="sm" onClick={() => setPage((p) => Math.min(paged.pageCount, p + 1))} disabled={paged.page >= paged.pageCount}>
@@ -841,22 +843,22 @@ export function CampaignPerformanceTable({
 
                 {loading ? (
                     <div className="flex items-center justify-center py-16">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                     </div>
                 ) : error ? (
-                    <div className="p-6 text-sm font-semibold text-red-300">{error}</div>
+                    <div className="p-6 text-sm font-semibold text-destructive">{error}</div>
                 ) : sorted.length === 0 ? (
                     <div className="p-10 text-center">
-                        <div className="text-sm font-semibold text-white">No campaigns match your filters</div>
-                        <div className="mt-1 text-sm text-gray-400">Try adjusting status or success rate.</div>
+                        <div className="text-sm font-semibold text-foreground">No campaigns match your filters</div>
+                        <div className="mt-1 text-sm text-muted-foreground">Try adjusting status or success rate.</div>
                     </div>
                 ) : (
-                    <div className="overflow-hidden">
+                    <div className="overflow-x-auto">
                         <div className="min-w-[980px]">
                             {TableHeader}
                             <div
                                 ref={tableScrollRef}
-                                className={cn("relative max-h-[520px] overflow-y-auto overscroll-contain", useVirtual ? "pb-2" : "")}
+                                className={cn("scrollbar-gutter-stable relative max-h-[520px] overflow-y-auto overflow-x-hidden overscroll-contain", useVirtual ? "pb-2" : "")}
                                 role="rowgroup"
                             >
                                 {useVirtual && virtual ? <div style={{ height: virtual.topPad }} /> : null}
@@ -871,10 +873,10 @@ export function CampaignPerformanceTable({
                                     const canResume = st === "Paused" || st === "Draft" || st === "Failed";
 
                                     return (
-                                        <div key={campaign.id} className="border-b border-white/5">
+                                        <div key={campaign.id} className="border-b border-border">
                                             <div
                                                 role="row"
-                                                className="grid grid-cols-[40px_1.4fr_120px_160px_140px_110px_110px_110px_170px_44px] items-center gap-2 px-3 py-2 text-sm text-white"
+                                                className="grid grid-cols-[40px_1.4fr_120px_160px_140px_110px_110px_110px_170px_44px] items-center gap-2 px-3 py-2 text-sm text-foreground"
                                             >
                                                 <div className="flex items-center justify-center">
                                                     <input
@@ -882,25 +884,25 @@ export function CampaignPerformanceTable({
                                                         type="checkbox"
                                                         checked={isSelected}
                                                         onChange={(e) => toggleSelected(campaign.id, e.target.checked)}
-                                                        className="h-4 w-4 rounded border-white/20 bg-white/5"
+                                                        className="h-4 w-4 rounded border-input bg-background accent-primary"
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-2 px-2">
                                                     <button
                                                         type="button"
                                                         aria-label={isExpanded ? "Collapse row details" : "Expand row details"}
-                                                        className="rounded-md p-1 text-gray-300 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                                        className="rounded-md p-1 text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                         onClick={() => toggleExpanded(campaign.id)}
                                                     >
                                                         {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="min-w-0 flex-1 text-left"
+                                                        className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                         onClick={() => setDetailsId(campaign.id)}
                                                     >
                                                         <div className="truncate font-semibold hover:underline">{campaign.name}</div>
-                                                        <div className="truncate text-xs text-gray-400">{campaign.description || "—"}</div>
+                                                        <div className="truncate text-xs text-muted-foreground">{campaign.description || "—"}</div>
                                                     </button>
                                                 </div>
                                                 <div className="px-2">
@@ -910,26 +912,26 @@ export function CampaignPerformanceTable({
                                                 </div>
                                                 <div className="px-2">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <div className="h-2 w-20 overflow-hidden rounded-full bg-white/10">
+                                                        <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
                                                             <div className={cn("h-full", progressColorClass(progress))} style={{ width: `${progress.toFixed(1)}%` }} />
                                                         </div>
-                                                        <div className="w-12 text-right text-xs font-semibold tabular-nums text-gray-200">
+                                                        <div className="w-12 text-right text-xs font-semibold tabular-nums text-foreground">
                                                             {formatPct(progress)}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="px-2 text-right text-sm font-semibold tabular-nums text-gray-200">{formatPct(success)}</div>
-                                                <div className="px-2 text-right tabular-nums text-gray-200">{Number(campaign.total_leads || 0).toLocaleString()}</div>
-                                                <div className="px-2 text-right tabular-nums text-gray-200">{Number(campaign.calls_completed || 0).toLocaleString()}</div>
-                                                <div className="px-2 text-right tabular-nums text-gray-200">{Number(campaign.calls_failed || 0).toLocaleString()}</div>
-                                                <div className="px-2 text-right text-xs font-semibold tabular-nums text-gray-300">
+                                                <div className="px-2 text-right text-sm font-semibold tabular-nums text-foreground">{formatPct(success)}</div>
+                                                <div className="px-2 text-right tabular-nums text-foreground">{Number(campaign.total_leads || 0).toLocaleString()}</div>
+                                                <div className="px-2 text-right tabular-nums text-foreground">{Number(campaign.calls_completed || 0).toLocaleString()}</div>
+                                                <div className="px-2 text-right tabular-nums text-foreground">{Number(campaign.calls_failed || 0).toLocaleString()}</div>
+                                                <div className="px-2 text-right text-xs font-semibold tabular-nums text-muted-foreground">
                                                     {new Date(campaign.created_at).toLocaleDateString()}
                                                 </div>
                                                 <div className="relative flex items-center justify-end">
                                                     <button
                                                         type="button"
                                                         aria-label="Row actions"
-                                                        className="rounded-md p-2 text-gray-300 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                                        className="rounded-md p-2 text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                         onClick={() => setMenuOpenFor((v) => (v === campaign.id ? null : campaign.id))}
                                                     >
                                                         <Ellipsis className="h-4 w-4" />
@@ -940,12 +942,12 @@ export function CampaignPerformanceTable({
                                                                 menuRefs.current[campaign.id] = node;
                                                             }}
                                                             role="menu"
-                                                            className="absolute right-0 top-10 z-20 w-56 overflow-hidden rounded-xl border border-white/10 bg-gray-950/95 shadow-xl"
+                                                            className="absolute right-0 top-10 z-50 w-56 origin-top-right overflow-hidden rounded-xl border border-border bg-popover shadow-xl animate-in fade-in-0 zoom-in-95"
                                                         >
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-white/5"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
                                                                 onClick={() => {
                                                                     setMenuOpenFor(null);
                                                                     setDetailsId(campaign.id);
@@ -957,7 +959,7 @@ export function CampaignPerformanceTable({
                                                                 type="button"
                                                                 role="menuitem"
                                                                 className={cn(
-                                                                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-white/5",
+                                                                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted",
                                                                     !(canPause || canResume) ? "opacity-50" : ""
                                                                 )}
                                                                 disabled={!(canPause || canResume)}
@@ -980,7 +982,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-white/5"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
                                                                 onClick={() => {
                                                                     setMenuOpenFor(null);
                                                                     setEditId(campaign.id);
@@ -991,7 +993,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-white/5"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
                                                                 onClick={() => {
                                                                     setMenuOpenFor(null);
                                                                     router.push(`/analytics?campaign=${encodeURIComponent(campaign.id)}`);
@@ -1002,7 +1004,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-white/5"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
                                                                 onClick={async () => {
                                                                     setMenuOpenFor(null);
                                                                     await onDuplicate(campaign.id);
@@ -1014,7 +1016,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-200 hover:bg-red-500/10"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive transition-colors duration-150 ease-out hover:bg-destructive/10"
                                                                 onClick={() => {
                                                                     setMenuOpenFor(null);
                                                                     setConfirmDeleteId(campaign.id);
@@ -1029,55 +1031,55 @@ export function CampaignPerformanceTable({
                                             </div>
 
                                             {isExpanded ? (
-                                                <div className="grid grid-cols-1 gap-4 px-6 pb-5 pt-3 text-sm text-gray-200 md:grid-cols-3">
-                                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                                        <div className="text-xs font-semibold text-gray-300">Performance breakdown</div>
+                                                <div className="grid grid-cols-1 gap-4 px-6 pb-5 pt-3 text-sm text-muted-foreground md:grid-cols-3">
+                                                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                                        <div className="text-xs font-semibold text-muted-foreground">Performance breakdown</div>
                                                         <div className="mt-3 space-y-2">
                                                             <div className="flex items-center justify-between">
-                                                                <div className="text-sm text-gray-200">Completion</div>
-                                                                <div className="text-sm font-semibold tabular-nums text-white">{formatPct(progress)}</div>
+                                                                <div className="text-sm text-muted-foreground">Completion</div>
+                                                                <div className="text-sm font-semibold tabular-nums text-foreground">{formatPct(progress)}</div>
                                                             </div>
                                                             <div className="flex items-center justify-between">
-                                                                <div className="text-sm text-gray-200">Success rate</div>
-                                                                <div className="text-sm font-semibold tabular-nums text-white">{formatPct(success)}</div>
+                                                                <div className="text-sm text-muted-foreground">Success rate</div>
+                                                                <div className="text-sm font-semibold tabular-nums text-foreground">{formatPct(success)}</div>
                                                             </div>
                                                             <div className="flex items-center justify-between">
-                                                                <div className="text-sm text-gray-200">Leads</div>
-                                                                <div className="text-sm font-semibold tabular-nums text-white">{Number(campaign.total_leads || 0).toLocaleString()}</div>
+                                                                <div className="text-sm text-muted-foreground">Leads</div>
+                                                                <div className="text-sm font-semibold tabular-nums text-foreground">{Number(campaign.total_leads || 0).toLocaleString()}</div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                                        <div className="text-xs font-semibold text-gray-300">Recent activity</div>
+                                                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                                        <div className="text-xs font-semibold text-muted-foreground">Recent activity</div>
                                                         <div className="mt-3 space-y-2">
                                                             <div className="flex items-center justify-between">
-                                                                <div className="text-sm text-gray-200">Last update</div>
-                                                                <div className="text-xs font-semibold text-gray-300">{new Date(campaign.created_at).toLocaleString()}</div>
+                                                                <div className="text-sm text-muted-foreground">Last update</div>
+                                                                <div className="text-xs font-semibold text-muted-foreground">{new Date(campaign.created_at).toLocaleString()}</div>
                                                             </div>
                                                             <div className="flex items-center justify-between">
-                                                                <div className="text-sm text-gray-200">Status change</div>
-                                                                <div className="text-xs font-semibold text-gray-300">{st}</div>
+                                                                <div className="text-sm text-muted-foreground">Status change</div>
+                                                                <div className="text-xs font-semibold text-muted-foreground">{st}</div>
                                                             </div>
                                                             <div className="flex items-center justify-between">
-                                                                <div className="text-sm text-gray-200">Agent</div>
-                                                                <div className="text-xs font-semibold text-gray-300">Talky AI</div>
+                                                                <div className="text-sm text-muted-foreground">Agent</div>
+                                                                <div className="text-xs font-semibold text-muted-foreground">Talky AI</div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                                        <div className="text-xs font-semibold text-gray-300">Assets & resources</div>
-                                                        <div className="mt-3 space-y-2 text-sm text-gray-200">
+                                                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                                        <div className="text-xs font-semibold text-muted-foreground">Assets & resources</div>
+                                                        <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                                                             <div className="flex items-center justify-between">
                                                                 <div>Script</div>
-                                                                <div className="text-xs font-semibold text-gray-300 truncate max-w-[160px]">{campaign.voice_id}</div>
+                                                                <div className="text-xs font-semibold text-muted-foreground truncate max-w-[160px]">{campaign.voice_id}</div>
                                                             </div>
                                                             <div className="flex items-center justify-between">
                                                                 <div>Prompt</div>
-                                                                <div className="text-xs font-semibold text-gray-300 truncate max-w-[160px]">{campaign.system_prompt?.slice(0, 16) || "—"}</div>
+                                                                <div className="text-xs font-semibold text-muted-foreground truncate max-w-[160px]">{campaign.system_prompt?.slice(0, 16) || "—"}</div>
                                                             </div>
                                                             <div className="flex items-center justify-between">
                                                                 <div>Concurrency</div>
-                                                                <div className="text-xs font-semibold text-gray-300 tabular-nums">{campaign.max_concurrent_calls || 0}</div>
+                                                                <div className="text-xs font-semibold text-muted-foreground tabular-nums">{campaign.max_concurrent_calls || 0}</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1102,8 +1104,8 @@ export function CampaignPerformanceTable({
                 size="lg"
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <div className="text-sm font-semibold text-white">Export format</div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                        <div className="text-sm font-semibold text-foreground">Export format</div>
                         <div className="mt-3 flex flex-wrap gap-2">
                             <Button type="button" variant="secondary" onClick={() => onExport("pdf")}>
                                 PDF
@@ -1118,25 +1120,25 @@ export function CampaignPerformanceTable({
                                 JSON
                             </Button>
                         </div>
-                        <div className="mt-3 text-xs font-semibold text-gray-300">
+                        <div className="mt-3 text-xs font-semibold text-muted-foreground">
                             PDF opens a print view; save as PDF from your browser.
                         </div>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <div className="text-sm font-semibold text-white">Scheduling</div>
-                        <div className="mt-2 text-sm text-gray-300">Save recurring settings locally (prototype mode).</div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                        <div className="text-sm font-semibold text-foreground">Scheduling</div>
+                        <div className="mt-2 text-sm text-muted-foreground">Save recurring settings locally (prototype mode).</div>
                         <ReportScheduleEditor storageKey="campaigns.performance.reportSchedule" />
                     </div>
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <div className="text-sm font-semibold text-white">Date range</div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                        <div className="text-sm font-semibold text-foreground">Date range</div>
                         <div className="mt-3 grid grid-cols-1 gap-3">
                             <select
                                 aria-label="Export date range preset"
                                 value={exportPreset}
                                 onChange={(e) => setExportPreset(e.target.value as ExportPreset)}
-                                className="h-10 rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                                className="h-10 rounded-md border border-border bg-background px-2 text-sm text-foreground"
                             >
                                 <option value="All Time">All Time</option>
                                 <option value="Last 7 Days">Last 7 Days</option>
@@ -1147,36 +1149,36 @@ export function CampaignPerformanceTable({
                             {exportPreset === "Custom" ? (
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div>
-                                        <label className="text-xs font-semibold text-gray-300">From</label>
+                                        <label className="text-xs font-semibold text-muted-foreground">From</label>
                                         <input
                                             type="date"
                                             value={exportFrom}
                                             onChange={(e) => setExportFrom(e.target.value)}
-                                            className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                                            className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-semibold text-gray-300">To</label>
+                                        <label className="text-xs font-semibold text-muted-foreground">To</label>
                                         <input
                                             type="date"
                                             value={exportTo}
                                             onChange={(e) => setExportTo(e.target.value)}
-                                            className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                                            className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
                                         />
                                     </div>
                                 </div>
                             ) : null}
-                            <div className="text-xs font-semibold text-gray-300">Using campaign created date • {exportRange.label}</div>
+                            <div className="text-xs font-semibold text-muted-foreground">Using campaign created date • {exportRange.label}</div>
                         </div>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <div className="text-sm font-semibold text-white">Columns</div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                        <div className="text-sm font-semibold text-foreground">Columns</div>
                         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
                             {EXPORT_COLUMNS.map((c) => {
                                 const checked = exportCols.has(c.key);
                                 return (
-                                    <label key={c.key} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                                        <div className="text-sm font-semibold text-white">{c.label}</div>
+                                    <label key={c.key} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2">
+                                        <div className="text-sm font-semibold text-foreground">{c.label}</div>
                                         <input
                                             type="checkbox"
                                             checked={checked}
@@ -1189,7 +1191,7 @@ export function CampaignPerformanceTable({
                                                     return set;
                                                 });
                                             }}
-                                            className="h-4 w-4 rounded border-white/20 bg-white/5"
+                                            className="h-4 w-4 rounded border-border bg-background"
                                         />
                                     </label>
                                 );
@@ -1197,9 +1199,9 @@ export function CampaignPerformanceTable({
                         </div>
                     </div>
                 </div>
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-                    <div className="text-sm font-semibold text-white">Included rows</div>
-                    <div className="mt-2 text-sm text-gray-300">{exportItems.length} campaigns</div>
+                <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
+                    <div className="text-sm font-semibold text-foreground">Included rows</div>
+                    <div className="mt-2 text-sm text-muted-foreground">{exportItems.length} campaigns</div>
                 </div>
             </Modal>
 
@@ -1213,22 +1215,22 @@ export function CampaignPerformanceTable({
                 {detailsCampaign ? (
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                <div className="text-xs font-semibold text-gray-300">Completion</div>
-                                <div className="mt-2 text-2xl font-black tabular-nums text-white">{formatPct(campaignProgressPct(detailsCampaign))}</div>
+                            <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                <div className="text-xs font-semibold text-muted-foreground">Completion</div>
+                                <div className="mt-2 text-2xl font-black tabular-nums text-foreground">{formatPct(campaignProgressPct(detailsCampaign))}</div>
                             </div>
-                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                <div className="text-xs font-semibold text-gray-300">Success Rate</div>
-                                <div className="mt-2 text-2xl font-black tabular-nums text-white">{formatPct(campaignSuccessRatePct(detailsCampaign))}</div>
+                            <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                <div className="text-xs font-semibold text-muted-foreground">Success Rate</div>
+                                <div className="mt-2 text-2xl font-black tabular-nums text-foreground">{formatPct(campaignSuccessRatePct(detailsCampaign))}</div>
                             </div>
-                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                <div className="text-xs font-semibold text-gray-300">Leads</div>
-                                <div className="mt-2 text-2xl font-black tabular-nums text-white">{Number(detailsCampaign.total_leads || 0).toLocaleString()}</div>
+                            <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                <div className="text-xs font-semibold text-muted-foreground">Leads</div>
+                                <div className="mt-2 text-2xl font-black tabular-nums text-foreground">{Number(detailsCampaign.total_leads || 0).toLocaleString()}</div>
                             </div>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                            <div className="text-sm font-semibold text-white">Description</div>
-                            <div className="mt-2 text-sm text-gray-200">{detailsCampaign.description || "—"}</div>
+                        <div className="rounded-xl border border-border bg-muted/30 p-4">
+                            <div className="text-sm font-semibold text-foreground">Description</div>
+                            <div className="mt-2 text-sm text-muted-foreground">{detailsCampaign.description || "—"}</div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <Link href={`/campaigns/${detailsCampaign.id}`}>
@@ -1290,37 +1292,37 @@ export function CampaignPerformanceTable({
                 {editCampaign && editDraft ? (
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
-                            <label className="text-xs font-semibold text-gray-300">Name</label>
+                            <label className="text-xs font-semibold text-muted-foreground">Name</label>
                             <Input
                                 value={editDraft.name}
                                 onChange={(e) => setEditDraft((p) => (p ? { ...p, name: e.target.value } : p))}
-                                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                                className="mt-1"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-semibold text-gray-300">Voice ID</label>
+                            <label className="text-xs font-semibold text-muted-foreground">Voice ID</label>
                             <Input
                                 value={editDraft.voiceId}
                                 onChange={(e) => setEditDraft((p) => (p ? { ...p, voiceId: e.target.value } : p))}
-                                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                                className="mt-1"
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="text-xs font-semibold text-gray-300">Description</label>
+                            <label className="text-xs font-semibold text-muted-foreground">Description</label>
                             <textarea
                                 value={editDraft.description}
                                 onChange={(e) => setEditDraft((p) => (p ? { ...p, description: e.target.value } : p))}
-                                className="mt-1 h-24 w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                className="mt-1 h-24 w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-semibold text-gray-300">Max concurrent calls</label>
+                            <label className="text-xs font-semibold text-muted-foreground">Max concurrent calls</label>
                             <Input
                                 type="number"
                                 min={0}
                                 value={editDraft.maxConcurrent}
                                 onChange={(e) => setEditDraft((p) => (p ? { ...p, maxConcurrent: Number(e.target.value) } : p))}
-                                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                                className="mt-1"
                             />
                         </div>
                     </div>
@@ -1353,7 +1355,7 @@ export function CampaignPerformanceTable({
                     </div>
                 }
             >
-                <div className="text-sm text-gray-200">
+                <div className="text-sm text-muted-foreground">
                     This action cannot be undone.
                 </div>
             </Modal>
@@ -1414,18 +1416,18 @@ function ReportScheduleEditor({ storageKey }: { storageKey: string }) {
 
     return (
         <div className="mt-3 space-y-3">
-            <label className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                <div className="text-sm font-semibold text-white">Enable recurring report</div>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                <div className="text-sm font-semibold text-foreground">Enable recurring report</div>
                 <input
                     type="checkbox"
                     checked={enabled}
                     onChange={(e) => setEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-white/20 bg-white/5"
+                    className="h-4 w-4 rounded border-border bg-background"
                 />
             </label>
             <div className={cn("grid grid-cols-1 gap-3 md:grid-cols-2", !enabled ? "opacity-50" : "")} aria-disabled={!enabled}>
                 <div>
-                    <label className="text-xs font-semibold text-gray-300">Recurrence</label>
+                    <label className="text-xs font-semibold text-muted-foreground">Recurrence</label>
                     <select
                         value={recurrence}
                         disabled={!enabled}
@@ -1433,7 +1435,7 @@ function ReportScheduleEditor({ storageKey }: { storageKey: string }) {
                             const v = e.target.value;
                             if (v === "Daily" || v === "Weekly" || v === "Monthly") setRecurrence(v);
                         }}
-                        className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
                     >
                         <option value="Daily">Daily</option>
                         <option value="Weekly">Weekly</option>
@@ -1441,7 +1443,7 @@ function ReportScheduleEditor({ storageKey }: { storageKey: string }) {
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs font-semibold text-gray-300">Delivery</label>
+                    <label className="text-xs font-semibold text-muted-foreground">Delivery</label>
                     <select
                         value={delivery}
                         disabled={!enabled}
@@ -1449,40 +1451,40 @@ function ReportScheduleEditor({ storageKey }: { storageKey: string }) {
                             const v = e.target.value;
                             if (v === "Email" || v === "Webhook") setDelivery(v);
                         }}
-                        className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
                     >
                         <option value="Email">Email</option>
                         <option value="Webhook">Webhook</option>
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs font-semibold text-gray-300">Time</label>
+                    <label className="text-xs font-semibold text-muted-foreground">Time</label>
                     <input
                         type="time"
                         value={time}
                         disabled={!enabled}
                         onChange={(e) => setTime(e.target.value)}
-                        className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white"
+                        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
                     />
                 </div>
                 {delivery === "Email" ? (
                     <div className="md:col-span-2">
-                        <label className="text-xs font-semibold text-gray-300">Recipients</label>
+                        <label className="text-xs font-semibold text-muted-foreground">Recipients</label>
                         <Input
                             value={recipients}
                             disabled={!enabled}
                             onChange={(e) => setRecipients(e.target.value)}
-                            className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                            className="mt-1"
                         />
                     </div>
                 ) : (
                     <div className="md:col-span-2">
-                        <label className="text-xs font-semibold text-gray-300">Webhook URL</label>
+                        <label className="text-xs font-semibold text-muted-foreground">Webhook URL</label>
                         <Input
                             value={webhook}
                             disabled={!enabled}
                             onChange={(e) => setWebhook(e.target.value)}
-                            className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                            className="mt-1"
                         />
                     </div>
                 )}

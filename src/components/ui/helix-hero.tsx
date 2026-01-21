@@ -184,8 +184,8 @@ const Scene: React.FC<{ aiState: AIState; audioLevel: number }> = ({ aiState, au
         orthographic
         shadows
         camera={{ zoom: 70, position: [0, 0, 20], near: 0.1, far: 1000 }}
-        gl={{ antialias: true }}
-        style={{ background: "#fafafa" }}
+        gl={{ antialias: true, alpha: true }}
+        style={{ background: "transparent" }}
     >
         <hemisphereLight color={"#e0e0e0"} groundColor={"#ffffff"} intensity={2} />
         <directionalLight position={[10, 10, 5]} intensity={2} castShadow color={"#ffffff"} />
@@ -234,9 +234,10 @@ interface HeroProps {
     title: string;
     description: string;
     stats?: Array<{ label: string; value: string }>;
+    adjustForNavbar?: boolean;
 }
 
-export const Hero: React.FC<HeroProps> = ({ title, description, stats }) => {
+export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustForNavbar = false }) => {
     const [aiState, setAiState] = useState<AIState>("idle");
     const [audioLevel, setAudioLevel] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -258,6 +259,9 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats }) => {
 
     const selectedVoice = VOICE_AGENTS[selectedVoiceIndex];
     const isActive = aiState !== "idle";
+    const titleParts = title.split(/\s+/).filter(Boolean);
+    const headlineA = (titleParts[0] || "AI").toUpperCase();
+    const headlineB = (titleParts.slice(1).join(" ") || "DIALER").toUpperCase();
 
     const playNextAudioChunk = useCallback(async () => {
         // Start IMMEDIATELY with first chunk - no pre-buffering delay
@@ -420,7 +424,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats }) => {
                     break;
             }
         }
-    }, [playNextAudioChunk, voiceSelected]);
+    }, [voiceSelected]);
 
     const endSession = useCallback(() => {
         stopMicrophone();
@@ -511,9 +515,10 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats }) => {
     };
 
     const showSwipeArrows = isActive && !voiceSelected;
+    const heroHeightClass = adjustForNavbar ? "h-[calc(100vh-var(--home-navbar-height))]" : "h-screen";
 
     return (
-        <section className="relative h-screen w-screen font-sans tracking-tight text-gray-900 bg-neutral-50 overflow-hidden">
+        <section className={`relative ${heroHeightClass} w-screen font-sans tracking-tight text-gray-900 bg-neutral-50 overflow-hidden`}>
             <div className="absolute inset-0 z-0">
                 <Scene aiState={aiState} audioLevel={audioLevel} />
             </div>
@@ -591,8 +596,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats }) => {
             {/* Hero content */}
             <div className="absolute bottom-8 left-8 md:bottom-16 md:left-16 z-20 max-w-2xl">
                 <div className="flex flex-col gap-2 mb-6">
-                    <MagneticText text="AI VOICE" hoverText="SMART AI" />
-                    <MagneticText text="DIALER" hoverText="CALLS" />
+                    <MagneticText text={headlineA} hoverText={headlineA} />
+                    <MagneticText text={headlineB} hoverText={headlineB} />
                 </div>
                 <p className="text-gray-600 text-base md:text-lg leading-relaxed font-light tracking-tight mb-8 max-w-lg">
                     {description}

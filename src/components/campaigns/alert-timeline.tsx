@@ -148,13 +148,6 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
         setAlerts((prev) => prev.map((a) => (a.id === id ? updater(a) : a)));
     };
 
-    const toggleSet = <T,>(s: Set<T>, value: T) => {
-        const next = new Set(s);
-        if (next.has(value)) next.delete(value);
-        else next.add(value);
-        return next;
-    };
-
     const footerButtons = details ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -209,10 +202,10 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
         <div className="content-card">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <div className="text-sm font-semibold text-white">Error & Alert Timeline</div>
-                    <div className="mt-1 text-sm text-gray-400">Track, triage, and resolve incidents.</div>
+                    <div className="text-sm font-semibold text-foreground">Error & Alert Timeline</div>
+                    <div className="mt-1 text-sm text-muted-foreground">Track, triage, and resolve incidents.</div>
                 </div>
-                <div className="text-sm font-semibold text-gray-300">{filtered.length} alerts</div>
+                <div className="text-sm font-semibold text-muted-foreground">{filtered.length} alerts</div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -244,14 +237,14 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                     <button
                         key={a.id}
                         type="button"
-                        className="flex w-full items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                        className="flex w-full items-start justify-between gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => {
                             setTab("Impact Analysis");
                             setDetailsId(a.id);
                         }}
                     >
                         <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2">
                                 <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", severityBadgeClass(a.severity))}>
                                     {a.severity}
                                 </span>
@@ -262,15 +255,19 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                                     {a.status}
                                 </span>
                                 {!a.acknowledged ? (
-                                    <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white">
+                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                                         New
                                     </span>
-                                ) : null}
+                                ) : (
+                                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                                        Ack
+                                    </span>
+                                )}
                             </div>
-                            <div className="mt-2 truncate text-sm font-semibold text-white">{a.title}</div>
-                            <div className="mt-1 line-clamp-2 text-sm text-gray-300">{a.description}</div>
+                            <div className="mt-2 text-sm font-semibold text-foreground">{a.title}</div>
+                            <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.description}</div>
                         </div>
-                        <div className="shrink-0 text-right text-xs font-semibold text-gray-400">
+                        <div className="shrink-0 text-right text-xs font-semibold text-muted-foreground">
                             <div>{new Date(a.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                             <div className="mt-1">{new Date(a.createdAt).toLocaleDateString()}</div>
                         </div>
@@ -301,7 +298,7 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                                 </Button>
                             ))}
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                        <div className="rounded-xl border border-border bg-card p-4">
                             {tab === "Impact Analysis" ? <ImpactPanel alert={details} campaigns={campaigns} /> : null}
                             {tab === "Root Cause" ? <RootCausePanel alert={details} /> : null}
                             {tab === "Timeline Visualization" ? <TimelinePanel alert={details} /> : null}
@@ -340,16 +337,16 @@ function FilterPills<T extends string>({
     };
 
     return (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-            <div className="text-xs font-semibold text-gray-300">{label}</div>
+        <div className="rounded-xl border border-border bg-card p-3">
+            <div className="text-xs font-semibold text-muted-foreground">{label}</div>
             <div className="mt-2 flex flex-wrap gap-2">
                 {options.map((o) => (
                     <button
                         key={o}
                         type="button"
                         className={cn(
-                            "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                            value.has(o) ? classFor(o) : "border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
+                            "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            value.has(o) ? classFor(o) : "border border-border bg-muted/50 text-foreground hover:bg-muted"
                         )}
                         aria-pressed={value.has(o)}
                         onClick={() => toggle(o)}
@@ -376,27 +373,27 @@ function ImpactPanel({ alert, campaigns }: { alert: AlertItem; campaigns: Campai
 
     return (
         <div className="space-y-3">
-            <div className="text-sm font-semibold text-white">Impact Analysis</div>
-            <div className="text-sm text-gray-200">{alert.description}</div>
+            <div className="text-sm font-semibold text-foreground">Impact Analysis</div>
+            <div className="text-sm text-muted-foreground">{alert.description}</div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                    <div className="text-xs font-semibold text-gray-300">Scope</div>
-                    <div className="mt-2 space-y-1 text-sm text-gray-200">
+                <div className="rounded-xl border border-border bg-muted/30 p-3">
+                    <div className="text-xs font-semibold text-muted-foreground">Scope</div>
+                    <div className="mt-2 space-y-1 text-sm text-foreground">
                         <div>Start: {new Date(alert.createdAt).toLocaleString()}</div>
                         <div>Last update: {new Date(alert.updatedAt).toLocaleString()}</div>
                     </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                    <div className="text-xs font-semibold text-gray-300">Related campaigns</div>
+                <div className="rounded-xl border border-border bg-muted/30 p-3">
+                    <div className="text-xs font-semibold text-muted-foreground">Related campaigns</div>
                     <div className="mt-2 space-y-2">
                         {related.length === 0 ? (
-                            <div className="text-sm text-gray-400">—</div>
+                            <div className="text-sm text-muted-foreground">—</div>
                         ) : (
                             related.map((c) => (
                                 <div key={c.id} className="flex items-center justify-between gap-3">
                                     <div className="min-w-0">
-                                        <div className="truncate text-sm font-semibold text-white">{c.name}</div>
-                                        <div className="truncate text-xs font-semibold text-gray-400">{c.id}</div>
+                                        <div className="truncate text-sm font-semibold text-foreground">{c.name}</div>
+                                        <div className="truncate text-xs font-semibold text-muted-foreground">{c.id}</div>
                                     </div>
                                     <Button type="button" variant="outline" size="sm" asChild>
                                         <a href={`/campaigns/${c.id}`}>Open</a>
@@ -414,22 +411,22 @@ function ImpactPanel({ alert, campaigns }: { alert: AlertItem; campaigns: Campai
 function RootCausePanel({ alert }: { alert: AlertItem }) {
     return (
         <div className="space-y-3">
-            <div className="text-sm font-semibold text-white">Root Cause</div>
-            <div className="text-sm text-gray-200">
+            <div className="text-sm font-semibold text-foreground">Root Cause</div>
+            <div className="text-sm text-muted-foreground">
                 Prototype analysis: likely upstream dependency behavior, transient network conditions, or campaign pacing configuration.
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <div className="text-xs font-semibold text-gray-300">Metadata</div>
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+                <div className="text-xs font-semibold text-muted-foreground">Metadata</div>
                 <div className="mt-2 space-y-2">
                     {alert.metadata ? (
                         Object.entries(alert.metadata).map(([k, v]) => (
                             <div key={k} className="flex items-center justify-between gap-3">
-                                <div className="text-sm text-gray-300">{k}</div>
-                                <div className="text-sm font-semibold text-white tabular-nums">{String(v)}</div>
+                                <div className="text-sm text-muted-foreground">{k}</div>
+                                <div className="text-sm font-semibold text-foreground tabular-nums">{String(v)}</div>
                             </div>
                         ))
                     ) : (
-                        <div className="text-sm text-gray-400">—</div>
+                        <div className="text-sm text-muted-foreground">—</div>
                     )}
                 </div>
             </div>
@@ -445,14 +442,14 @@ function TimelinePanel({ alert }: { alert: AlertItem }) {
     ];
     return (
         <div className="space-y-3">
-            <div className="text-sm font-semibold text-white">Timeline Visualization</div>
+            <div className="text-sm font-semibold text-foreground">Timeline Visualization</div>
             <div className="space-y-2">
                 {events.map((e) => (
-                    <div key={e.t} className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
-                        <div className="mt-0.5 h-2 w-2 rounded-full bg-white/60" />
+                    <div key={e.t} className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2">
+                        <div className="mt-0.5 h-2 w-2 rounded-full bg-primary/60" />
                         <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-white">{e.label}</div>
-                            <div className="text-xs font-semibold text-gray-400 tabular-nums">{new Date(e.t).toLocaleString()}</div>
+                            <div className="text-sm font-semibold text-foreground">{e.label}</div>
+                            <div className="text-xs font-semibold text-muted-foreground tabular-nums">{new Date(e.t).toLocaleString()}</div>
                         </div>
                     </div>
                 ))}
@@ -470,16 +467,16 @@ function RecommendedPanel({ alert }: { alert: AlertItem }) {
     ];
     return (
         <div className="space-y-3">
-            <div className="text-sm font-semibold text-white">Recommended Actions</div>
+            <div className="text-sm font-semibold text-foreground">Recommended Actions</div>
             <div className="space-y-2">
                 {items.map((t) => (
-                    <div key={t} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-gray-200">
+                    <div key={t} className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                         {t}
                     </div>
                 ))}
             </div>
             {alert.status === "Resolved" ? (
-                <div className="text-sm font-semibold text-emerald-200">Status indicates the incident is resolved.</div>
+                <div className="text-sm font-semibold text-emerald-500">Status indicates the incident is resolved.</div>
             ) : null}
         </div>
     );
@@ -488,8 +485,8 @@ function RecommendedPanel({ alert }: { alert: AlertItem }) {
 function RelatedPanel({ alert }: { alert: AlertItem }) {
     return (
         <div className="space-y-3">
-            <div className="text-sm font-semibold text-white">Related Incidents</div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-gray-200">
+            <div className="text-sm font-semibold text-foreground">Related Incidents</div>
+            <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
                 Prototype view: no related incidents linked for {alert.id}.
             </div>
         </div>
@@ -505,27 +502,27 @@ function RuleBuilder({ onDone }: { onDone: () => void }) {
         <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div>
-                    <label className="text-xs font-semibold text-gray-300">Rule name</label>
+                    <label className="text-xs font-semibold text-muted-foreground">Rule name</label>
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-3 text-sm text-white"
+                        className="mt-1 h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                 </div>
                 <div>
-                    <label className="text-xs font-semibold text-gray-300">Action</label>
+                    <label className="text-xs font-semibold text-muted-foreground">Action</label>
                     <input
                         value={action}
                         onChange={(e) => setAction(e.target.value)}
-                        className="mt-1 h-10 w-full rounded-md border border-white/10 bg-white/5 px-3 text-sm text-white"
+                        className="mt-1 h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                 </div>
                 <div className="md:col-span-2">
-                    <label className="text-xs font-semibold text-gray-300">Condition</label>
+                    <label className="text-xs font-semibold text-muted-foreground">Condition</label>
                     <textarea
                         value={condition}
                         onChange={(e) => setCondition(e.target.value)}
-                        className="mt-1 h-24 w-full resize-none rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                        className="mt-1 h-24 w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                 </div>
             </div>

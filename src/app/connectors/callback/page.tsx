@@ -7,6 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { parseConnectorsCallback } from "@/lib/connectors-utils";
 
+function randomEventId() {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+    return `evt_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+}
+
 function ConnectorsCallbackInner() {
     const searchParams = useSearchParams();
     const [canClose, setCanClose] = useState(true);
@@ -14,7 +19,13 @@ function ConnectorsCallbackInner() {
     const parsed = useMemo(() => parseConnectorsCallback(new URLSearchParams(searchParams.toString())), [searchParams]);
 
     useEffect(() => {
-        const payload = { type: "connectors:updated", ok: parsed.ok, providerType: parsed.providerType };
+        const payload = {
+            type: "connectors:updated",
+            eventId: randomEventId(),
+            ok: parsed.ok,
+            providerType: parsed.providerType,
+            message: parsed.message,
+        };
 
         try {
             if (window.opener && !window.opener.closed) window.opener.postMessage(payload, "*");
@@ -43,7 +54,7 @@ function ConnectorsCallbackInner() {
             }
         }, 350);
         return () => window.clearTimeout(t);
-    }, [parsed.ok, parsed.providerType]);
+    }, [parsed.message, parsed.ok, parsed.providerType]);
 
     return (
         <div className="mx-auto flex min-h-[60vh] w-full max-w-xl items-center justify-center px-4">

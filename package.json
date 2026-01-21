@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "node --test --import tsx --import ./src/test-utils/setup.ts",
     "test:visual": "playwright test",
+    "check-branding": "node scripts/check-branding.js",
+    "fix-branding": "node scripts/fix-branding.js",
     "docs:openapi": "node --import tsx scripts/generate-openapi.ts --write",
     "docs:openapi:check": "node --import tsx scripts/generate-openapi.ts --check",
     "storybook": "storybook dev -p 6006",

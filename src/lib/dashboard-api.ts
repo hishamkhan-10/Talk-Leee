@@ -305,14 +305,17 @@ class DashboardApi {
     }
 
     async startCampaign(_id: string): Promise<{ message: string; jobs_enqueued: number }> {
+        void _id;
         return { message: "Campaign started! (Prototype mode)", jobs_enqueued: 50 };
     }
 
     async pauseCampaign(_id: string): Promise<{ message: string }> {
+        void _id;
         return { message: "Campaign paused! (Prototype mode)" };
     }
 
     async stopCampaign(_id: string): Promise<{ message: string }> {
+        void _id;
         return { message: "Campaign stopped! (Prototype mode)" };
     }
 

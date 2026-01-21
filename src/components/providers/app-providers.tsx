@@ -72,6 +72,8 @@ function createAppQueryClient(onUnauthorized: () => void) {
     });
 }
 
+import { ThemeProvider } from "./theme-provider";
+
 export function AppProviders({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [client] = useState(() =>
@@ -84,5 +86,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         })
     );
 
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    return (
+        <QueryClientProvider client={client}>
+            <ThemeProvider>
+                {children}
+            </ThemeProvider>
+        </QueryClientProvider>
+    );
 }

@@ -9,6 +9,7 @@ import { Moon, Sun } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { HealthIndicator } from "@/components/ui/health-indicator";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/components/providers/theme-provider";
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -24,7 +25,7 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
     const { collapsed, mobileOpen } = useSidebarState();
     const { setMobileOpen } = useSidebarActions();
     const [isDesktop, setIsDesktop] = useState(false);
-    const [theme, setTheme] = useState<"light" | "dark">("light");
+    const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
         if (!requireAuth) return;
@@ -40,23 +41,6 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const storageKey = "talklee.theme";
-        let next: "light" | "dark" = "light";
-        try {
-            const saved = window.localStorage.getItem(storageKey);
-            if (saved === "dark" || saved === "light") next = saved;
-            else next = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
-        } catch {
-            next = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
-        }
-        const root = document.documentElement;
-        if (next === "dark") root.classList.add("dark");
-        else root.classList.remove("dark");
-        setTheme(next);
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
         const mql = window.matchMedia("(min-width: 1024px)");
         const update = () => setIsDesktop(mql.matches);
         update();
@@ -68,17 +52,6 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
         if (!isDesktop) return undefined;
         return collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-expanded-width)";
     }, [collapsed, isDesktop]);
-
-    const toggleTheme = () => {
-        const next = theme === "dark" ? "light" : "dark";
-        setTheme(next);
-        const root = document.documentElement;
-        if (next === "dark") root.classList.add("dark");
-        else root.classList.remove("dark");
-        try {
-            window.localStorage.setItem("talklee.theme", next);
-        } catch {}
-    };
 
     const themeTooltip = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
     const ThemeIcon = theme === "dark" ? Sun : Moon;

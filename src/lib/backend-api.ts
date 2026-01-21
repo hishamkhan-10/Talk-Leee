@@ -98,9 +98,20 @@ export const backendApi = {
         },
     },
     calendarEvents: {
-        list: async (signal?: AbortSignal): Promise<ListResponse<CalendarEvent>> => {
-            const data = await httpClient.request({ path: backendEndpoints.calendarEventsList.path, timeoutMs: 12_000, signal });
-            return parseOrThrow(ListResponseSchema(CalendarEventResponseSchema), data);
+        list: async (
+            input?: { page?: number; pageSize?: number },
+            signal?: AbortSignal
+        ): Promise<{ items: CalendarEvent[]; total?: number; page?: number; page_size?: number }> => {
+            const data = await httpClient.request({
+                path: backendEndpoints.calendarEventsList.path,
+                timeoutMs: 12_000,
+                signal,
+                query: {
+                    page: input?.page,
+                    page_size: input?.pageSize,
+                },
+            });
+            return parseOrThrow(PaginatedResponseSchema(CalendarEventResponseSchema), data);
         },
         create: async (input: {
             leadId: string;
@@ -120,6 +131,40 @@ export const backendApi = {
                     start_time: input.startTime,
                     end_time: input.endTime,
                     notes: input.notes,
+                },
+                timeoutMs: 12_000,
+            });
+            return parseOrThrow(CalendarEventResponseSchema, data);
+        },
+        update: async (
+            id: string,
+            patch: {
+                title?: string;
+                startTime?: string;
+                endTime?: string;
+                status?: string;
+                leadId?: string;
+                leadName?: string;
+                notes?: string;
+                joinLink?: string;
+                calendarLink?: string;
+                participants?: Array<{ id?: string; name?: string; email?: string; role?: string }>;
+            }
+        ): Promise<CalendarEvent> => {
+            const data = await httpClient.request({
+                path: backendEndpoints.calendarEventsUpdate.path.replace("{id}", encodeURIComponent(id)),
+                method: backendEndpoints.calendarEventsUpdate.method,
+                body: {
+                    ...(patch.title !== undefined ? { title: patch.title } : {}),
+                    ...(patch.startTime !== undefined ? { start_time: patch.startTime } : {}),
+                    ...(patch.endTime !== undefined ? { end_time: patch.endTime } : {}),
+                    ...(patch.status !== undefined ? { status: patch.status } : {}),
+                    ...(patch.leadId !== undefined ? { lead_id: patch.leadId } : {}),
+                    ...(patch.leadName !== undefined ? { lead_name: patch.leadName } : {}),
+                    ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+                    ...(patch.joinLink !== undefined ? { join_link: patch.joinLink } : {}),
+                    ...(patch.calendarLink !== undefined ? { calendar_link: patch.calendarLink } : {}),
+                    ...(patch.participants !== undefined ? { participants: patch.participants } : {}),
                 },
                 timeoutMs: 12_000,
             });
@@ -240,10 +285,7 @@ export const backendApi = {
                 sortDir?: "asc" | "desc";
             },
             signal?: AbortSignal
-        ): Promise<
-            | { items: AssistantRun[] }
-            | { items: AssistantRun[]; total: number; page: number; page_size: number }
-        > => {
+        ): Promise<{ items: AssistantRun[]; total?: number; page?: number; page_size?: number }> => {
             const data = await httpClient.request({
                 path: backendEndpoints.assistantRunsList.path,
                 method: backendEndpoints.assistantRunsList.method,

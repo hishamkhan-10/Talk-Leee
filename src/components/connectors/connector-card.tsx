@@ -20,7 +20,7 @@ function openOAuthWindow(url: string) {
     const left = Math.max(0, Math.round((window.screen.width - w) / 2));
     const top = Math.max(0, Math.round((window.screen.height - h) / 2));
     const features = `popup=yes,width=${w},height=${h},left=${left},top=${top},noopener=yes,noreferrer=yes`;
-    const win = window.open(url, "connector_oauth", features);
+    const win = window.open(url, "_blank", features);
     if (!win) {
         window.location.assign(url);
         return;
@@ -95,16 +95,18 @@ export function ConnectorCard({
 
     const isBusy = pendingAction !== null;
 
-    const connectDisabled = isBusy || status !== "disconnected";
-    const reconnectDisabled = isBusy || status === "disconnected";
-    const disconnectDisabled = isBusy || status === "disconnected";
+    const canConnect = status === "disconnected";
+    const canReconnect = status === "expired" || status === "error";
+    const canDisconnect = status === "connected" || status === "expired" || status === "error";
 
     const connectOrReconnect = useCallback(async () => {
         setInlineError(undefined);
         setPendingAction(status === "disconnected" ? "connect" : "reconnect");
         try {
             const redirect = new URL(`${window.location.origin}${oauthCallbackPath}`);
-            redirect.searchParams.set("type", type);
+            if (!oauthCallbackPath.includes("[type]") && !oauthCallbackPath.includes(`/${type}/`)) {
+                redirect.searchParams.set("type", type);
+            }
             const res = await authorizeFn({ type, redirect_uri: redirect.toString() });
             openOAuthWindow(res.authorization_url);
         } catch (err) {
@@ -136,7 +138,7 @@ export function ConnectorCard({
     const lastSyncLabel = useMemo(() => formatLastSync(lastSync), [lastSync]);
 
     return (
-        <div className={cn("rounded-2xl border p-4 backdrop-blur-sm", accentClassName, className)}>
+        <div className={cn("rounded-2xl border p-4 backdrop-blur-sm", accentClassName, className)} data-testid={`connector-card-${type}`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="flex items-center gap-3">
@@ -170,18 +172,56 @@ export function ConnectorCard({
                 <div className="text-xs text-muted-foreground">{provider ? `Provider: ${provider}` : null}</div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button type="button" variant="outline" disabled={connectDisabled} onClick={() => void connectOrReconnect()}>
-                        {pendingAction === "connect" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ExternalLink className="h-4 w-4" aria-hidden />}
-                        {pendingAction === "connect" ? "Starting..." : "Connect"}
-                    </Button>
-                    <Button type="button" variant="secondary" disabled={reconnectDisabled} onClick={() => void connectOrReconnect()}>
-                        {pendingAction === "reconnect" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <RotateCcw className="h-4 w-4" aria-hidden />}
-                        {pendingAction === "reconnect" ? "Starting..." : "Reconnect"}
-                    </Button>
-                    <Button type="button" variant="destructive" disabled={disconnectDisabled} onClick={requestDisconnect}>
-                        {pendingAction === "disconnect" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Unplug className="h-4 w-4" aria-hidden />}
-                        {pendingAction === "disconnect" ? "Disconnecting..." : "Disconnect"}
-                    </Button>
+                    {canConnect ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={isBusy}
+                            onClick={() => void connectOrReconnect()}
+                            data-testid={`connector-${type}-connect`}
+                        >
+                            {pendingAction === "connect" ? (
+                                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                            ) : (
+                                <ExternalLink className="h-4 w-4" aria-hidden />
+                            )}
+                            {pendingAction === "connect" ? "Starting..." : "Connect"}
+                        </Button>
+                    ) : null}
+
+                    {canReconnect ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={isBusy}
+                            onClick={() => void connectOrReconnect()}
+                            data-testid={`connector-${type}-reconnect`}
+                        >
+                            {pendingAction === "reconnect" ? (
+                                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                            ) : (
+                                <RotateCcw className="h-4 w-4" aria-hidden />
+                            )}
+                            {pendingAction === "reconnect" ? "Starting..." : "Reconnect"}
+                        </Button>
+                    ) : null}
+
+                    {canDisconnect ? (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={isBusy}
+                            onClick={requestDisconnect}
+                            data-testid={`connector-${type}-disconnect`}
+                        >
+                            {pendingAction === "disconnect" ? (
+                                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                            ) : (
+                                <Unplug className="h-4 w-4" aria-hidden />
+                            )}
+                            {pendingAction === "disconnect" ? "Disconnecting..." : "Disconnect"}
+                        </Button>
+                    ) : null}
                 </div>
             </div>
 

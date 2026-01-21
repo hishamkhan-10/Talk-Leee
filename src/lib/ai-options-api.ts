@@ -257,6 +257,7 @@ class AIOptionsApi {
 
     // Run full benchmark
     async runBenchmark(_config: AIProviderConfig): Promise<LatencyBenchmarkResponse> {
+        void _config;
         return {
             llm_first_token_ms: 85,
             llm_total_ms: 340,

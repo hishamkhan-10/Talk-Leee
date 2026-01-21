@@ -236,8 +236,8 @@ export function CommandBar({
         <>
             <div className="content-card flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <div className="text-sm font-semibold text-white">Search & Command Bar</div>
-                    <div className="mt-1 text-sm text-gray-400">Press Ctrl + K to open.</div>
+                    <div className="text-sm font-semibold text-foreground">Search & Command Bar</div>
+                    <div className="mt-1 text-sm text-muted-foreground">Press Ctrl + K to open.</div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" onClick={openBar}>
@@ -271,11 +271,11 @@ export function CommandBar({
                         }}
                         onKeyDown={onKeyDownInput}
                         placeholder='Try "Holiday", "/pause", or "> analytics"…'
-                        className="border-white/10 bg-white/5 text-white placeholder:text-gray-400 focus-visible:ring-white/30"
+                        className="border-input bg-muted/50 text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
                     />
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+                    <div className="rounded-xl border border-border bg-card p-2">
                         {results.length === 0 ? (
-                            <div className="px-2 py-6 text-center text-sm text-gray-300">No results</div>
+                            <div className="px-2 py-6 text-center text-sm text-muted-foreground">No results</div>
                         ) : (
                             <div className="space-y-1">
                                 {results.map((r, idx) => (
@@ -283,24 +283,24 @@ export function CommandBar({
                                         key={r.id}
                                         type="button"
                                         className={cn(
-                                            "flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left",
-                                            idx === activeIndex ? "bg-white/10" : "hover:bg-white/5"
+                                            "flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors duration-150 ease-out",
+                                            idx === activeIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50 text-foreground"
                                         )}
                                         onMouseEnter={() => setActiveIndex(idx)}
                                         onClick={() => void runResult(r)}
                                     >
                                         <div className="min-w-0">
-                                            <div className="truncate text-sm font-semibold text-white">{r.title}</div>
-                                            {r.subtitle ? <div className="truncate text-xs font-semibold text-gray-400">{r.subtitle}</div> : null}
+                                            <div className="truncate text-sm font-semibold">{r.title}</div>
+                                            {r.subtitle ? <div className="truncate text-xs font-semibold text-muted-foreground">{r.subtitle}</div> : null}
                                         </div>
-                                        <div className="shrink-0 text-xs font-semibold text-gray-300">{r.category}</div>
+                                        <div className="shrink-0 text-xs font-semibold text-muted-foreground">{r.category}</div>
                                     </button>
                                 ))}
                             </div>
                         )}
                     </div>
-                    <div className="text-xs font-semibold text-gray-400">
-                        Prefixes: <span className="text-gray-200">/</span> actions, <span className="text-gray-200">&gt;</span> navigation, <span className="text-gray-200">@</span> users, <span className="text-gray-200">#</span> tags
+                    <div className="text-xs font-semibold text-muted-foreground">
+                        Prefixes: <span className="text-foreground">/</span> actions, <span className="text-foreground">&gt;</span> navigation, <span className="text-foreground">@</span> users, <span className="text-foreground">#</span> tags
                     </div>
                 </div>
             </Modal>

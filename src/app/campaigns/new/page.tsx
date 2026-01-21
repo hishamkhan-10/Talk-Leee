@@ -36,8 +36,8 @@ export default function NewCampaignPage() {
                 const voiceList = await aiOptionsApi.getVoices();
                 setVoices(voiceList);
                 // Set default to first voice if available
-                if (voiceList.length > 0 && !formData.voice_id) {
-                    setFormData(prev => ({ ...prev, voice_id: voiceList[0].id }));
+                if (voiceList.length > 0) {
+                    setFormData((prev) => (prev.voice_id ? prev : { ...prev, voice_id: voiceList[0].id }));
                 }
             } catch (err) {
                 captureException(err, { area: "campaigns-new", kind: "voices" });
@@ -129,7 +129,7 @@ export default function NewCampaignPage() {
             >
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Back to campaigns
@@ -142,11 +142,11 @@ export default function NewCampaignPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="content-card"
                 >
-                    <h3 className="text-lg font-semibold text-white mb-6">Campaign Details</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-6">Campaign Details</h3>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-gray-400">Campaign Name</Label>
+                            <Label htmlFor="name">Campaign Name</Label>
                             <Input
                                 id="name"
                                 name="name"
@@ -155,13 +155,12 @@ export default function NewCampaignPage() {
                                 onChange={handleChange}
                                 required
                                 disabled={loading}
-                                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
                             />
                         </div>
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <Label htmlFor="description" className="text-gray-400">Description (optional)</Label>
+                            <Label htmlFor="description">Description (optional)</Label>
                             <textarea
                                 id="description"
                                 name="description"
@@ -170,13 +169,13 @@ export default function NewCampaignPage() {
                                 onChange={handleChange}
                                 disabled={loading}
                                 rows={2}
-                                className="flex w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                             />
                         </div>
 
                         {/* Goal */}
                         <div className="space-y-2">
-                            <Label htmlFor="goal" className="text-gray-400">Campaign Goal (optional)</Label>
+                            <Label htmlFor="goal">Campaign Goal (optional)</Label>
                             <Input
                                 id="goal"
                                 name="goal"
@@ -184,20 +183,19 @@ export default function NewCampaignPage() {
                                 value={formData.goal}
                                 onChange={handleChange}
                                 disabled={loading}
-                                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
                             />
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 Define what success looks like for each call
                             </p>
                         </div>
 
                         {/* Voice Selection - Updated to use AI Options voices */}
                         <div className="space-y-2">
-                            <Label className="text-gray-400">AI Voice ({voices.length} available)</Label>
+                            <Label>AI Voice ({voices.length} available)</Label>
                             {loadingVoices ? (
                                 <div className="flex items-center justify-center py-8">
-                                    <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
-                                    <span className="ml-2 text-gray-400">Loading voices...</span>
+                                    <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+                                    <span className="ml-2 text-muted-foreground">Loading voices...</span>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -205,9 +203,9 @@ export default function NewCampaignPage() {
                                         <div
                                             key={voice.id}
                                             onClick={() => setFormData((prev) => ({ ...prev, voice_id: voice.id }))}
-                                            className={`relative p-3 rounded-lg border cursor-pointer transition-all ${formData.voice_id === voice.id
+                                            className={`relative p-3 rounded-lg border cursor-pointer transition-colors ${formData.voice_id === voice.id
                                                     ? "border-emerald-500 bg-emerald-500/20"
-                                                    : "border-white/20 bg-white/5 hover:bg-white/10"
+                                                    : "border-border bg-muted/30 hover:bg-muted/40"
                                                 }`}
                                         >
                                             {/* Play Preview Button */}
@@ -237,9 +235,9 @@ export default function NewCampaignPage() {
                                                     >
                                                         <Volume2 className="w-3 h-3" style={{ color: voice.accent_color || "#10B981" }} />
                                                     </div>
-                                                    <p className="font-medium text-sm text-white">{voice.name}</p>
+                                                    <p className="font-medium text-sm text-foreground">{voice.name}</p>
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                                     {voice.description}
                                                 </p>
 
@@ -270,7 +268,7 @@ export default function NewCampaignPage() {
 
                         {/* System Prompt */}
                         <div className="space-y-2">
-                            <Label htmlFor="system_prompt" className="text-gray-400">AI Instructions</Label>
+                            <Label htmlFor="system_prompt">AI Instructions</Label>
                             <textarea
                                 id="system_prompt"
                                 name="system_prompt"
@@ -280,9 +278,9 @@ export default function NewCampaignPage() {
                                 required
                                 disabled={loading}
                                 rows={6}
-                                className="flex w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                             />
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 Describe how the AI should behave during calls. Be specific about tone, objectives, and key talking points.
                             </p>
                         </div>
@@ -294,7 +292,7 @@ export default function NewCampaignPage() {
                         )}
 
                         <div className="flex gap-4">
-                            <Button type="submit" disabled={loading} className="bg-white text-gray-900 hover:bg-gray-100">
+                            <Button type="submit" disabled={loading}>
                                 {loading ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -309,7 +307,6 @@ export default function NewCampaignPage() {
                                 variant="outline"
                                 onClick={() => router.back()}
                                 disabled={loading}
-                                className="border-white/20 text-white hover:bg-white/10"
                             >
                                 Cancel
                             </Button>

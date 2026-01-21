@@ -21,6 +21,17 @@ function Harness({ onConfirm }: { onConfirm: () => void | Promise<void> }) {
     });
 }
 
+function IntentHarness({ intent }: { intent: "disconnect" | "cancel" | "delete" }) {
+    const [open, setOpen] = useState(true);
+    return createElement(ConfirmDialog, {
+        open,
+        onOpenChange: setOpen,
+        intent,
+        warningText: "Are you sure?",
+        onConfirm: () => {},
+    });
+}
+
 test("ConfirmDialog focuses Cancel and traps tab navigation", async () => {
     const userEvent = (await import("@testing-library/user-event")).default;
     const user = userEvent.setup({ document: globalThis.document });
@@ -90,4 +101,18 @@ test("ConfirmDialog shows error when confirm fails and stays open", async () => 
         assert.ok(screen.getByText("Nope"));
         assert.ok(screen.getByRole("dialog"));
     });
+});
+
+test("ConfirmDialog intent=cancel uses default copy", () => {
+    renderWithQueryClient(createElement(IntentHarness, { intent: "cancel" }));
+    assert.ok(screen.getByText("Cancel action"));
+    assert.ok(screen.getByText("This will stop the current operation."));
+    assert.equal(screen.getAllByRole("button", { name: "Cancel" }).length, 2);
+});
+
+test("ConfirmDialog intent=delete uses default copy", () => {
+    renderWithQueryClient(createElement(IntentHarness, { intent: "delete" }));
+    assert.ok(screen.getByText("Delete item"));
+    assert.ok(screen.getByText("This action cannot be undone."));
+    assert.ok(screen.getByRole("button", { name: "Delete" }));
 });

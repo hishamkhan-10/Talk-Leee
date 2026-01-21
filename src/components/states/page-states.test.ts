@@ -14,7 +14,15 @@ test("ErrorState renders message and supports retry", async () => {
     const userEvent = (await import("@testing-library/user-event")).default;
     const user = userEvent.setup({ document: globalThis.document });
     let retries = 0;
-    renderWithQueryClient(createElement(ErrorState, { title: "Oops", message: "Failed", onRetry: () => (retries += 1) }));
+    renderWithQueryClient(
+        createElement(ErrorState, {
+            title: "Oops",
+            message: "Failed",
+            onRetry: () => {
+                retries += 1;
+            },
+        })
+    );
 
     assert.ok(screen.getByText("Oops"));
     assert.ok(screen.getByRole("alert"));
@@ -42,7 +50,16 @@ test("EmptyState renders CTA when provided", async () => {
     const userEvent = (await import("@testing-library/user-event")).default;
     const user = userEvent.setup({ document: globalThis.document });
     let clicks = 0;
-    renderWithQueryClient(createElement(EmptyState, { title: "Nothing here", message: "No data", actionLabel: "Create", onAction: () => (clicks += 1) }));
+    renderWithQueryClient(
+        createElement(EmptyState, {
+            title: "Nothing here",
+            message: "No data",
+            actionLabel: "Create",
+            onAction: () => {
+                clicks += 1;
+            },
+        })
+    );
 
     await user.click(screen.getByRole("button", { name: "Create" }));
     assert.equal(clicks, 1);
@@ -61,7 +78,9 @@ test("EmptyState supports primary and secondary actions", async () => {
             primaryActionLabel: "Create new",
             onPrimaryAction: () => {},
             secondaryActionLabel: "Import",
-            onSecondaryAction: () => (secondary += 1),
+            onSecondaryAction: () => {
+                secondary += 1;
+            },
         })
     );
 

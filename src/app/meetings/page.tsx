@@ -6,13 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
 import { ViewportDrawer } from "@/components/ui/viewport-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states/page-states";
 import { useCalendarEvents, useCancelCalendarEvent, useCreateCalendarEvent } from "@/lib/api-hooks";
 import { notificationsStore } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
-import { splitAndSortMeetings, formatMeetingDateTime, meetingLeadLabel, meetingStatusBadgeClass, meetingStatusLabel } from "@/lib/meetings-utils";
+import {
+    splitAndSortMeetings,
+    formatMeetingDateTime,
+    meetingLeadLabel,
+    meetingParticipantSummary,
+    meetingStatusBadgeClass,
+    meetingStatusLabel,
+    sanitizeMeetingNotesHtml,
+    sortMeetings,
+    type MeetingSortKey,
+    type SortDir,
+} from "@/lib/meetings-utils";
 import { isApiClientError } from "@/lib/http-client";
 import { dashboardApi, type Campaign, type Contact } from "@/lib/dashboard-api";
 import type { CalendarEvent } from "@/lib/models";
@@ -116,7 +128,31 @@ function MeetingsContent() {
     const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
     const events = useMemo(() => q.data?.items ?? [], [q.data?.items]);
-    const split = useMemo(() => splitAndSortMeetings(events), [events]);
+    const [query, setQuery] = useState("");
+    const [sortKey, setSortKey] = useState<MeetingSortKey>("startTime");
+    const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+    const filteredEvents = useMemo(() => {
+        const needle = query.trim().toLowerCase();
+        if (needle.length === 0) return events;
+        return events.filter((m) => {
+            const parts: string[] = [];
+            parts.push(m.title);
+            if (m.leadName) parts.push(m.leadName);
+            if (m.leadId) parts.push(m.leadId);
+            if (m.status) parts.push(m.status);
+            for (const p of m.participants ?? []) {
+                if (p.name) parts.push(p.name);
+                if (p.email) parts.push(p.email);
+                if (p.role) parts.push(p.role);
+            }
+            return parts.join(" ").toLowerCase().includes(needle);
+        });
+    }, [events, query]);
+
+    const split = useMemo(() => splitAndSortMeetings(filteredEvents), [filteredEvents]);
+    const sortedUpcoming = useMemo(() => sortMeetings(split.upcoming, sortKey, sortDir), [split.upcoming, sortDir, sortKey]);
+    const sortedPast = useMemo(() => sortMeetings(split.past, sortKey, sortDir), [sortDir, sortKey, split.past]);
 
     const selected = useMemo(() => events.find((m) => m.id === drawerId) ?? null, [drawerId, events]);
     const confirmMeeting = useMemo(() => events.find((m) => m.id === confirmCancelId) ?? null, [confirmCancelId, events]);
@@ -129,11 +165,21 @@ function MeetingsContent() {
     const [leadActiveIndex, setLeadActiveIndex] = useState(0);
     const [leadId, setLeadId] = useState<string>("");
     const [leadName, setLeadName] = useState<string>("");
+    const leadBoxRef = useRef<HTMLDivElement | null>(null);
 
     const [title, setTitle] = useState("");
     const [whenValue, setWhenValue] = useState("");
     const notesRef = useRef<HTMLDivElement | null>(null);
     const [formError, setFormError] = useState<string | null>(null);
+
+    const timeZoneLabel = useMemo(() => {
+        try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            return tz ? `Times shown in ${tz}` : "Times shown in local time";
+        } catch {
+            return "Times shown in local time";
+        }
+    }, []);
 
     const leadSelectedLabel = useMemo(() => {
         const found = leadOptions.find((x) => x.id === leadId);
@@ -181,6 +227,7 @@ function MeetingsContent() {
                 if (all.length > 0) {
                     setLeadId((prev) => prev || all[0]!.id);
                     setLeadName((prev) => prev || all[0]!.leadName);
+                    setLeadQuery((prev) => (prev.trim().length > 0 ? prev : all[0]!.label));
                 }
             } catch (e) {
                 if (!alive) return;
@@ -205,6 +252,34 @@ function MeetingsContent() {
         setWhenValue(toLocalDateTimeInputValue(soon.toISOString()));
     }, [createOpen, title.length, whenValue.length]);
 
+    useEffect(() => {
+        if (!leadOpen) return;
+        const onDown = (e: PointerEvent) => {
+            const t = e.target as Node | null;
+            if (!t) return;
+            if (leadBoxRef.current && leadBoxRef.current.contains(t)) return;
+            setLeadOpen(false);
+        };
+        document.addEventListener("pointerdown", onDown);
+        return () => {
+            document.removeEventListener("pointerdown", onDown);
+        };
+    }, [leadOpen]);
+
+    useEffect(() => {
+        if (!createOpen) return;
+        if (leadOpen) return;
+        if (!leadId) return;
+        if (!leadSelectedLabel) return;
+        if (leadQuery.trim() === leadSelectedLabel.trim()) return;
+        setLeadQuery(leadSelectedLabel);
+    }, [createOpen, leadId, leadOpen, leadQuery, leadSelectedLabel]);
+
+    const sanitizedSelectedNotes = useMemo(() => {
+        if (!selected?.notes) return "";
+        return sanitizeMeetingNotesHtml(selected.notes);
+    }, [selected?.notes]);
+
     return (
         <>
             <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -221,6 +296,31 @@ function MeetingsContent() {
                             Create meeting
                         </Button>
                     </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background/70 p-4 md:flex-row md:items-end md:justify-between">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="mtg-q">Search</Label>
+                            <Input id="mtg-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Title, lead, participant…" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="mtg-sort">Sort</Label>
+                            <div className="flex gap-2">
+                                <Select value={sortKey} onChange={(v) => setSortKey(v as MeetingSortKey)} ariaLabel="Sort key" className="flex-1">
+                                    <option value="startTime">Date/time</option>
+                                    <option value="title">Title</option>
+                                    <option value="lead">Lead</option>
+                                    <option value="status">Status</option>
+                                </Select>
+                                <Select value={sortDir} onChange={(v) => setSortDir(v as SortDir)} ariaLabel="Sort direction" className="w-28">
+                                    <option value="asc">Asc</option>
+                                    <option value="desc">Desc</option>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-xs font-semibold text-muted-foreground">{filteredEvents.length} meetings</div>
                 </div>
 
                 {q.isLoading ? (
@@ -240,20 +340,22 @@ function MeetingsContent() {
                         actionLabel="Create meeting"
                         onAction={() => setCreateOpen(true)}
                     />
+                ) : filteredEvents.length === 0 ? (
+                    <EmptyState title="No matches" message="Try a different search query." />
                 ) : (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <section className="rounded-2xl border border-border bg-background/70 p-4 md:p-5">
                             <div className="flex items-center justify-between gap-3">
                                 <div className="text-sm font-semibold text-foreground">Upcoming</div>
-                                <div className="text-xs text-muted-foreground tabular-nums">{split.upcoming.length}</div>
+                                <div className="text-xs text-muted-foreground tabular-nums">{sortedUpcoming.length}</div>
                             </div>
-                            {split.upcoming.length === 0 ? (
+                            {sortedUpcoming.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
                                     No upcoming meetings.
                                 </div>
                             ) : (
                                 <div className="mt-4 space-y-2">
-                                    {split.upcoming.map((m) => (
+                                    {sortedUpcoming.map((m) => (
                                         <MeetingRow key={m.id} meeting={m} onOpen={() => setDrawerId(m.id)} />
                                     ))}
                                 </div>
@@ -263,15 +365,15 @@ function MeetingsContent() {
                         <section className="rounded-2xl border border-border bg-background/70 p-4 md:p-5">
                             <div className="flex items-center justify-between gap-3">
                                 <div className="text-sm font-semibold text-foreground">Past</div>
-                                <div className="text-xs text-muted-foreground tabular-nums">{split.past.length}</div>
+                                <div className="text-xs text-muted-foreground tabular-nums">{sortedPast.length}</div>
                             </div>
-                            {split.past.length === 0 ? (
+                            {sortedPast.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
                                     No past meetings.
                                 </div>
                             ) : (
                                 <div className="mt-4 space-y-2">
-                                    {split.past.map((m) => (
+                                    {sortedPast.map((m) => (
                                         <MeetingRow key={m.id} meeting={m} onOpen={() => setDrawerId(m.id)} />
                                     ))}
                                 </div>
@@ -318,6 +420,15 @@ function MeetingsContent() {
                         </div>
 
                         <div className="mt-5 space-y-5">
+                            <div className="rounded-2xl border border-border bg-background p-4">
+                                <div className="text-sm font-semibold text-foreground">Details</div>
+                                <div className="mt-3 space-y-2">
+                                    <InfoRow label="Meeting ID" value={selected.id} />
+                                    {selected.leadId ? <InfoRow label="Lead ID" value={selected.leadId} /> : null}
+                                    {selected.status ? <InfoRow label="Raw status" value={selected.status} /> : null}
+                                </div>
+                            </div>
+
                             {(selected.joinLink || selected.calendarLink) && (
                                 <div className="rounded-2xl border border-border bg-background p-4">
                                     <div className="text-sm font-semibold text-foreground">Links</div>
@@ -335,8 +446,8 @@ function MeetingsContent() {
                             <div className="rounded-2xl border border-border bg-background p-4">
                                 <div className="text-sm font-semibold text-foreground">Notes</div>
                                 <div className="mt-3 text-sm text-foreground whitespace-pre-wrap break-words">
-                                    {selected.notes ? (
-                                        <div dangerouslySetInnerHTML={{ __html: selected.notes }} />
+                                    {sanitizedSelectedNotes ? (
+                                        <div dangerouslySetInnerHTML={{ __html: sanitizedSelectedNotes }} />
                                     ) : (
                                         <div className="text-muted-foreground">No notes.</div>
                                     )}
@@ -436,7 +547,8 @@ function MeetingsContent() {
 
                                 const endIso = computeDefaultEndTime(startIso);
                                 const notesHtml = notesRef.current?.innerHTML ?? "";
-                                const notesText = sanitizeHtmlToText(notesHtml);
+                                const sanitizedNotes = sanitizeMeetingNotesHtml(notesHtml);
+                                const notesText = sanitizeHtmlToText(sanitizedNotes);
                                 try {
                                     await createM.mutateAsync({
                                         leadId,
@@ -444,7 +556,7 @@ function MeetingsContent() {
                                         title: trimmedTitle,
                                         startTime: startIso,
                                         endTime: endIso,
-                                        notes: notesText.length > 0 ? notesHtml : undefined,
+                                        notes: notesText.length > 0 ? sanitizedNotes : undefined,
                                     });
                                     setCreateOpen(false);
                                 } catch (e) {
@@ -475,11 +587,13 @@ function MeetingsContent() {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label className="text-gray-200">Lead / contact</Label>
-                            <div className="relative">
+                            <div className="relative" ref={leadBoxRef}>
                                 <Input
                                     value={leadQuery}
                                     onChange={(e) => {
                                         setLeadQuery(e.target.value);
+                                        setLeadId("");
+                                        setLeadName("");
                                         setLeadOpen(true);
                                         setLeadActiveIndex(0);
                                     }}
@@ -570,6 +684,7 @@ function MeetingsContent() {
                                 className="border-white/15 bg-white/5 text-white placeholder:text-gray-300 focus-visible:ring-white/20"
                                 aria-label="Meeting date and time"
                             />
+                            <div className="text-xs text-gray-300">{timeZoneLabel}</div>
                         </div>
                     </div>
 
@@ -699,6 +814,8 @@ export default function MeetingsPage() {
 }
 
 function MeetingRow({ meeting, onOpen }: { meeting: CalendarEvent; onOpen: () => void }) {
+    const participantSummary = meetingParticipantSummary(meeting);
+
     return (
         <button
             type="button"
@@ -711,6 +828,7 @@ function MeetingRow({ meeting, onOpen }: { meeting: CalendarEvent; onOpen: () =>
                     <div className="text-sm font-semibold text-foreground truncate">{meeting.title}</div>
                     <div className="mt-1 text-xs text-muted-foreground truncate">{formatMeetingDateTime(meeting.startTime)}</div>
                     <div className="mt-2 text-xs text-muted-foreground truncate">Lead: {meetingLeadLabel(meeting)}</div>
+                    {participantSummary ? <div className="mt-1 text-xs text-muted-foreground truncate">Participants: {participantSummary}</div> : null}
                 </div>
                 <div className="shrink-0">
                     <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", meetingStatusBadgeClass(meeting))}>
@@ -746,6 +864,34 @@ function LinkRow({ label, href, variant }: { label: string; href: string; varian
                         try {
                             await copyText(href);
                             notificationsStore.create({ type: "success", title: "Copied", message: "Link copied to clipboard." });
+                        } catch (e) {
+                            notificationsStore.create({ type: "error", title: "Copy failed", message: formatError(e) });
+                        }
+                    }}
+                >
+                    <Copy aria-hidden />
+                    Copy
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background/70 p-3">
+            <div className="min-w-0">
+                <div className="text-xs font-semibold text-muted-foreground">{label}</div>
+                <div className="mt-1 text-sm text-foreground truncate">{value}</div>
+            </div>
+            <div className="shrink-0">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                        try {
+                            await copyText(value);
+                            notificationsStore.create({ type: "success", title: "Copied", message: "Copied to clipboard." });
                         } catch (e) {
                             notificationsStore.create({ type: "error", title: "Copy failed", message: formatError(e) });
                         }

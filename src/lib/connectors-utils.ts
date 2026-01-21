@@ -29,12 +29,15 @@ export function extractAuthorizationUrl(data: unknown): string {
     throw new Error("Authorization failed. Please try again.");
 }
 
-export function parseConnectorsCallback(params: URLSearchParams): {
+export function parseConnectorsCallback(
+    params: URLSearchParams,
+    defaultProviderType?: string
+): {
     ok: boolean;
     providerType?: string;
     message: string;
 } {
-    const providerType = params.get("type") ?? params.get("provider") ?? undefined;
+    const providerType = params.get("type") ?? params.get("provider") ?? defaultProviderType ?? undefined;
 
     const statusParam = (params.get("status") ?? "").toLowerCase();
     const okParam = (params.get("ok") ?? params.get("success") ?? "").toLowerCase();
@@ -66,4 +69,3 @@ export function formatLastSync(value: string | null | undefined) {
     if (!Number.isFinite(ms)) return value;
     return new Date(ms).toLocaleString();
 }
-

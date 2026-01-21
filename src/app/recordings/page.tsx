@@ -101,21 +101,26 @@ export default function RecordingsPage() {
     const pageSize = 20;
 
     useEffect(() => {
-        loadRecordings();
-    }, [page]);
-
-    async function loadRecordings() {
-        try {
-            setLoading(true);
-            const response = await extendedApi.listRecordings(undefined, page, pageSize);
-            setRecordings(response.items);
-            setTotal(response.total);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load recordings");
-        } finally {
-            setLoading(false);
-        }
-    }
+        let alive = true;
+        (async () => {
+            try {
+                setLoading(true);
+                const response = await extendedApi.listRecordings(undefined, page, pageSize);
+                if (!alive) return;
+                setRecordings(response.items);
+                setTotal(response.total);
+            } catch (err) {
+                if (!alive) return;
+                setError(err instanceof Error ? err.message : "Failed to load recordings");
+            } finally {
+                if (!alive) return;
+                setLoading(false);
+            }
+        })();
+        return () => {
+            alive = false;
+        };
+    }, [page, pageSize]);
 
     const totalPages = Math.ceil(total / pageSize);
 

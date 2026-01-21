@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, type ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
@@ -9,6 +9,8 @@ import { ConnectorCard } from "@/components/connectors/connector-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConnectorStatuses, queryKeys } from "@/lib/api-hooks";
 import { isApiClientError } from "@/lib/http-client";
+import type { ConnectorProviderStatus } from "@/lib/models";
+import { notificationsStore } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { CalendarDays, Mail, UsersRound, HardDrive } from "lucide-react";
 
@@ -30,28 +32,28 @@ type ProviderCard = {
 const PROVIDERS: ProviderCard[] = [
     {
         type: "calendar",
-        name: "Calendar",
-        description: "Sync events for scheduling and reminders.",
+        name: "Google Calendar",
+        description: "Sync events for scheduling, reminders, and meeting context.",
         accent: "border-sky-500/20 bg-gradient-to-br from-sky-500/10 to-indigo-500/5",
         icon: CalendarDays,
     },
     {
         type: "email",
-        name: "Email",
+        name: "Gmail",
         description: "Connect inboxes for activity capture and follow-ups.",
         accent: "border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-cyan-500/5",
         icon: Mail,
     },
     {
         type: "crm",
-        name: "CRM",
-        description: "Sync contacts and engagement history to your CRM.",
+        name: "HubSpot",
+        description: "Sync contacts and engagement history into your CRM.",
         accent: "border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5",
         icon: UsersRound,
     },
     {
         type: "drive",
-        name: "Drive",
+        name: "Google Drive",
         description: "Connect file storage for documents and recordings.",
         accent: "border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-orange-500/5",
         icon: HardDrive,
@@ -63,24 +65,39 @@ export default function ConnectorsPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const q = useConnectorStatuses();
+    const seenEvents = useRef(new Set<string>());
 
     useEffect(() => {
-        const onMessage = (event: MessageEvent) => {
-            const data = event.data as unknown;
+        const handleUpdated = (data: unknown) => {
             if (!data || typeof data !== "object") return;
-            const t = (data as Record<string, unknown>).type;
-            if (t !== "connectors:updated") return;
+            const obj = data as Record<string, unknown>;
+            if (obj.type !== "connectors:updated") return;
+
+            const eventId = typeof obj.eventId === "string" ? obj.eventId : undefined;
+            if (eventId) {
+                if (seenEvents.current.has(eventId)) return;
+                seenEvents.current.add(eventId);
+            }
+
+            const ok = Boolean(obj.ok);
+            const message = typeof obj.message === "string" ? obj.message : undefined;
+            notificationsStore.create({
+                type: ok ? "success" : "error",
+                title: ok ? "Connector connected" : "Connector connection failed",
+                message: message ?? (ok ? "Connection completed successfully." : "Authorization failed. Please try again."),
+            });
+
             void qc.invalidateQueries({ queryKey: queryKeys.connectorStatuses() });
+        };
+
+        const onMessage = (event: MessageEvent) => {
+            handleUpdated(event.data as unknown);
         };
         window.addEventListener("message", onMessage);
 
         const bc = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("connectors") : null;
         const onBc = (event: MessageEvent) => {
-            const data = event.data as unknown;
-            if (!data || typeof data !== "object") return;
-            const t = (data as Record<string, unknown>).type;
-            if (t !== "connectors:updated") return;
-            void qc.invalidateQueries({ queryKey: queryKeys.connectorStatuses() });
+            handleUpdated(event.data as unknown);
         };
         bc?.addEventListener("message", onBc);
 
@@ -99,8 +116,12 @@ export default function ConnectorsPage() {
     }, [qc]);
 
     const byType = useMemo(() => {
-        const map = new Map<string, { status: string; last_sync?: string | null; error_message?: string | null; provider?: string | null }>();
-        for (const item of q.data?.items ?? []) map.set(item.type, item);
+        const map = new Map<ProviderType, ConnectorProviderStatus>();
+        for (const item of q.data?.items ?? []) {
+            if (item.type === "calendar" || item.type === "email" || item.type === "crm" || item.type === "drive") {
+                map.set(item.type, item);
+            }
+        }
         return map;
     }, [q.data?.items]);
 
@@ -174,6 +195,7 @@ export default function ConnectorsPage() {
                                         lastSync={data?.last_sync}
                                         provider={data?.provider}
                                         errorMessage={data?.error_message}
+                                        oauthCallbackPath={`/connectors/${p.type}/callback`}
                                     />
                                 );
                             })}

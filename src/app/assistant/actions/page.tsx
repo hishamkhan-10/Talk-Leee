@@ -151,6 +151,24 @@ function runsToCsv(items: AssistantRun[]) {
 }
 
 function guidanceForError(err: unknown) {
+    if (err && typeof err === "object") {
+        const obj = err as Record<string, unknown>;
+        const message = typeof obj.message === "string" ? obj.message : undefined;
+        const nextSteps = Array.isArray(obj.nextSteps) ? obj.nextSteps.filter((s): s is string => typeof s === "string") : undefined;
+        const retryable = typeof obj.retryable === "boolean" ? obj.retryable : undefined;
+        const docsUrl = typeof obj.docsUrl === "string" ? obj.docsUrl : undefined;
+        if (message || nextSteps?.length || typeof retryable === "boolean" || docsUrl) {
+            return {
+                rootCause: message ?? "Action failed.",
+                nextSteps:
+                    nextSteps && nextSteps.length > 0
+                        ? nextSteps
+                        : ["Open run details and inspect request/response payloads.", "Retry after adjusting inputs.", "Contact support if the error persists."],
+                retryable: retryable ?? true,
+                docsUrl: docsUrl ?? "https://docs.talk-lee.ai/troubleshooting/assistant-actions",
+            };
+        }
+    }
     if (isApiClientError(err)) {
         const apiErr = err as ApiClientError;
         if (apiErr.code === "unauthorized") {
@@ -551,13 +569,14 @@ export default function AssistantActionsPage() {
         return runsItems.length < pageSize ? page : page + 1;
     }, [page, pageSize, runsItems.length, runsTotal]);
 
-    const actions = actionsQ.data?.items ?? [];
+    const actionsItems = actionsQ.data?.items;
+    const actions = actionsItems ?? [];
     const actionTypes = useMemo(() => {
-        const types = actions.map(normalizeActionType).filter(Boolean);
+        const types = (actionsItems ?? []).map(normalizeActionType).filter(Boolean);
         const unique = Array.from(new Set(types));
         unique.sort((a, b) => a.localeCompare(b));
         return unique;
-    }, [actions]);
+    }, [actionsItems]);
 
     const categorizedActionTypes = useMemo(() => {
         const groups = new Map<string, string[]>();

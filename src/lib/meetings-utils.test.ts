@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitAndSortMeetings, meetingLeadLabel, meetingStatusLabel } from "@/lib/meetings-utils";
+import {
+    splitAndSortMeetings,
+    meetingLeadLabel,
+    meetingParticipantSummary,
+    meetingStatusLabel,
+    sortMeetings,
+    sanitizeMeetingNotesHtml,
+} from "@/lib/meetings-utils";
 import type { CalendarEvent } from "@/lib/models";
 
 test("splitAndSortMeetings splits by start time and sorts correctly", () => {
@@ -49,4 +56,51 @@ test("meetingStatusLabel normalizes status values", () => {
     assert.equal(meetingStatusLabel(b), "Completed");
     assert.equal(meetingStatusLabel(c), "Scheduled");
     assert.equal(meetingStatusLabel(d), "weird");
+});
+
+test("meetingParticipantSummary returns first two and extra count", () => {
+    const a: CalendarEvent = {
+        id: "a",
+        title: "A",
+        startTime: "2026-01-14T13:00:00Z",
+        participants: [
+            { id: undefined, name: "Ada", email: undefined, role: undefined },
+            { id: undefined, name: "Bob", email: undefined, role: undefined },
+            { id: undefined, name: "Cara", email: undefined, role: undefined },
+        ],
+    };
+    const b: CalendarEvent = { id: "b", title: "B", startTime: "2026-01-14T13:00:00Z", participants: [] };
+
+    assert.equal(meetingParticipantSummary(a), "Ada, Bob +1");
+    assert.equal(meetingParticipantSummary(b), "");
+});
+
+test("sortMeetings can sort by title and startTime", () => {
+    const items: CalendarEvent[] = [
+        { id: "b", title: "Bravo", startTime: "2026-01-14T14:00:00Z" },
+        { id: "a", title: "alpha", startTime: "2026-01-14T13:00:00Z" },
+        { id: "c", title: "Charlie", startTime: "not-a-date" },
+    ];
+
+    assert.deepEqual(
+        sortMeetings(items, "title", "asc").map((m) => m.id),
+        ["a", "b", "c"]
+    );
+    assert.deepEqual(
+        sortMeetings(items, "startTime", "asc").map((m) => m.id),
+        ["a", "b", "c"]
+    );
+    assert.deepEqual(
+        sortMeetings(items, "startTime", "desc").map((m) => m.id),
+        ["c", "b", "a"]
+    );
+});
+
+test("sanitizeMeetingNotesHtml removes scripts and event handlers", () => {
+    const input = `<div onclick="alert(1)"><b>Hi</b><script>alert(1)</script><img src=x onerror="alert(2)"></div>`;
+    const out = sanitizeMeetingNotesHtml(input);
+    assert.ok(!out.toLowerCase().includes("script"));
+    assert.ok(!out.toLowerCase().includes("onclick"));
+    assert.ok(!out.toLowerCase().includes("onerror"));
+    assert.ok(out.includes("<b>Hi</b>"));
 });

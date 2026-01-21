@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { apiBaseUrl } from "@/lib/env";
@@ -13,7 +13,7 @@ function AuthCallbackInner() {
     const [status, setStatus] = useState("Processing authentication...");
     const [error, setError] = useState("");
 
-    async function handleCallback() {
+    const handleCallback = useCallback(async () => {
         try {
             // Supabase magic link tokens come in URL hash (#) or query params
             // Check for access_token in hash fragment first
@@ -56,7 +56,7 @@ function AuthCallbackInner() {
 
                 // Try to create profile if this is first login (registration)
                 try {
-                    const response = await fetch(
+                    await fetch(
                         `${apiBaseUrl()}/auth/create-profile`,
                         {
                             method: "POST",
@@ -89,7 +89,7 @@ function AuthCallbackInner() {
             captureException(err, { area: "auth-callback" });
             setError(err instanceof Error ? err.message : "Authentication failed");
         }
-    }
+    }, [router, searchParams]);
 
     useEffect(() => {
         const id = window.setTimeout(() => {
@@ -97,7 +97,7 @@ function AuthCallbackInner() {
         }, 0);
 
         return () => window.clearTimeout(id);
-    }, []);
+    }, [handleCallback]);
 
     return (
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">

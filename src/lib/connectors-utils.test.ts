@@ -41,10 +41,15 @@ test("parseConnectorsCallback handles success and failure", () => {
     assert.equal(fail.message, "denied");
 });
 
+test("parseConnectorsCallback uses default providerType when missing from query", () => {
+    const ok = parseConnectorsCallback(new URLSearchParams("status=success"), "drive");
+    assert.equal(ok.ok, true);
+    assert.equal(ok.providerType, "drive");
+});
+
 test("formatLastSync is stable for empty and invalid values", () => {
     assert.equal(formatLastSync(undefined), "—");
     assert.equal(formatLastSync(null), "—");
     assert.equal(formatLastSync("not-a-date"), "not-a-date");
     assert.ok(formatLastSync("2025-01-01T00:00:00Z").length > 0);
 });
-

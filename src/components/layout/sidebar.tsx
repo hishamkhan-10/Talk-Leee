@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
@@ -50,6 +51,8 @@ const bottomNavigation = [
     { name: "Settings", href: "/settings", icon: Settings },
 ];
 
+import { useTheme } from "@/components/providers/theme-provider";
+
 export function Sidebar({
     className,
 }: {
@@ -59,6 +62,8 @@ export function Sidebar({
     const { collapsed, mobileOpen } = useSidebarState();
     const { toggleCollapsed, closeMobile } = useSidebarActions();
     const tooltip = useHoverTooltip();
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
 
     const desktopWidth = collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-expanded-width)";
     const desktopNavItemClass = collapsed ? "justify-center px-2" : "justify-start px-3";
@@ -82,7 +87,7 @@ export function Sidebar({
 
     const NavContent = (
         <div className="flex flex-col h-full">
-            <div className={cn("relative h-20 flex items-center justify-between border-b border-gray-200/60", collapsed ? "px-2" : "px-6")}>
+            <div className={cn("relative h-20 flex items-center justify-between border-b border-sidebar-border/60", collapsed ? "px-2" : "px-6")}>
                 <div className={cn("flex items-center justify-between w-full gap-3", collapsed ? "justify-start" : "")}>
                     <div className="flex items-center min-w-0">
                         <Button
@@ -91,7 +96,7 @@ export function Sidebar({
                             size="icon"
                             onClick={toggleCollapsed}
                             className={cn(
-                                "hidden lg:inline-flex group rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-900/5 transition-[opacity,transform,max-width,color,background-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20",
+                                "hidden lg:inline-flex group rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-[opacity,transform,max-width,color,background-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/40",
                                 collapsed ? "max-w-9 opacity-100 translate-x-0" : "max-w-0 opacity-0 -translate-x-2 pointer-events-none"
                             )}
                             aria-label="Expand sidebar"
@@ -111,10 +116,10 @@ export function Sidebar({
                             )}
                             onClick={onClose}
                         >
-                            <img src="/favicon.svg" alt="Talk-Lee" width={28} height={28} className="w-7 h-7" />
+                            <Image src="/favicon.svg" alt="Talk-Lee" width={28} height={28} className="w-7 h-7" />
                             <div className="leading-tight min-w-0">
-                                <div className="text-base font-black text-gray-900 tracking-tight">Talk-Lee</div>
-                                <div className="text-[11px] font-semibold text-gray-600">Voice Ops</div>
+                                <div className="text-base font-black text-sidebar-foreground tracking-tight">Talk-Lee</div>
+                                <div className="text-[11px] font-semibold text-sidebar-foreground/60">Voice Ops</div>
                             </div>
                         </Link>
                     </div>
@@ -125,7 +130,7 @@ export function Sidebar({
                             variant="ghost"
                             size="icon"
                             onClick={onClose}
-                            className="lg:hidden inline-flex group rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-900/5 transition-[transform,color,background-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                            className="lg:hidden inline-flex group rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-[transform,color,background-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/40"
                             aria-label="Close sidebar"
                         >
                             <PanelLeftClose
@@ -140,7 +145,7 @@ export function Sidebar({
                             size="icon"
                             onClick={toggleCollapsed}
                             className={cn(
-                                "hidden lg:inline-flex group rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-900/5 transition-[opacity,transform,color,background-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20",
+                                "hidden lg:inline-flex group rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-[opacity,transform,color,background-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/40",
                                 collapsed ? "opacity-0 translate-x-2 pointer-events-none" : "opacity-100 translate-x-0"
                             )}
                             aria-label="Collapse sidebar"
@@ -170,11 +175,11 @@ export function Sidebar({
                                 "group flex items-center gap-3 py-2.5 rounded-xl text-sm font-semibold transition-colors border",
                                 desktopNavItemClass,
                                 isActive
-                                    ? "bg-gray-900/5 border-gray-900/10 text-gray-900"
-                                    : "bg-transparent border-transparent text-gray-700 hover:bg-gray-900/5 hover:border-gray-900/10 hover:text-gray-900"
+                                    ? "bg-sidebar-accent border-sidebar-border/60 text-sidebar-accent-foreground"
+                                    : "bg-transparent border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:border-sidebar-border/60 hover:text-sidebar-foreground"
                             )}
                         >
-                            <item.icon className={cn("w-5 h-5", isActive ? "text-gray-900" : "text-gray-600 group-hover:text-gray-900")} />
+                            <item.icon className={cn("w-5 h-5", isActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground")} />
                             <span className={cn("truncate", desktopTextClass)}>{item.name}</span>
                             {collapsed ? <span className="sr-only">{item.name}</span> : null}
                         </Link>
@@ -182,7 +187,7 @@ export function Sidebar({
                 })}
             </nav>
 
-            <div className="px-4 pb-4 border-t border-gray-200/60 pt-4 space-y-1.5">
+            <div className="px-4 pb-4 border-t border-sidebar-border/60 pt-4 space-y-1.5">
                 {bottomNavigation.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                     return (
@@ -197,11 +202,11 @@ export function Sidebar({
                                 "group flex items-center gap-3 py-2.5 rounded-xl text-sm font-semibold transition-colors border",
                                 desktopNavItemClass,
                                 isActive
-                                    ? "bg-gray-900/5 border-gray-900/10 text-gray-900"
-                                    : "bg-transparent border-transparent text-gray-700 hover:bg-gray-900/5 hover:border-gray-900/10 hover:text-gray-900"
+                                    ? "bg-sidebar-accent border-sidebar-border/60 text-sidebar-accent-foreground"
+                                    : "bg-transparent border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:border-sidebar-border/60 hover:text-sidebar-foreground"
                             )}
                         >
-                            <item.icon className={cn("w-5 h-5", isActive ? "text-gray-900" : "text-gray-600 group-hover:text-gray-900")} />
+                            <item.icon className={cn("w-5 h-5", isActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground")} />
                             <span className={cn("truncate", desktopTextClass)}>{item.name}</span>
                             {collapsed ? <span className="sr-only">{item.name}</span> : null}
                         </Link>
@@ -212,28 +217,28 @@ export function Sidebar({
                     type="button"
                     onClick={handleLogout}
                     className={cn(
-                        "w-full group flex items-center gap-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-900/5 hover:text-gray-900 transition-colors border border-transparent hover:border-gray-900/10",
+                        "w-full group flex items-center gap-3 py-2.5 rounded-xl text-sm font-semibold text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors border border-transparent hover:border-sidebar-border/60",
                         desktopNavItemClass
                     )}
                     onMouseEnter={(e) => maybeShowTooltip(e, "Logout")}
                     onMouseMove={(e) => maybeShowTooltip(e, "Logout")}
                     onMouseLeave={() => tooltip.hide()}
                 >
-                    <LogOut className="w-5 h-5 text-gray-600 group-hover:text-gray-900" />
+                    <LogOut className="w-5 h-5 text-sidebar-foreground/60 group-hover:text-sidebar-foreground" />
                     <span className={cn("truncate", desktopTextClass)}>Logout</span>
                     {collapsed ? <span className="sr-only">Logout</span> : null}
                 </button>
             </div>
 
             <div className="px-4 pb-5">
-                <div className="content-card">
+                <div className="rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/60 px-4 py-4 backdrop-blur-sm shadow-sm transition-colors duration-300">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                            <span className="text-sm font-black text-gray-900">{DUMMY_USER.email?.charAt(0).toUpperCase()}</span>
+                        <div className="w-10 h-10 rounded-full bg-sidebar-primary/15 border border-sidebar-border/60 flex items-center justify-center shadow-sm">
+                            <span className="text-sm font-black text-sidebar-foreground">{DUMMY_USER.email?.charAt(0).toUpperCase()}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 truncate">{DUMMY_USER.name}</p>
-                            <p className="text-xs text-gray-600 font-semibold truncate">{DUMMY_USER.business_name}</p>
+                            <p className="font-bold text-sidebar-foreground truncate">{DUMMY_USER.name}</p>
+                            <p className="text-xs text-sidebar-foreground/60 font-semibold truncate">{DUMMY_USER.business_name}</p>
                         </div>
                     </div>
                 </div>
@@ -251,7 +256,12 @@ export function Sidebar({
                     willChange: "width",
                 }}
             >
-                <div className="w-full h-full bg-white/70 backdrop-blur-xl border-r border-gray-200/60 shadow-sm overflow-y-auto overscroll-contain">
+                <div
+                    className={cn(
+                        isDark ? "dark" : undefined,
+                        "w-full h-full bg-sidebar/70 text-sidebar-foreground backdrop-blur-xl border-r border-sidebar-border/60 shadow-sm overflow-y-auto overscroll-contain"
+                    )}
+                >
                     {NavContent}
                 </div>
             </aside>
@@ -266,6 +276,7 @@ export function Sidebar({
                 margin={10}
                 ariaLabel="Sidebar"
                 className="lg:hidden"
+                panelClassName={cn(isDark ? "dark" : undefined, "border-sidebar-border/60 bg-sidebar/85")}
             >
                 {NavContent}
             </ViewportDrawer>

@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { dashboardApi, DashboardSummary, Campaign } from "@/lib/dashboard-api";
 import { extendedApi, CallSeriesItem } from "@/lib/extended-api";
-import { Phone, PhoneOff, Clock, Megaphone, ArrowUpRight, ArrowDownRight, TrendingUp, Activity, AlertTriangle } from "lucide-react";
+import { Clock, Megaphone, ArrowUpRight, Activity, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { motion, animate, useInView } from "framer-motion";
 import {
@@ -13,16 +13,13 @@ import {
     DonutChart,
     Heatmap,
     LiveCallsTimeSeriesChart,
-    RealTimeCallLineChart,
     StackedAreaChart,
-    TimeSeriesLineChart,
     type LiveAnomaly,
     type LiveChartMarker,
     type LiveTimeBucket,
     type LiveWindow,
     type DualSeriesPoint,
     type FeedItem,
-    type TimeSeriesPoint,
     type TimelineItem,
 } from "@/components/ui/dashboard-charts";
 import { HoverTooltip, useHoverTooltip } from "@/components/ui/hover-tooltip";
@@ -58,69 +55,8 @@ function Counter({ value }: { value: number }) {
     return <span ref={nodeRef} className="tabular-nums" data-testid="kpi-counter">0</span>;
 }
 
-function GlassStatCard({
-    title,
-    value,
-    icon: Icon,
-    trend,
-    trendLabel,
-    delay = 0,
-}: {
-    title: string;
-    value: string | number;
-    icon: React.ComponentType<{ className?: string }>;
-    trend?: "up" | "down";
-    trendLabel?: string;
-    delay?: number;
-}) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay, duration: 0.4 }}
-            className="h-full"
-        >
-            <div className="content-card group h-full flex flex-col">
-                <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-bold text-gray-600 uppercase tracking-wide leading-tight">{title}</p>
-                    <div className="w-12 h-12 shrink-0 bg-gray-100/80 rounded-xl group-hover:bg-gray-200/90 transition-colors duration-300 ease-in-out shadow-md flex items-center justify-center">
-                        <Icon className="w-6 h-6 text-gray-800" />
-                    </div>
-                </div>
-                
-                <div className="mt-4">
-                    <p className="text-4xl font-black text-gray-900 drop-shadow-lg leading-none tabular-nums">
-                        {typeof value === "number" ? <Counter value={value} /> : value}
-                    </p>
-                    <div className="mt-2 min-h-5 flex items-center text-sm font-semibold">
-                        {trendLabel ? (
-                            <>
-                                {trend === "up" ? (
-                                    <ArrowUpRight className="w-4 h-4 text-emerald-600" />
-                                ) : trend === "down" ? (
-                                    <ArrowDownRight className="w-4 h-4 text-red-600" />
-                                ) : null}
-                                <span className={trend === "up" ? "text-emerald-700 font-bold" : "text-red-700 font-bold"}>
-                                    {trendLabel}
-                                </span>
-                            </>
-                        ) : null}
-                    </div>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
 function formatHhMmSs(ms: number) {
     return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
-
-function formatMmSs(seconds: number) {
-    const s = Math.max(0, Math.round(seconds));
-    const mm = Math.floor(s / 60);
-    const ss = s % 60;
-    return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 }
 
 function delta(current: number, previous: number) {
@@ -219,6 +155,7 @@ function useSimulatedLiveBuckets() {
     const lastMinuteStartRef = useRef<number>(0);
 
     useEffect(() => {
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
         const BUCKET_MS = 60_000;
         const totalMinutes = 48 * 60;
 
@@ -259,6 +196,12 @@ function useSimulatedLiveBuckets() {
         const initId = window.setTimeout(() => {
             setState({ loading: false, error: "", lastUpdatedMs: now, buckets });
         }, 0);
+
+        if (reducedMotion) {
+            return () => {
+                window.clearTimeout(initId);
+            };
+        }
 
         const id = window.setInterval(() => {
             const now = Date.now();
@@ -836,7 +779,6 @@ export default function DashboardPage() {
 
         const prevTotal = sum(previousBucketsBase, "total");
         const prevAnswered = sum(previousBucketsBase, "answered");
-        const prevFailed = sum(previousBucketsBase, "failed");
         const prevSuccessRate = prevTotal > 0 ? (prevAnswered / prevTotal) * 100 : 0;
 
         const currentAvgDurationSec = (() => {
@@ -865,13 +807,11 @@ export default function DashboardPage() {
         const successDelta = delta(currentSuccessRate, prevSuccessRate);
         const failedPct = currentTotal > 0 ? (currentFailed / currentTotal) * 100 : 0;
 
-        const currentActiveCalls = Math.max(0, Math.round((liveBuckets[liveBuckets.length - 1]?.total ?? 0) * 0.18 + 6 + (Math.random() - 0.5) * 4));
+        const currentActiveCalls = Math.max(0, Math.round((liveBuckets[liveBuckets.length - 1]?.total ?? 0) * 0.18 + 6));
         const prevActiveCalls = Math.max(0, Math.round((previousBucketsBase[previousBucketsBase.length - 1]?.total ?? 0) * 0.18 + 6));
         const activeDelta = delta(currentActiveCalls, prevActiveCalls);
 
         const avgDurDelta = delta(currentAvgDurationSec, prevAvgDurationSec);
-
-        const lastUpdatedMs = sim.lastUpdatedMs;
 
         const kpis = [
             {
@@ -979,7 +919,7 @@ export default function DashboardPage() {
         };
 
         return { kpis, markers, maintenanceWindows, peakBands, anomalies: anomalies.slice(-40), outcomes, hoverStats };
-    }, [activeBucket, activeRange.endMs, activeRange.startMs, liveBuckets, notes, previousBucketsBase, sim.lastUpdatedMs]);
+    }, [activeBucket, activeRange.endMs, activeRange.startMs, liveBuckets, notes, previousBucketsBase]);
 
     useEffect(() => {
         loadData();
@@ -1027,7 +967,7 @@ export default function DashboardPage() {
         }, 1000);
 
         return () => window.clearInterval(id);
-    }, [!!liveSummary, streamStatus]);
+    }, [liveSummary, streamStatus]);
 
     useEffect(() => {
         if (series.length === 0) return;
@@ -1332,11 +1272,6 @@ export default function DashboardPage() {
         ro.observe(el);
         return () => ro.disconnect();
     }, [minutesRemainingText, minutesUsedText]);
-
-    const linePoints: TimeSeriesPoint[] = series.map((s) => ({
-        label: new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        value: s.total_calls,
-    }));
 
     const stackedPoints: DualSeriesPoint[] = series.map((s) => ({
         label: new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),

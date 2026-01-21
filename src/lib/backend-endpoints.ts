@@ -17,6 +17,7 @@ export const backendEndpoints = {
     meetingsList: { method: "GET", path: "/meetings", tags: ["Meetings"], summary: "List meetings" },
     calendarEventsList: { method: "GET", path: "/calendar/events", tags: ["Meetings"], summary: "List calendar events" },
     calendarEventsCreate: { method: "POST", path: "/calendar/events", tags: ["Meetings"], summary: "Create calendar event" },
+    calendarEventsUpdate: { method: "PATCH", path: "/calendar/events/{id}", tags: ["Meetings"], summary: "Update calendar event" },
     calendarEventsDelete: { method: "DELETE", path: "/calendar/events/{id}", tags: ["Meetings"], summary: "Cancel calendar event" },
 
     remindersList: { method: "GET", path: "/reminders", tags: ["Reminders"], summary: "List reminders" },

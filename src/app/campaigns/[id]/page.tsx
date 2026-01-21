@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -24,26 +24,26 @@ import { motion } from "framer-motion";
 function getStatusStyle(status: string) {
     switch (status) {
         case "running":
-            return "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
         case "paused":
-            return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+            return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20";
         case "completed":
-            return "bg-blue-500/20 text-blue-400 border border-blue-500/30";
+            return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20";
         case "stopped":
-            return "bg-red-500/20 text-red-400 border border-red-500/30";
+            return "bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20";
         default:
-            return "bg-gray-500/20 text-gray-400 border border-gray-500/30";
+            return "bg-muted text-muted-foreground border border-border";
     }
 }
 
 function getContactStatusStyle(result: string) {
     switch (result) {
         case "goal_achieved":
-            return "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
         case "pending":
-            return "bg-gray-500/20 text-gray-400 border border-gray-500/30";
+            return "bg-muted text-muted-foreground border border-border";
         default:
-            return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+            return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20";
     }
 }
 
@@ -74,13 +74,7 @@ export default function CampaignDetailPage() {
     });
     const [addingContact, setAddingContact] = useState(false);
 
-    useEffect(() => {
-        if (campaignId) {
-            loadData();
-        }
-    }, [campaignId]);
-
-    async function loadData() {
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
             const [campaignData, contactsData, statsData] = await Promise.all([
@@ -96,7 +90,13 @@ export default function CampaignDetailPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [campaignId]);
+
+    useEffect(() => {
+        if (campaignId) {
+            void loadData();
+        }
+    }, [campaignId, loadData]);
 
     async function handleStart() {
         try {
@@ -158,7 +158,7 @@ export default function CampaignDetailPage() {
             >
                 <button
                     onClick={() => router.push("/campaigns")}
-                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Back to campaigns
@@ -167,7 +167,7 @@ export default function CampaignDetailPage() {
 
             {loading ? (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" />
                 </div>
             ) : error ? (
                 <div className="content-card border-red-500/30 text-red-400">
@@ -183,29 +183,29 @@ export default function CampaignDetailPage() {
                     >
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-semibold text-white">{campaign.name}</h1>
+                                <h1 className="text-2xl font-semibold text-foreground">{campaign.name}</h1>
                                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusStyle(campaign.status)}`}>
                                     {campaign.status}
                                 </span>
                             </div>
                             {campaign.description && (
-                                <p className="mt-2 text-gray-400">{campaign.description}</p>
+                                <p className="mt-2 text-muted-foreground">{campaign.description}</p>
                             )}
                         </div>
 
                         <div className="flex gap-2">
                             {campaign.status === "draft" || campaign.status === "paused" || campaign.status === "stopped" ? (
-                                <Button onClick={handleStart} disabled={actionLoading} className="bg-white text-gray-900 hover:bg-gray-100">
+                                <Button onClick={handleStart} disabled={actionLoading}>
                                     <Play className="w-4 h-4" />
                                     Start
                                 </Button>
                             ) : campaign.status === "running" ? (
                                 <>
-                                    <Button variant="outline" onClick={handlePause} disabled={actionLoading} className="border-white/20 text-white hover:bg-white/10">
+                                    <Button variant="outline" onClick={handlePause} disabled={actionLoading}>
                                         <Pause className="w-4 h-4" />
                                         Pause
                                     </Button>
-                                    <Button variant="outline" onClick={handleStop} disabled={actionLoading} className="border-white/20 text-white hover:bg-white/10">
+                                    <Button variant="outline" onClick={handleStop} disabled={actionLoading}>
                                         <Square className="w-4 h-4" />
                                         Stop
                                     </Button>
@@ -223,12 +223,12 @@ export default function CampaignDetailPage() {
                             className="content-card"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/10 rounded-lg">
-                                    <Users className="w-5 h-5 text-white" />
+                                <div className="p-2 bg-muted/30 rounded-lg">
+                                    <Users className="w-5 h-5 text-foreground" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">{stats?.total_leads || 0}</p>
-                                    <p className="text-sm text-gray-400">Total Leads</p>
+                                    <p className="text-2xl font-bold text-foreground">{stats?.total_leads || 0}</p>
+                                    <p className="text-sm text-muted-foreground">Total Leads</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -239,14 +239,14 @@ export default function CampaignDetailPage() {
                             className="content-card"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/10 rounded-lg">
-                                    <Phone className="w-5 h-5 text-white" />
+                                <div className="p-2 bg-muted/30 rounded-lg">
+                                    <Phone className="w-5 h-5 text-foreground" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">
+                                    <p className="text-2xl font-bold text-foreground">
                                         {Object.values(stats?.call_outcome_counts || {}).reduce((a, b) => a + b, 0)}
                                     </p>
-                                    <p className="text-sm text-gray-400">Calls Made</p>
+                                    <p className="text-sm text-muted-foreground">Calls Made</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -261,8 +261,8 @@ export default function CampaignDetailPage() {
                                     <CheckCircle className="w-5 h-5 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">{stats?.goals_achieved || 0}</p>
-                                    <p className="text-sm text-gray-400">Goals Achieved</p>
+                                    <p className="text-2xl font-bold text-foreground">{stats?.goals_achieved || 0}</p>
+                                    <p className="text-sm text-muted-foreground">Goals Achieved</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -277,10 +277,10 @@ export default function CampaignDetailPage() {
                                     <XCircle className="w-5 h-5 text-red-400" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">
+                                    <p className="text-2xl font-bold text-foreground">
                                         {stats?.call_outcome_counts?.["failed"] || 0}
                                     </p>
-                                    <p className="text-sm text-gray-400">Failed</p>
+                                    <p className="text-sm text-muted-foreground">Failed</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -294,64 +294,60 @@ export default function CampaignDetailPage() {
                         className="content-card"
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-white">Contacts</h3>
-                            <Button size="sm" onClick={() => setShowAddContact(true)} className="bg-white text-gray-900 hover:bg-gray-100">
+                            <h3 className="text-lg font-semibold text-foreground">Contacts</h3>
+                            <Button size="sm" onClick={() => setShowAddContact(true)}>
                                 <Plus className="w-4 h-4" />
                                 Add Contact
                             </Button>
                         </div>
 
                         {showAddContact && (
-                            <form onSubmit={handleAddContact} className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
+                            <form onSubmit={handleAddContact} className="mb-6 p-4 bg-muted/30 rounded-lg border border-border">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                                     <div>
-                                        <Label htmlFor="phone" className="text-gray-400">Phone Number</Label>
+                                        <Label htmlFor="phone">Phone Number</Label>
                                         <Input
                                             id="phone"
                                             value={contactForm.phone_number}
                                             onChange={(e) => setContactForm((prev) => ({ ...prev, phone_number: e.target.value }))}
                                             placeholder="+1234567890"
                                             required
-                                            className="bg-white/10 border-white/20 text-white"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="first_name" className="text-gray-400">First Name</Label>
+                                        <Label htmlFor="first_name">First Name</Label>
                                         <Input
                                             id="first_name"
                                             value={contactForm.first_name}
                                             onChange={(e) => setContactForm((prev) => ({ ...prev, first_name: e.target.value }))}
                                             placeholder="John"
-                                            className="bg-white/10 border-white/20 text-white"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="last_name" className="text-gray-400">Last Name</Label>
+                                        <Label htmlFor="last_name">Last Name</Label>
                                         <Input
                                             id="last_name"
                                             value={contactForm.last_name}
                                             onChange={(e) => setContactForm((prev) => ({ ...prev, last_name: e.target.value }))}
                                             placeholder="Doe"
-                                            className="bg-white/10 border-white/20 text-white"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="email" className="text-gray-400">Email</Label>
+                                        <Label htmlFor="email">Email</Label>
                                         <Input
                                             id="email"
                                             type="email"
                                             value={contactForm.email}
                                             onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
                                             placeholder="john@example.com"
-                                            className="bg-white/10 border-white/20 text-white"
                                         />
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button type="submit" size="sm" disabled={addingContact} className="bg-white text-gray-900 hover:bg-gray-100">
+                                    <Button type="submit" size="sm" disabled={addingContact}>
                                         {addingContact ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
                                     </Button>
-                                    <Button type="button" variant="outline" size="sm" onClick={() => setShowAddContact(false)} className="border-white/20 text-white hover:bg-white/10">
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setShowAddContact(false)}>
                                         Cancel
                                     </Button>
                                 </div>
@@ -359,25 +355,25 @@ export default function CampaignDetailPage() {
                         )}
 
                         {contacts.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400">
+                            <div className="text-center py-8 text-muted-foreground">
                                 No contacts yet. Add contacts to start your campaign.
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className="border-b border-white/10">
+                                    <thead className="border-b border-border">
                                         <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Phone</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Name</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Attempts</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Phone</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Name</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Attempts</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/5">
+                                    <tbody className="divide-y divide-border/60">
                                         {contacts.map((contact) => (
-                                            <tr key={contact.id} className="hover:bg-white/5 transition-colors">
-                                                <td className="px-4 py-3 text-sm text-white">{contact.phone_number}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-300">
+                                            <tr key={contact.id} className="hover:bg-muted/30 transition-colors">
+                                                <td className="px-4 py-3 text-sm text-foreground">{contact.phone_number}</td>
+                                                <td className="px-4 py-3 text-sm text-muted-foreground">
                                                     {contact.first_name || contact.last_name
                                                         ? `${contact.first_name || ""} ${contact.last_name || ""}`.trim()
                                                         : "--"}
@@ -387,7 +383,7 @@ export default function CampaignDetailPage() {
                                                         {contact.last_call_result}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-gray-400">{contact.call_attempts}</td>
+                                                <td className="px-4 py-3 text-sm text-muted-foreground">{contact.call_attempts}</td>
                                             </tr>
                                         ))}
                                     </tbody>

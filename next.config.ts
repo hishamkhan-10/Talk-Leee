@@ -3,7 +3,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
     outputFileTracingRoot: process.cwd(),
-    allowedDevOrigins: ["http://127.0.0.1:3100"],
+    // allowedDevOrigins: ["http://127.0.0.1:3100"],
     webpack: (config, { dev }) => {
         if (dev) config.cache = false;
         return config;
