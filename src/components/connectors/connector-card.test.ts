@@ -23,8 +23,41 @@ test("ConnectorCard enables only Connect when disconnected", () => {
     );
 
     assert.equal(screen.getByRole("button", { name: "Connect" }).hasAttribute("disabled"), false);
-    assert.equal(screen.getByRole("button", { name: "Reconnect" }).hasAttribute("disabled"), true);
-    assert.equal(screen.getByRole("button", { name: "Disconnect" }).hasAttribute("disabled"), true);
+    assert.equal(screen.queryByRole("button", { name: "Reconnect" }), null);
+    assert.equal(screen.queryByRole("button", { name: "Disconnect" }), null);
+});
+
+test("ConnectorCard enables Disconnect when connected", () => {
+    renderWithQueryClient(
+        createElement(ConnectorCard, {
+            type: "email",
+            name: "Email",
+            description: "Connect inboxes",
+            icon: Mail,
+            status: "connected",
+        })
+    );
+
+    assert.equal(screen.getByRole("button", { name: "Disconnect" }).hasAttribute("disabled"), false);
+    assert.equal(screen.queryByRole("button", { name: "Connect" }), null);
+    assert.equal(screen.queryByRole("button", { name: "Reconnect" }), null);
+});
+
+test("ConnectorCard shows Expired status and allows reconnect", () => {
+    renderWithQueryClient(
+        createElement(ConnectorCard, {
+            type: "email",
+            name: "Email",
+            description: "Connect inboxes",
+            icon: Mail,
+            status: "expired",
+        })
+    );
+
+    assert.ok(screen.getByLabelText("Status: Expired"));
+    assert.equal(screen.getByRole("button", { name: "Reconnect" }).hasAttribute("disabled"), false);
+    assert.equal(screen.getByRole("button", { name: "Disconnect" }).hasAttribute("disabled"), false);
+    assert.equal(screen.queryByRole("button", { name: "Connect" }), null);
 });
 
 test("ConnectorCard calls authorize and shows loading state", async () => {
@@ -37,11 +70,10 @@ test("ConnectorCard calls authorize and shows loading state", async () => {
         return { focus: () => {} } as unknown as Window;
     }) as typeof window.open;
 
-    let resolveAuth: ((v: { authorization_url: string }) => void) | null = null;
-    const authorizeConnector = () =>
-        new Promise<{ authorization_url: string }>((res) => {
-            resolveAuth = res;
-        });
+    const authorizeConnector = async () => {
+        await new Promise((r) => setTimeout(r, 50));
+        return { authorization_url: "https://provider.example/auth" };
+    };
 
     try {
         renderWithQueryClient(
@@ -56,10 +88,9 @@ test("ConnectorCard calls authorize and shows loading state", async () => {
         );
 
         await user.click(screen.getByRole("button", { name: "Connect" }));
-        assert.ok(screen.getByText("Starting..."));
+        assert.ok(await screen.findByText("Starting..."));
 
-        resolveAuth?.({ authorization_url: "https://provider.example/auth" });
-        await new Promise((r) => setTimeout(r, 0));
+        await new Promise((r) => setTimeout(r, 70));
 
         assert.deepEqual(calls, ["https://provider.example/auth"]);
         assert.ok(screen.getByRole("button", { name: "Connect" }));
