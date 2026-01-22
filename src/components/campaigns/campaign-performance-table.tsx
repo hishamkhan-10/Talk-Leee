@@ -621,7 +621,7 @@ export function CampaignPerformanceTable({
                                                 type="button"
                                                 role="option"
                                                 aria-selected={filters.query === n}
-                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
+                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
                                                 onClick={() => {
                                                     setFilters((p) => ({ ...p, query: n }));
                                                     setSuggestOpen(false);
@@ -662,7 +662,7 @@ export function CampaignPerformanceTable({
                                             return (
                                                 <label
                                                     key={s}
-                                                    className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
+                                                    className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
                                                 >
                                                     <span className="flex items-center gap-2">
                                                         <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(s))}>
@@ -891,7 +891,7 @@ export function CampaignPerformanceTable({
                                                     <button
                                                         type="button"
                                                         aria-label={isExpanded ? "Collapse row details" : "Expand row details"}
-                                                        className="rounded-md p-1 text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                        className="rounded-md p-1 text-muted-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                         onClick={() => toggleExpanded(campaign.id)}
                                                     >
                                                         {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -947,7 +947,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
                                                                 onClick={() => {
                                                                     setMenuOpenFor(null);
                                                                     setDetailsId(campaign.id);
@@ -959,7 +959,7 @@ export function CampaignPerformanceTable({
                                                                 type="button"
                                                                 role="menuitem"
                                                                 className={cn(
-                                                                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted",
+                                                                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground",
                                                                     !(canPause || canResume) ? "opacity-50" : ""
                                                                 )}
                                                                 disabled={!(canPause || canResume)}
@@ -982,7 +982,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
                                                                 onClick={() => {
                                                                     setMenuOpenFor(null);
                                                                     setEditId(campaign.id);
@@ -1004,7 +1004,7 @@ export function CampaignPerformanceTable({
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
-                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-muted"
+                                                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
                                                                 onClick={async () => {
                                                                     setMenuOpenFor(null);
                                                                     await onDuplicate(campaign.id);

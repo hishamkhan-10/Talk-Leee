@@ -237,7 +237,7 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                     <button
                         key={a.id}
                         type="button"
-                        className="flex w-full items-start justify-between gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex w-full items-start justify-between gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => {
                             setTab("Impact Analysis");
                             setDetailsId(a.id);
@@ -346,7 +346,7 @@ function FilterPills<T extends string>({
                         type="button"
                         className={cn(
                             "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            value.has(o) ? classFor(o) : "border border-border bg-muted/50 text-foreground hover:bg-muted"
+                            value.has(o) ? classFor(o) : "border border-border bg-muted/50 text-foreground hover:bg-accent hover:text-accent-foreground"
                         )}
                         aria-pressed={value.has(o)}
                         onClick={() => toggle(o)}

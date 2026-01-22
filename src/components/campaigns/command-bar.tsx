@@ -284,7 +284,7 @@ export function CommandBar({
                                         type="button"
                                         className={cn(
                                             "flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors duration-150 ease-out",
-                                            idx === activeIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50 text-foreground"
+                                            idx === activeIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground text-foreground"
                                         )}
                                         onMouseEnter={() => setActiveIndex(idx)}
                                         onClick={() => void runResult(r)}

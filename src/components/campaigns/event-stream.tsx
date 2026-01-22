@@ -183,7 +183,7 @@ export function EventStream({
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: 10 }}
                                             type="button"
-                                            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                             onClick={() => setDetailsId(e.id)}
                                         >
                                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
