@@ -59,15 +59,17 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
     if (requireAuth) {
         if (authLoading) {
             return (
-                <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" />
+                <div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status" aria-live="polite" aria-busy="true">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" aria-hidden />
+                    <span className="sr-only">Loading…</span>
                 </div>
             );
         }
         if (!user) {
             return (
-                <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" />
+                <div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status" aria-live="polite" aria-busy="true">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" aria-hidden />
+                    <span className="sr-only">Redirecting to sign in…</span>
                 </div>
             );
         }

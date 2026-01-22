@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -20,6 +20,19 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const emailInputRef = useRef<HTMLInputElement | null>(null);
+    const otpInputRef = useRef<HTMLInputElement | null>(null);
+    const errorId = useId();
+    const messageId = useId();
+    const otpHelpId = useId();
+
+    useEffect(() => {
+        const t = window.setTimeout(() => {
+            if (step === "email") emailInputRef.current?.focus();
+            if (step === "otp") otpInputRef.current?.focus();
+        }, 0);
+        return () => window.clearTimeout(t);
+    }, [step]);
 
     // Handle email submission - sends OTP code
     async function handleEmailSubmit(e: React.FormEvent) {
@@ -110,15 +123,15 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-block">
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             Talk-Lee
                         </h1>
-                        <p className="text-sm text-gray-500 mt-1">AI Voice Dialer</p>
+                        <p className="text-sm text-muted-foreground mt-1">AI Voice Dialer</p>
                     </Link>
                 </div>
 
@@ -135,7 +148,7 @@ export default function LoginPage() {
 
                     {step === "email" ? (
                         // Step 1: Email input
-                        <form onSubmit={handleEmailSubmit}>
+                        <form onSubmit={handleEmailSubmit} aria-busy={loading} aria-describedby={error ? errorId : undefined}>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
@@ -150,12 +163,15 @@ export default function LoginPage() {
                                             className="pl-10"
                                             required
                                             disabled={loading}
+                                            ref={emailInputRef}
+                                            aria-invalid={error ? true : undefined}
+                                            aria-describedby={error ? errorId : undefined}
                                         />
                                     </div>
                                 </div>
 
                                 {error && (
-                                    <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
                                         {error}
                                     </div>
                                 )}
@@ -165,7 +181,7 @@ export default function LoginPage() {
                                 <Button type="submit" className="w-full" disabled={loading}>
                                     {loading ? (
                                         <>
-                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                                             Sending code...
                                         </>
                                     ) : (
@@ -180,7 +196,7 @@ export default function LoginPage() {
                                     New to Talk-Lee?{" "}
                                     <Link
                                         href="/auth/register"
-                                        className="text-gray-900 font-medium hover:underline"
+                                        className="text-foreground font-medium hover:underline"
                                     >
                                         Create an account
                                     </Link>
@@ -189,7 +205,11 @@ export default function LoginPage() {
                         </form>
                     ) : (
                         // Step 2: OTP input
-                        <form onSubmit={handleOtpSubmit}>
+                        <form
+                            onSubmit={handleOtpSubmit}
+                            aria-busy={loading}
+                            aria-describedby={[message ? messageId : null, error ? errorId : null, otpHelpId].filter(Boolean).join(" ")}
+                        >
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="otp">Verification Code</Label>
@@ -206,21 +226,26 @@ export default function LoginPage() {
                                             disabled={loading}
                                             maxLength={8}
                                             autoComplete="one-time-code"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            ref={otpInputRef}
+                                            aria-invalid={error ? true : undefined}
+                                            aria-describedby={[message ? messageId : null, error ? errorId : null, otpHelpId].filter(Boolean).join(" ")}
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-500 text-center">
+                                    <p id={otpHelpId} className="text-xs text-muted-foreground text-center">
                                         Check your email for the verification code
                                     </p>
                                 </div>
 
                                 {error && (
-                                    <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
                                         {error}
                                     </div>
                                 )}
 
                                 {message && (
-                                    <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
+                                    <div id={messageId} role="status" aria-live="polite" className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
                                         {message}
                                     </div>
                                 )}
@@ -230,7 +255,7 @@ export default function LoginPage() {
                                 <Button type="submit" className="w-full" disabled={loading || otpCode.length < 6}>
                                     {loading ? (
                                         <>
-                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                                             Verifying...
                                         </>
                                     ) : (
@@ -245,7 +270,7 @@ export default function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={handleBack}
-                                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
                                         disabled={loading}
                                     >
                                         <ArrowLeft className="h-3 w-3" />
@@ -254,7 +279,7 @@ export default function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={handleResend}
-                                        className="text-sm text-gray-900 font-medium hover:underline"
+                                        className="text-sm text-foreground font-medium hover:underline"
                                         disabled={loading}
                                     >
                                         Resend code
@@ -265,7 +290,7 @@ export default function LoginPage() {
                     )}
                 </Card>
 
-                <p className="text-xs text-gray-400 text-center mt-8">
+                <p className="text-xs text-muted-foreground text-center mt-8">
                     By continuing, you agree to our Terms of Service and Privacy Policy.
                 </p>
             </div>

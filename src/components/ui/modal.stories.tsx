@@ -36,6 +36,14 @@ function Demo() {
 const meta: Meta<typeof Modal> = {
     title: "UI/Modal",
     component: Modal,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    "UX & accessibility behavior:\n\n- Focus: moves focus into the modal on open and restores focus on close.\n- Keyboard: Escape closes; Tab is trapped within the modal.\n- Semantics: role=dialog, aria-modal=true; title/description are wired to aria-labelledby/aria-describedby.\n",
+            },
+        },
+    },
 };
 
 export default meta;
@@ -44,4 +52,3 @@ type Story = StoryObj<typeof Modal>;
 export const Default: Story = {
     render: () => <Demo />,
 };
-

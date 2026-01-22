@@ -16,7 +16,6 @@ export function ContactSection() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    console.log("Validating form data:", formData);
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email address";
@@ -64,7 +63,7 @@ export function ContactSection() {
                 transition={{ delay: 0.2 }}
                 className="bg-white rounded-2xl p-0 md:p-4"
              >
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" aria-busy={loading}>
                    <div className="space-y-2">
                       <Label htmlFor="name" className="text-gray-500 font-medium">Full Name</Label>
                       <Input 
@@ -73,8 +72,10 @@ export function ContactSection() {
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                         className={cn("bg-white border-gray-200 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl h-12", errors.name && "border-red-500 focus-visible:ring-red-500")}
+                        aria-invalid={errors.name ? true : undefined}
+                        aria-describedby={errors.name ? "contact-name-error" : undefined}
                       />
-                      {errors.name && <p className="text-sm text-red-500" data-testid="name-error">{errors.name}</p>}
+                      {errors.name && <p id="contact-name-error" role="alert" aria-live="assertive" className="text-sm text-red-500" data-testid="name-error">{errors.name}</p>}
                    </div>
                    
                    <div className="space-y-2">
@@ -86,8 +87,10 @@ export function ContactSection() {
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
                         className={cn("bg-white border-gray-200 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl h-12", errors.email && "border-red-500 focus-visible:ring-red-500")}
+                        aria-invalid={errors.email ? true : undefined}
+                        aria-describedby={errors.email ? "contact-email-error" : undefined}
                       />
-                      {errors.email && <p className="text-sm text-red-500" data-testid="email-error">{errors.email}</p>}
+                      {errors.email && <p id="contact-email-error" role="alert" aria-live="assertive" className="text-sm text-red-500" data-testid="email-error">{errors.email}</p>}
                    </div>
 
                    <div className="space-y-2">
@@ -113,16 +116,18 @@ export function ContactSection() {
                           "flex w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 resize-none transition-all",
                           errors.message && "border-red-500 focus-visible:ring-red-500"
                         )}
+                        aria-invalid={errors.message ? true : undefined}
+                        aria-describedby={[errors.message ? "contact-message-error" : null, "contact-message-count"].filter(Boolean).join(" ")}
                       />
-                      {errors.message && <p className="text-sm text-red-500" data-testid="message-error">{errors.message}</p>}
-                      <p className="text-xs text-gray-400 text-right">{formData.message.length}/500</p>
+                      {errors.message && <p id="contact-message-error" role="alert" aria-live="assertive" className="text-sm text-red-500" data-testid="message-error">{errors.message}</p>}
+                      <p id="contact-message-count" className="text-xs text-gray-400 text-right">{formData.message.length}/500</p>
                    </div>
 
                    <Button type="submit" size="lg" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl" disabled={loading}>
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" aria-hidden /> : null}
                       {loading ? "Sending..." : "Send Message"}
                    </Button>
-                   {success && <p className="text-green-600 text-center font-medium bg-green-50 p-3 rounded-lg border border-green-100" data-testid="success-message">Message sent successfully!</p>}
+                   {success && <p role="status" aria-live="polite" className="text-green-600 text-center font-medium bg-green-50 p-3 rounded-lg border border-green-100" data-testid="success-message">Message sent successfully!</p>}
                 </form>
              </motion.div>
 

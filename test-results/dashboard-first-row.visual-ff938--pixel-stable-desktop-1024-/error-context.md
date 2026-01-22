@@ -1,0 +1,446 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - generic [ref=e8]:
+            - button "Expand sidebar" [expanded]:
+              - img
+            - link "Talk-Lee Talk-Lee Voice Ops" [ref=e9] [cursor=pointer]:
+              - /url: /dashboard
+              - img "Talk-Lee" [ref=e10]
+              - generic [ref=e11]:
+                - generic [ref=e12]: Talk-Lee
+                - generic [ref=e13]: Voice Ops
+          - button "Collapse sidebar" [expanded] [ref=e15]:
+            - img
+        - navigation [ref=e16]:
+          - link "Dashboard" [ref=e17] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e18]
+            - generic [ref=e23]: Dashboard
+          - link "Campaigns" [ref=e24] [cursor=pointer]:
+            - /url: /campaigns
+            - img [ref=e25]
+            - generic [ref=e28]: Campaigns
+          - link "Call History" [ref=e29] [cursor=pointer]:
+            - /url: /calls
+            - img [ref=e30]
+            - generic [ref=e32]: Call History
+          - link "Contacts" [ref=e33] [cursor=pointer]:
+            - /url: /contacts
+            - img [ref=e34]
+            - generic [ref=e39]: Contacts
+          - link "Email" [ref=e40] [cursor=pointer]:
+            - /url: /email
+            - img [ref=e41]
+            - generic [ref=e44]: Email
+          - link "Analytics" [ref=e45] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e46]
+            - generic [ref=e47]: Analytics
+          - link "Recordings" [ref=e48] [cursor=pointer]:
+            - /url: /recordings
+            - img [ref=e49]
+            - generic [ref=e53]: Recordings
+          - link "AI Options" [ref=e54] [cursor=pointer]:
+            - /url: /ai-options
+            - img [ref=e55]
+            - generic [ref=e58]: AI Options
+          - link "Meetings" [ref=e59] [cursor=pointer]:
+            - /url: /meetings
+            - img [ref=e60]
+            - generic [ref=e62]: Meetings
+          - link "Reminders" [ref=e63] [cursor=pointer]:
+            - /url: /reminders
+            - img [ref=e64]
+            - generic [ref=e67]: Reminders
+          - link "Assistant" [ref=e68] [cursor=pointer]:
+            - /url: /assistant
+            - img [ref=e69]
+            - generic [ref=e72]: Assistant
+        - generic [ref=e73]:
+          - link "Settings" [ref=e74] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e75]
+            - generic [ref=e78]: Settings
+          - button "Logout" [ref=e79]:
+            - img [ref=e80]
+            - generic [ref=e83]: Logout
+        - generic [ref=e86]:
+          - generic [ref=e88]: D
+          - generic [ref=e89]:
+            - paragraph [ref=e90]: Demo User
+            - paragraph [ref=e91]: Talk-Lee Demo Inc.
+    - generic [ref=e92]:
+      - banner [ref=e93]:
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - heading "Dashboard" [level=1] [ref=e96]
+            - paragraph [ref=e97]: Overview of your voice campaigns
+          - generic [ref=e98]:
+            - 'generic "Health: Degraded" [ref=e99]':
+              - generic [ref=e101]: Degraded
+            - button "Switch to dark theme" [ref=e102]:
+              - img [ref=e103]
+              - generic [ref=e105]: Switch to dark theme
+            - button "Open notification center" [ref=e106]:
+              - img [ref=e107]
+      - main [ref=e110]:
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e114]:
+              - generic [ref=e115]:
+                - generic:
+                  - paragraph [ref=e116]: Total Calls
+                  - paragraph: 6,568
+                - generic [ref=e117]:
+                  - generic [ref=e118]: Last updated
+                  - generic [ref=e119]: 10:13:20 PM
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - generic [ref=e122]: ▼
+                  - generic [ref=e123]: 25.6%
+                - generic [ref=e124]: −2,258 vs previous
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - generic:
+                  - paragraph [ref=e128]: Success Rate
+                  - paragraph: 86%
+                - generic [ref=e129]:
+                  - generic [ref=e130]: Last updated
+                  - generic [ref=e131]: 10:13:20 PM
+              - generic [ref=e132]:
+                - generic [ref=e133]:
+                  - generic [ref=e134]: ▲
+                  - generic [ref=e135]: 0.2%
+                - generic [ref=e136]: +0.145 vs previous
+            - generic [ref=e138]:
+              - generic [ref=e139]:
+                - generic:
+                  - paragraph [ref=e140]: Active Calls
+                  - paragraph: "10"
+                - generic [ref=e141]:
+                  - generic [ref=e142]: Last updated
+                  - generic [ref=e143]: 10:13:20 PM
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - generic [ref=e146]: ▼
+                  - generic [ref=e147]: 16.7%
+                - generic [ref=e148]: −2 vs previous
+            - generic [ref=e150]:
+              - generic [ref=e151]:
+                - generic:
+                  - paragraph [ref=e152]: Avg Duration
+                  - paragraph: 89s
+                - generic [ref=e153]:
+                  - generic [ref=e154]: Last updated
+                  - generic [ref=e155]: 10:13:20 PM
+              - generic [ref=e156]:
+                - generic [ref=e157]:
+                  - generic [ref=e158]: ▼
+                  - generic [ref=e159]: 20.3%
+                - generic [ref=e160]: −22.786 vs previous
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - generic [ref=e163]:
+                - generic [ref=e164]:
+                  - heading "Live Line Chart" [level=3] [ref=e165]
+                  - paragraph [ref=e166]: Call volume over time
+                - generic [ref=e167]:
+                  - img [ref=e168]
+                  - text: Live
+              - generic [ref=e171]:
+                - button "1h" [ref=e172]
+                - button "4h" [ref=e173]
+                - button "8h" [ref=e174]
+                - button "24h" [ref=e175]
+                - button "Custom" [ref=e176]
+              - img "Live calls time-series chart" [ref=e178]:
+                - generic [ref=e187]: Campaign A start
+                - generic [ref=e189]: Campaign A end
+                - generic [ref=e191]: Campaign B start
+                - generic [ref=e193]: Campaign B end
+                - generic [ref=e195]: Deploy
+                - generic [ref=e196]: "0"
+                - generic [ref=e197]: "13"
+                - generic [ref=e198]: "25"
+                - generic [ref=e199]: "38"
+                - generic [ref=e200]: "50"
+                - generic [ref=e201]: 06:13 PM
+                - generic [ref=e202]: 07:33 PM
+                - generic [ref=e203]: 08:53 PM
+                - generic [ref=e204]: 10:13 PM
+                - generic [ref=e205]: Time
+                - generic [ref=e206]: Number of Calls
+            - generic [ref=e207]:
+              - heading "Donut Chart" [level=3] [ref=e208]
+              - generic [ref=e209]:
+                - generic [ref=e210]:
+                  - img "Answered 1090 (87%), Failed 162 (13%), Total 1252" [ref=e211]:
+                    - img [ref=e212]:
+                      - generic [ref=e216]: Answered 1,090
+                      - generic [ref=e217]: Failed 162
+                  - generic:
+                    - generic: 87%
+                    - generic: Success rate
+                - generic [ref=e218]:
+                  - generic [ref=e219]:
+                    - generic [ref=e220]: Answered
+                    - generic [ref=e221]: "1090"
+                  - generic [ref=e222]:
+                    - generic [ref=e223]: Failed
+                    - generic [ref=e224]: "162"
+            - generic [ref=e225]:
+              - heading "Minutes Usage" [level=3] [ref=e226]
+              - 'img "Minutes usage: used 3439 of 5000 minutes, remaining 1561 minutes" [ref=e227]':
+                - generic [ref=e228]:
+                  - generic [ref=e230]:
+                    - generic [ref=e231]: Minutes used
+                    - generic [ref=e232]:
+                      - img [ref=e233]
+                      - generic [ref=e236]: 69%
+                      - generic [ref=e237]: used
+                  - generic [ref=e243]:
+                    - generic [ref=e244]:
+                      - generic [ref=e245]:
+                        - generic [ref=e246]: Used
+                        - generic [ref=e247]: 3,439
+                      - generic [ref=e249]:
+                        - generic [ref=e250]: Remaining
+                        - generic [ref=e251]: 1,561
+                    - generic [ref=e252]:
+                      - generic [ref=e253]: "0"
+                      - generic [ref=e254]: 5,000 min
+            - generic [ref=e255]:
+              - generic [ref=e256]:
+                - generic [ref=e257]:
+                  - heading "Stacked Area Chart" [level=3] [ref=e258]
+                  - paragraph [ref=e259]: Answered vs failed trend
+                - generic [ref=e260]: Last 7 points
+              - img "Stacked area chart of answered and failed calls" [ref=e262]
+            - generic [ref=e267]:
+              - generic [ref=e268]:
+                - generic [ref=e269]:
+                  - heading "Real-Time Call Statistics" [level=3] [ref=e270]
+                  - paragraph [ref=e271]: 06:13 PM–10:13 PM
+                - generic [ref=e272]:
+                  - button "Status" [ref=e273]
+                  - button "Campaigns" [ref=e274]
+                  - button "Outcomes" [ref=e275]
+              - generic [ref=e276]:
+                - generic [ref=e277]:
+                  - generic [ref=e278]: Active calls
+                  - generic [ref=e279]: "10"
+                - generic [ref=e280]:
+                  - generic [ref=e281]: Queue size
+                  - generic [ref=e282]: "7"
+                - generic [ref=e283]:
+                  - generic [ref=e284]: In progress
+                  - generic [ref=e285]: "1"
+                - generic [ref=e286]:
+                  - generic [ref=e287]: Success rate
+                  - generic [ref=e288]: 86.1%
+              - img [ref=e290]:
+                - generic [ref=e617]: "!"
+                - generic [ref=e618]: Time
+            - generic [ref=e619]:
+              - generic [ref=e620]:
+                - generic [ref=e621]:
+                  - heading "Heatmap" [level=3] [ref=e622]
+                  - paragraph [ref=e623]: Activity intensity by day and time
+                - generic [ref=e624]: 7×8
+              - generic [ref=e627]:
+                - generic [ref=e629]: 0–3
+                - generic [ref=e630]: 3–6
+                - generic [ref=e631]: 6–9
+                - generic [ref=e632]: 9–12
+                - generic [ref=e633]: 12–15
+                - generic [ref=e634]: 15–18
+                - generic [ref=e635]: 18–21
+                - generic [ref=e636]: 21–24
+                - generic [ref=e637]:
+                  - generic [ref=e638]: Mon
+                  - 'img "Mon 0–3: 16" [ref=e640]'
+                  - 'img "Mon 3–6: 9" [ref=e642]'
+                  - 'img "Mon 6–9: 3" [ref=e644]'
+                  - 'img "Mon 9–12: 2" [ref=e646]'
+                  - 'img "Mon 12–15: 7" [ref=e648]'
+                  - 'img "Mon 15–18: 14" [ref=e650]'
+                  - 'img "Mon 18–21: 18" [ref=e652]'
+                  - 'img "Mon 21–24: 16" [ref=e654]'
+                - generic [ref=e655]:
+                  - generic [ref=e656]: Tue
+                  - 'img "Tue 0–3: 2" [ref=e658]'
+                  - 'img "Tue 3–6: 1" [ref=e660]'
+                  - 'img "Tue 6–9: 2" [ref=e662]'
+                  - 'img "Tue 9–12: 4" [ref=e664]'
+                  - 'img "Tue 12–15: 6" [ref=e666]'
+                  - 'img "Tue 15–18: 6" [ref=e668]'
+                  - 'img "Tue 18–21: 5" [ref=e670]'
+                  - 'img "Tue 21–24: 2" [ref=e672]'
+                - generic [ref=e673]:
+                  - generic [ref=e674]: Wed
+                  - 'img "Wed 0–3: 3" [ref=e676]'
+                  - 'img "Wed 3–6: 10" [ref=e678]'
+                  - 'img "Wed 6–9: 19" [ref=e680]'
+                  - 'img "Wed 9–12: 24" [ref=e682]'
+                  - 'img "Wed 12–15: 20" [ref=e684]'
+                  - 'img "Wed 15–18: 11" [ref=e686]'
+                  - 'img "Wed 18–21: 4" [ref=e688]'
+                  - 'img "Wed 21–24: 3" [ref=e690]'
+                - generic [ref=e691]:
+                  - generic [ref=e692]: Thu
+                  - 'img "Thu 0–3: 17" [ref=e694]'
+                  - 'img "Thu 3–6: 25" [ref=e696]'
+                  - 'img "Thu 6–9: 25" [ref=e698]'
+                  - 'img "Thu 9–12: 17" [ref=e700]'
+                  - 'img "Thu 12–15: 7" [ref=e702]'
+                  - 'img "Thu 15–18: 3" [ref=e704]'
+                  - 'img "Thu 18–21: 7" [ref=e706]'
+                  - 'img "Thu 21–24: 17" [ref=e708]'
+                - generic [ref=e709]:
+                  - generic [ref=e710]: Fri
+                  - 'img "Fri 0–3: 22" [ref=e712]'
+                  - 'img "Fri 3–6: 18" [ref=e714]'
+                  - 'img "Fri 6–9: 10" [ref=e716]'
+                  - 'img "Fri 9–12: 3" [ref=e718]'
+                  - 'img "Fri 12–15: 3" [ref=e720]'
+                  - 'img "Fri 15–18: 11" [ref=e722]'
+                  - 'img "Fri 18–21: 19" [ref=e724]'
+                  - 'img "Fri 21–24: 22" [ref=e726]'
+                - generic [ref=e727]:
+                  - generic [ref=e728]: Sat
+                  - 'img "Sat 0–3: 18" [ref=e730]'
+                  - 'img "Sat 3–6: 7" [ref=e732]'
+                  - 'img "Sat 6–9: 3" [ref=e734]'
+                  - 'img "Sat 9–12: 9" [ref=e736]'
+                  - 'img "Sat 12–15: 20" [ref=e738]'
+                  - 'img "Sat 15–18: 29" [ref=e740]'
+                  - 'img "Sat 18–21: 27" [ref=e742]'
+                  - 'img "Sat 21–24: 18" [ref=e744]'
+                - generic [ref=e745]:
+                  - generic [ref=e746]: Sun
+                  - 'img "Sun 0–3: 4" [ref=e748]'
+                  - 'img "Sun 3–6: 5" [ref=e750]'
+                  - 'img "Sun 6–9: 16" [ref=e752]'
+                  - 'img "Sun 9–12: 26" [ref=e754]'
+                  - 'img "Sun 12–15: 30" [ref=e756]'
+                  - 'img "Sun 15–18: 23" [ref=e758]'
+                  - 'img "Sun 18–21: 11" [ref=e760]'
+                  - 'img "Sun 21–24: 4" [ref=e762]'
+            - generic [ref=e763]:
+              - heading "Event Stream" [level=3] [ref=e764]
+              - generic [ref=e765]:
+                - 'group "Holiday Sales Outreach: 342 completed • 45 failed • running" [ref=e766]':
+                  - generic [ref=e768]:
+                    - generic [ref=e769]:
+                      - paragraph [ref=e772]: Holiday Sales Outreach
+                      - paragraph [ref=e773]: 342 completed • 45 failed • running
+                    - generic [ref=e774]: Dec 15
+                - 'group "Customer Satisfaction Survey: 87 completed • 12 failed • paused" [ref=e775]':
+                  - generic [ref=e777]:
+                    - generic [ref=e778]:
+                      - paragraph [ref=e781]: Customer Satisfaction Survey
+                      - paragraph [ref=e782]: 87 completed • 12 failed • paused
+                    - generic [ref=e783]: Dec 20
+                - 'group "New Product Launch: 0 completed • 0 failed • draft" [ref=e784]':
+                  - generic [ref=e786]:
+                    - generic [ref=e787]:
+                      - paragraph [ref=e790]: New Product Launch
+                      - paragraph [ref=e791]: 0 completed • 0 failed • draft
+                    - generic [ref=e792]: Dec 28
+                - 'group "Appointment Reminders: 285 completed • 15 failed • completed" [ref=e793]':
+                  - generic [ref=e795]:
+                    - generic [ref=e796]:
+                      - paragraph [ref=e799]: Appointment Reminders
+                      - paragraph [ref=e800]: 285 completed • 15 failed • completed
+                    - generic [ref=e801]: Dec 10
+                - 'group "Live traffic update: 16 calls in the last minute" [ref=e802]':
+                  - generic [ref=e804]:
+                    - generic [ref=e805]:
+                      - paragraph [ref=e808]: Live traffic update
+                      - paragraph [ref=e809]: 16 calls in the last minute
+                    - generic [ref=e810]: Now
+            - generic [ref=e811]:
+              - generic [ref=e812]:
+                - generic [ref=e813]:
+                  - heading "Error & Alert Timeline" [level=3] [ref=e814]
+                  - paragraph [ref=e815]: Recent delivery health signals
+                - generic [ref=e816]:
+                  - img [ref=e817]
+                  - text: Monitoring
+              - generic [ref=e819]:
+                - 'group "Elevated failures: 33 failed out of 239 calls (14%)" [ref=e820]':
+                  - generic [ref=e824]:
+                    - generic [ref=e825]:
+                      - paragraph [ref=e826]: Elevated failures
+                      - generic [ref=e827]: Dec 30
+                    - paragraph [ref=e828]: 33 failed out of 239 calls (14%)
+                - 'group "Elevated failures: 29 failed out of 234 calls (12%)" [ref=e829]':
+                  - generic [ref=e833]:
+                    - generic [ref=e834]:
+                      - paragraph [ref=e835]: Elevated failures
+                      - generic [ref=e836]: Dec 29
+                    - paragraph [ref=e837]: 29 failed out of 234 calls (12%)
+                - 'group "Elevated failures: 22 failed out of 178 calls (12%)" [ref=e838]':
+                  - generic [ref=e842]:
+                    - generic [ref=e843]:
+                      - paragraph [ref=e844]: Elevated failures
+                      - generic [ref=e845]: Dec 28
+                    - paragraph [ref=e846]: 22 failed out of 178 calls (12%)
+                - 'group "Elevated failures: 26 failed out of 210 calls (12%)" [ref=e847]':
+                  - generic [ref=e851]:
+                    - generic [ref=e852]:
+                      - paragraph [ref=e853]: Elevated failures
+                      - generic [ref=e854]: Dec 27
+                    - paragraph [ref=e855]: 26 failed out of 210 calls (12%)
+                - 'group "Elevated failures: 24 failed out of 189 calls (13%)" [ref=e856]':
+                  - generic [ref=e860]:
+                    - generic [ref=e861]:
+                      - paragraph [ref=e862]: Elevated failures
+                      - generic [ref=e863]: Dec 26
+                    - paragraph [ref=e864]: 24 failed out of 189 calls (13%)
+          - generic [ref=e865]:
+            - generic [ref=e866]:
+              - heading "Recent Campaigns" [level=3] [ref=e867]
+              - link "View all" [ref=e868] [cursor=pointer]:
+                - /url: /campaigns
+            - generic [ref=e869]:
+              - link "Holiday Sales Outreach 500 leads | 342 completed running" [ref=e871] [cursor=pointer]:
+                - /url: /campaigns/camp-001
+                - generic [ref=e872]:
+                  - heading "Holiday Sales Outreach" [level=4] [ref=e873]
+                  - paragraph [ref=e874]: 500 leads | 342 completed
+                - generic [ref=e875]:
+                  - generic [ref=e876]: running
+                  - img [ref=e877]
+              - link "Customer Satisfaction Survey 200 leads | 87 completed paused" [ref=e881] [cursor=pointer]:
+                - /url: /campaigns/camp-002
+                - generic [ref=e882]:
+                  - heading "Customer Satisfaction Survey" [level=4] [ref=e883]
+                  - paragraph [ref=e884]: 200 leads | 87 completed
+                - generic [ref=e885]:
+                  - generic [ref=e886]: paused
+                  - img [ref=e887]
+              - link "New Product Launch 750 leads | 0 completed draft" [ref=e891] [cursor=pointer]:
+                - /url: /campaigns/camp-003
+                - generic [ref=e892]:
+                  - heading "New Product Launch" [level=4] [ref=e893]
+                  - paragraph [ref=e894]: 750 leads | 0 completed
+                - generic [ref=e895]:
+                  - generic [ref=e896]: draft
+                  - img [ref=e897]
+              - link "Appointment Reminders 300 leads | 285 completed completed" [ref=e901] [cursor=pointer]:
+                - /url: /campaigns/camp-004
+                - generic [ref=e902]:
+                  - heading "Appointment Reminders" [level=4] [ref=e903]
+                  - paragraph [ref=e904]: 300 leads | 285 completed
+                - generic [ref=e905]:
+                  - generic [ref=e906]: completed
+                  - img [ref=e907]
+  - alert [ref=e910]
+```

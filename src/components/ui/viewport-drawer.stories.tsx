@@ -26,6 +26,14 @@ function Demo() {
 const meta: Meta<typeof ViewportDrawer> = {
     title: "UI/ViewportDrawer",
     component: ViewportDrawer,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    "UX & accessibility behavior:\n\n- Focus: moves focus into the drawer on open and restores focus on close.\n- Keyboard: Escape closes the drawer; Tab is trapped within the drawer.\n- Semantics: rendered as a modal dialog (role=dialog, aria-modal=true) with an accessible label.\n",
+            },
+        },
+    },
 };
 
 export default meta;
@@ -34,4 +42,3 @@ type Story = StoryObj<typeof ViewportDrawer>;
 export const Default: Story = {
     render: () => <Demo />,
 };
-

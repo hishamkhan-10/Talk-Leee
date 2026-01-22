@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { extendedApi, CallSeriesItem } from "@/lib/extended-api";
 import { BarChart2, TrendingUp, TrendingDown, Calendar, Activity, Percent } from "lucide-react";
 import { motion } from "framer-motion";
+import { Select } from "@/components/ui/select";
 
 function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -17,7 +18,7 @@ function GlassStatCard({
     title,
     value,
     icon: Icon,
-    iconColor = "text-white",
+    iconColor = "text-foreground",
     delay = 0,
 }: {
     title: string;
@@ -31,15 +32,15 @@ function GlassStatCard({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay, duration: 0.4 }}
-            className="content-card"
+            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-4"
         >
             <div className="flex items-center gap-3">
-                <div className={`p-2 bg-white/10 rounded-lg`}>
+                <div className="p-2 bg-muted/60 rounded-lg">
                     <Icon className={`w-5 h-5 ${iconColor}`} />
                 </div>
                 <div>
-                    <p className="text-2xl font-bold text-white">{value}</p>
-                    <p className="text-sm text-gray-400">{title}</p>
+                    <p className="text-2xl font-bold text-foreground">{value}</p>
+                    <p className="text-sm text-muted-foreground">{title}</p>
                 </div>
             </div>
         </motion.div>
@@ -101,32 +102,35 @@ export default function AnalyticsPage() {
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 mb-6"
+                className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:gap-4"
             >
                 <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <select
-                        value={dateRange}
-                        onChange={(e) => setDateRange(Number(e.target.value))}
-                        className="text-sm bg-white/10 border border-white/20 text-white rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-white/30"
+                    <Calendar className="w-4 h-4 text-muted-foreground" aria-hidden />
+                    <Select
+                        value={String(dateRange)}
+                        onChange={(v) => setDateRange(Number(v))}
+                        ariaLabel="Select date range"
+                        className="w-40"
                     >
-                        <option value={7} className="bg-gray-900">Last 7 days</option>
-                        <option value={30} className="bg-gray-900">Last 30 days</option>
-                        <option value={90} className="bg-gray-900">Last 90 days</option>
-                    </select>
+                        <option value="7">Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </Select>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">Group by:</span>
-                    <div className="flex bg-white/10 rounded-lg overflow-hidden border border-white/20">
+                    <span className="text-sm text-muted-foreground">Group by:</span>
+                    <div className="flex rounded-lg overflow-hidden border border-border bg-background/70 backdrop-blur-sm">
                         {(["day", "week", "month"] as const).map((g) => (
                             <button
                                 key={g}
+                                type="button"
                                 onClick={() => setGroupBy(g)}
                                 className={`px-3 py-1.5 text-sm transition-colors ${groupBy === g
-                                    ? "bg-white text-gray-900"
-                                    : "text-gray-300 hover:bg-white/10"
+                                    ? "bg-foreground text-background"
+                                    : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
                                     }`}
+                                aria-pressed={groupBy === g}
                             >
                                 {g.charAt(0).toUpperCase() + g.slice(1)}
                             </button>
@@ -136,11 +140,12 @@ export default function AnalyticsPage() {
             </motion.div>
 
             {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                <div className="flex items-center justify-center h-64" role="status" aria-live="polite" aria-busy="true">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" aria-hidden />
+                    <span className="sr-only">Loading analytics…</span>
                 </div>
             ) : error ? (
-                <div className="content-card border-red-500/30 text-red-400">
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600" role="alert" aria-live="assertive">
                     {error}
                 </div>
             ) : (
@@ -157,14 +162,14 @@ export default function AnalyticsPage() {
                             title="Answered"
                             value={totals.answered}
                             icon={TrendingUp}
-                            iconColor="text-emerald-400"
+                            iconColor="text-emerald-600"
                             delay={0.1}
                         />
                         <GlassStatCard
                             title="Failed"
                             value={totals.failed}
                             icon={TrendingDown}
-                            iconColor="text-red-400"
+                            iconColor="text-red-600"
                             delay={0.2}
                         />
                         <GlassStatCard
@@ -180,12 +185,12 @@ export default function AnalyticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="content-card"
+                        className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-4"
                     >
-                        <h3 className="text-lg font-semibold text-white mb-6">Call Volume</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-6">Call Volume</h3>
                         {data.length === 0 ? (
-                            <div className="text-center py-12 text-gray-400">
-                                <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <div className="text-center py-12 text-muted-foreground">
+                                <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" aria-hidden />
                                 No data for the selected period
                             </div>
                         ) : (
@@ -229,7 +234,7 @@ export default function AnalyticsPage() {
                                     {data.map((item, index) => (
                                         <div
                                             key={index}
-                                            className="flex-1 text-center text-xs text-gray-500"
+                                            className="flex-1 text-center text-xs text-muted-foreground"
                                         >
                                             {formatDate(item.date)}
                                         </div>
@@ -237,14 +242,14 @@ export default function AnalyticsPage() {
                                 </div>
 
                                 {/* Legend */}
-                                <div className="flex items-center justify-center gap-6 pt-4 border-t border-white/10">
+                                <div className="flex items-center justify-center gap-6 pt-4 border-t border-border/60">
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded" />
-                                        <span className="text-sm text-gray-400">Answered</span>
+                                        <span className="text-sm text-muted-foreground">Answered</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-gradient-to-b from-red-400 to-red-600 rounded" />
-                                        <span className="text-sm text-gray-400">Failed</span>
+                                        <span className="text-sm text-muted-foreground">Failed</span>
                                     </div>
                                 </div>
                             </div>
@@ -256,48 +261,48 @@ export default function AnalyticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="content-card"
+                        className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-4"
                     >
-                        <h3 className="text-lg font-semibold text-white mb-4">Breakdown</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-4">Breakdown</h3>
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="border-b border-white/10">
+                                <thead className="border-b border-border/60">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                             Date
                                         </th>
-                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                                             Total
                                         </th>
-                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                                             Answered
                                         </th>
-                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                                             Failed
                                         </th>
-                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                                             Rate
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5">
+                                <tbody className="divide-y divide-border/60">
                                     {data.map((item, index) => (
                                         <motion.tr
                                             key={index}
                                             initial={{ opacity: 0, x: -10 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: 0.7 + index * 0.03 }}
-                                            className="hover:bg-white/5 transition-colors"
+                                            className="hover:bg-foreground/5 transition-colors"
                                         >
-                                            <td className="px-4 py-3 text-sm text-gray-300">{item.date}</td>
-                                            <td className="px-4 py-3 text-sm text-right text-white font-medium">{item.total_calls}</td>
-                                            <td className="px-4 py-3 text-sm text-right text-emerald-400">
+                                            <td className="px-4 py-3 text-sm text-muted-foreground">{item.date}</td>
+                                            <td className="px-4 py-3 text-sm text-right text-foreground font-semibold tabular-nums">{item.total_calls}</td>
+                                            <td className="px-4 py-3 text-sm text-right text-emerald-600 tabular-nums">
                                                 {item.answered}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-right text-red-400">
+                                            <td className="px-4 py-3 text-sm text-right text-red-600 tabular-nums">
                                                 {item.failed}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-right text-white">
+                                            <td className="px-4 py-3 text-sm text-right text-foreground tabular-nums">
                                                 {item.total_calls > 0
                                                     ? `${Math.round((item.answered / item.total_calls) * 100)}%`
                                                     : "--"}

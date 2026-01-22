@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useRef } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
 
   const menuItems = [
     { label: "Home", href: "/" },
@@ -29,7 +30,7 @@ export function Navbar() {
 
         <div className="justify-self-center">
           {/* Mobile Menu */}
-          <details className="relative md:hidden group">
+          <details ref={mobileMenuRef} className="relative md:hidden group">
             <summary
               className="home-menu-toggle list-none cursor-pointer"
               aria-label="Open navigation menu"
@@ -60,6 +61,9 @@ export function Navbar() {
                       href={item.href}
                       className="home-mobile-link text-sm text-foreground/90 hover:text-foreground focus-visible:outline-none"
                       role="menuitem"
+                      onClick={() => {
+                        mobileMenuRef.current?.removeAttribute("open");
+                      }}
                     >
                       {item.label}
                     </Link>

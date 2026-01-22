@@ -58,8 +58,8 @@ function toPath(points: Array<{ x: number; y: number }>, smoothing = 0.18) {
 export function TimeSeriesLineChart({
   points,
   height = 160,
-  stroke = "#111827",
-  fill = "rgba(17, 24, 39, 0.10)",
+  stroke = "currentColor",
+  fill = "color-mix(in oklab, currentColor 12%, transparent)",
 }: {
   points: TimeSeriesPoint[];
   height?: number;
@@ -89,7 +89,7 @@ export function TimeSeriesLineChart({
       : "";
 
   return (
-    <div className="relative">
+    <div className="relative text-foreground">
       <HoverTooltip state={tooltip.state} />
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40">
         <path d={areaD} fill={fill} />
@@ -99,8 +99,8 @@ export function TimeSeriesLineChart({
           const value = points[i]?.value ?? 0;
           const content = (
             <div className="flex items-center gap-2">
-              <span className="text-gray-700">{label}</span>
-              <span className="font-black tabular-nums">{value.toLocaleString()}</span>
+              <span className="text-muted-foreground">{label}</span>
+              <span className="font-black tabular-nums text-foreground">{value.toLocaleString()}</span>
             </div>
           );
 
@@ -171,8 +171,8 @@ export function RealTimeBarChart({
   const answeredTooltipContent = useMemo(() => {
     return (
       <div className="space-y-1">
-        <div className="text-sm font-black text-gray-900">Answered Calls</div>
-        <div className="text-sm font-black tabular-nums">{answeredValue.toLocaleString()}</div>
+        <div className="text-sm font-black text-foreground">Answered Calls</div>
+        <div className="text-sm font-black tabular-nums text-foreground">{answeredValue.toLocaleString()}</div>
       </div>
     );
   }, [answeredValue]);
@@ -180,8 +180,8 @@ export function RealTimeBarChart({
   const failedTooltipContent = useMemo(() => {
     return (
       <div className="space-y-1">
-        <div className="text-sm font-black text-gray-900">Failed Calls</div>
-        <div className="text-sm font-black tabular-nums">{failedValue.toLocaleString()}</div>
+        <div className="text-sm font-black text-foreground">Failed Calls</div>
+        <div className="text-sm font-black tabular-nums text-foreground">{failedValue.toLocaleString()}</div>
       </div>
     );
   }, [failedValue]);
@@ -932,45 +932,45 @@ export function DonutChart({
 
   const summaryContent = (
     <div className="space-y-2">
-      <div className="text-sm font-black text-gray-900">Calls breakdown</div>
+      <div className="text-sm font-black text-foreground">Calls breakdown</div>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-6">
           <span className="text-emerald-700 font-bold">Answered</span>
-          <span className="tabular-nums font-black text-gray-900">
+          <span className="tabular-nums font-black text-foreground">
             {answered.toLocaleString()}{" "}
-            <span className="text-gray-600 font-semibold">
+            <span className="text-muted-foreground font-semibold">
               ({Math.round(answeredPct * 100)}%)
             </span>
           </span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-red-700 font-bold">Failed</span>
-          <span className="tabular-nums font-black text-gray-900">
+          <span className="tabular-nums font-black text-foreground">
             {failed.toLocaleString()}{" "}
-            <span className="text-gray-600 font-semibold">({Math.round(failedPct * 100)}%)</span>
+            <span className="text-muted-foreground font-semibold">({Math.round(failedPct * 100)}%)</span>
           </span>
         </div>
       </div>
-      <div className="text-xs font-semibold text-gray-600">Total: {total.toLocaleString()}</div>
+      <div className="text-xs font-semibold text-muted-foreground">Total: {total.toLocaleString()}</div>
     </div>
   );
 
   const answeredContent = (
     <div className="space-y-1">
-      <div className="text-sm font-black text-gray-900">Answered</div>
+      <div className="text-sm font-black text-foreground">Answered</div>
       <div className="flex items-center justify-between gap-6">
-        <span className="tabular-nums font-black">{answered.toLocaleString()}</span>
-        <span className="text-gray-600 font-semibold">{Math.round(answeredPct * 100)}%</span>
+        <span className="tabular-nums font-black text-foreground">{answered.toLocaleString()}</span>
+        <span className="text-muted-foreground font-semibold">{Math.round(answeredPct * 100)}%</span>
       </div>
     </div>
   );
 
   const failedContent = (
     <div className="space-y-1">
-      <div className="text-sm font-black text-gray-900">Failed</div>
+      <div className="text-sm font-black text-foreground">Failed</div>
       <div className="flex items-center justify-between gap-6">
-        <span className="tabular-nums font-black">{failed.toLocaleString()}</span>
-        <span className="text-gray-600 font-semibold">{Math.round(failedPct * 100)}%</span>
+        <span className="tabular-nums font-black text-foreground">{failed.toLocaleString()}</span>
+        <span className="text-muted-foreground font-semibold">{Math.round(failedPct * 100)}%</span>
       </div>
     </div>
   );

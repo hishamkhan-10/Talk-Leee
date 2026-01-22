@@ -658,7 +658,7 @@ export default function AssistantActionsPage() {
                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr]">
                         <div className="space-y-6 min-w-0">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2" role="tablist" aria-label="Assistant actions sections">
                                     {(["Audit Log", "Catalog", "Verification"] as const).map((t) => (
                                         <button
                                             key={t}
@@ -668,7 +668,9 @@ export default function AssistantActionsPage() {
                                                 "rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                                                 tab === t ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
                                             )}
-                                            aria-pressed={tab === t}
+                                            role="tab"
+                                            aria-selected={tab === t}
+                                            tabIndex={tab === t ? 0 : -1}
                                         >
                                             {t}
                                         </button>

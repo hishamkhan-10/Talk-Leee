@@ -6,6 +6,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type DrawerSide = "left" | "right" | "top" | "bottom";
 
+function getFocusableElements(container: HTMLElement) {
+    const selector =
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const all = Array.from(container.querySelectorAll<HTMLElement>(selector));
+    return all.filter((el) => {
+        if (el.hasAttribute("disabled")) return false;
+        const style = window.getComputedStyle(el);
+        if (style.visibility === "hidden" || style.display === "none") return false;
+        if (el.getAttribute("aria-hidden") === "true") return false;
+        return true;
+    });
+}
+
 function clamp(value: number, min: number, max: number) {
     return Math.min(max, Math.max(min, value));
 }
@@ -37,6 +50,7 @@ export function ViewportDrawer({
 }) {
     const panelRef = useRef<HTMLElement | null>(null);
     const [viewport, setViewport] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+    const lastActiveRef = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
         if (!open) return;
@@ -44,6 +58,21 @@ export function ViewportDrawer({
         update();
         window.addEventListener("resize", update, { passive: true });
         return () => window.removeEventListener("resize", update);
+    }, [open]);
+
+    useEffect(() => {
+        if (!open) return;
+        lastActiveRef.current = (document.activeElement as HTMLElement | null) ?? null;
+        const t = window.setTimeout(() => {
+            const panel = panelRef.current;
+            if (!panel) return;
+            const focusable = getFocusableElements(panel);
+            (focusable[0] ?? panel).focus();
+        }, 0);
+        return () => {
+            window.clearTimeout(t);
+            lastActiveRef.current?.focus?.();
+        };
     }, [open]);
 
     useEffect(() => {
@@ -126,11 +155,36 @@ export function ViewportDrawer({
                         role="dialog"
                         aria-modal="true"
                         aria-label={ariaLabel}
+                        tabIndex={-1}
                         className={cn(
                             "absolute overflow-hidden rounded-2xl border border-gray-200/60 bg-white/85 backdrop-blur-xl shadow-xl",
                             panelClassName
                         )}
                         style={panelStyle}
+                        onKeyDown={(e) => {
+                            if (e.key !== "Tab") return;
+                            const panel = panelRef.current;
+                            if (!panel) return;
+                            const focusable = getFocusableElements(panel);
+                            if (focusable.length === 0) {
+                                e.preventDefault();
+                                panel.focus();
+                                return;
+                            }
+                            const first = focusable[0];
+                            const last = focusable[focusable.length - 1];
+                            if (e.shiftKey) {
+                                if (document.activeElement === first || document.activeElement === panel) {
+                                    e.preventDefault();
+                                    last.focus();
+                                }
+                            } else {
+                                if (document.activeElement === last) {
+                                    e.preventDefault();
+                                    first.focus();
+                                }
+                            }
+                        }}
                         initial={initial}
                         animate={animate}
                         exit={exit}
@@ -143,4 +197,3 @@ export function ViewportDrawer({
         </AnimatePresence>
     );
 }
-
