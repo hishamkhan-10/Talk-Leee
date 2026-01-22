@@ -518,7 +518,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const heroHeightClass = adjustForNavbar ? "h-[calc(100vh-var(--home-navbar-height))]" : "h-screen";
 
     return (
-        <section className={`relative ${heroHeightClass} w-screen font-sans tracking-tight text-gray-900 bg-neutral-50 overflow-hidden`}>
+        <section className={`relative ${heroHeightClass} w-screen font-sans tracking-tight text-foreground bg-transparent overflow-hidden`}>
             <div className="absolute inset-0 z-0">
                 <Scene aiState={aiState} audioLevel={audioLevel} />
             </div>
@@ -536,7 +536,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {showSwipeArrows && hasSwiped && (
                     <button
                         onClick={() => switchVoice('prev')}
-                        className="w-10 h-10 rounded-full bg-white/90 hover:bg-white border border-indigo-200 flex items-center justify-center text-indigo-600 hover:text-indigo-700 transition-all shadow-lg hover:shadow-xl hover:scale-110"
+                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
@@ -545,9 +545,9 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {/* Main Circle Button */}
                 <button
                     onClick={handleMainButtonClick}
-                    className={`relative rounded-full flex flex-col items-center justify-center transition-all duration-500 ease-out cursor-pointer group backdrop-blur-md ${!isActive
-                        ? "w-32 h-32 bg-white/60 hover:bg-white/80 border border-gray-200/50 hover:border-gray-300 shadow-2xl hover:shadow-3xl hover:scale-105"
-                        : "w-40 h-40 bg-white/80 border-2 border-indigo-300/60"
+                    className={`relative rounded-full flex flex-col items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
+                        ? "w-32 h-32 bg-background/55 hover:bg-background/75 border border-border/60 hover:border-border shadow-2xl hover:shadow-2xl hover:scale-105"
+                        : "w-40 h-40 bg-background/70 border-2 border-indigo-400/40"
                         }`}
                     style={{
                         boxShadow: isActive
@@ -562,19 +562,19 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                     <div className="text-center z-10">
                         {!isActive && (
                             <>
-                                <h3 className="text-xl font-semibold text-gray-800 group-hover:text-gray-900 mb-1">Ask AI</h3>
-                                <p className="text-xs text-gray-500 group-hover:text-gray-600">{getStatusText()}</p>
+                                <h3 className="text-xl font-semibold text-foreground mb-1">Ask AI</h3>
+                                <p className="text-xs text-muted-foreground">{getStatusText()}</p>
                             </>
                         )}
 
                         {isActive && (
                             <>
-                                <div className="text-2xl font-bold text-indigo-700 mb-0.5">
+                                <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-0.5">
                                     {currentVoiceName || selectedVoice.name}
                                 </div>
-                                <div className="text-xs text-indigo-500 mb-1">{selectedVoice.description}</div>
+                                <div className="text-xs text-indigo-600/80 dark:text-indigo-300/80 mb-1">{selectedVoice.description}</div>
                                 <AudioVisualizer isActive={voiceSelected && (aiState === "listening" || aiState === "speaking")} audioLevel={audioLevel} />
-                                <p className="text-[10px] text-indigo-400 mt-1">{getStatusText()}</p>
+                                <p className="text-[10px] text-indigo-600/70 dark:text-indigo-300/70 mt-1">{getStatusText()}</p>
                             </>
                         )}
                     </div>
@@ -584,7 +584,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {showSwipeArrows && (
                     <button
                         onClick={() => switchVoice('next')}
-                        className="w-10 h-10 rounded-full bg-white/90 hover:bg-white border border-indigo-200 flex items-center justify-center text-indigo-600 hover:text-indigo-700 transition-all shadow-lg hover:shadow-xl hover:scale-110"
+                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
@@ -599,23 +599,23 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                     <MagneticText text={headlineA} hoverText={headlineA} />
                     <MagneticText text={headlineB} hoverText={headlineB} />
                 </div>
-                <p className="text-gray-600 text-base md:text-lg leading-relaxed font-light tracking-tight mb-8 max-w-lg">
+                <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight mb-8 max-w-lg">
                     {description}
                 </p>
                 {stats && stats.length > 0 && (
                     <div className="flex flex-wrap gap-8">
                         {stats.map((stat, index) => (
                             <div key={index} className="text-left">
-                                <div className="text-3xl md:text-4xl font-semibold text-gray-900">{stat.value}</div>
-                                <div className="text-sm text-gray-500 uppercase tracking-wide mt-1">{stat.label}</div>
+                                <div className="text-3xl md:text-4xl font-semibold text-foreground">{stat.value}</div>
+                                <div className="text-sm text-muted-foreground uppercase tracking-wide mt-1">{stat.label}</div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
 
-            <BlurEffect className="absolute bg-gradient-to-b from-transparent to-neutral-50/40 h-1/2 md:h-1/3 w-full bottom-0" intensity={50} />
-            <BlurEffect className="absolute bg-gradient-to-b from-neutral-50/40 to-transparent h-1/2 md:h-1/3 w-full top-0" intensity={50} />
+            <BlurEffect className="absolute bg-gradient-to-b from-transparent to-background/55 h-1/2 md:h-1/3 w-full bottom-0" intensity={50} />
+            <BlurEffect className="absolute bg-gradient-to-b from-background/55 to-transparent h-1/2 md:h-1/3 w-full top-0" intensity={50} />
 
             <style jsx>{`
                 @keyframes ping {

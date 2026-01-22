@@ -49,10 +49,17 @@
   --sidebar-collapsed-width: 76px;
   --sidebar-transition-ms: 220ms;
   --home-navbar-height: 88px;
+  --home-navbar-bg: rgba(255, 255, 255, 0.76);
+  --home-navbar-border: rgba(17, 24, 39, 0.10);
+  --home-navbar-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+  --home-surface-border: rgba(17, 24, 39, 0.12);
+  --home-hover-bg: rgba(17, 24, 39, 0.06);
+  --home-focus-ring: rgba(17, 24, 39, 0.14);
+  --home-panel-bg: rgba(255, 255, 255, 0.92);
   --home-bg-top-left: #F2F4F7;
   --home-bg-center: #F7F9FB;
   --home-bg-edge: #FFFFFF;
-  --home-bg-shadow: rgba(0, 0, 0, 0.04);
+  --home-bg-shadow: rgba(17, 24, 39, 0.05);
   --background: #FFFFFF;
   --foreground: #171717;
   --card: #FFFFFF;
@@ -99,6 +106,17 @@
 }
 
 .dark {
+  --home-navbar-bg: rgba(18, 18, 18, 0.72);
+  --home-navbar-border: rgba(255, 255, 255, 0.10);
+  --home-navbar-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  --home-surface-border: rgba(255, 255, 255, 0.12);
+  --home-hover-bg: rgba(255, 255, 255, 0.07);
+  --home-focus-ring: rgba(255, 255, 255, 0.16);
+  --home-panel-bg: rgba(18, 18, 18, 0.86);
+  --home-bg-top-left: #0B1220;
+  --home-bg-center: #0F172A;
+  --home-bg-edge: #111827;
+  --home-bg-shadow: rgba(0, 0, 0, 0.55);
   --background: #121212;
   --foreground: #EDEDED;
   --card: #121212;
@@ -139,7 +157,7 @@
 
   * {
     @apply border-border outline-ring/50;
-    transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out;
+    transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out, box-shadow 300ms ease-in-out;
   }
 
   body {
@@ -175,7 +193,11 @@
   left: 0;
   right: 0;
   width: 100%;
-  background-color: #ffffff;
+  background-color: var(--home-navbar-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--home-navbar-border);
+  box-shadow: var(--home-navbar-shadow);
   z-index: 60;
 }
 
@@ -197,8 +219,8 @@
 }
 
 .home-nav-link:hover {
-  background-color: rgba(17, 24, 39, 0.06);
-  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.08);
+  background-color: var(--home-hover-bg);
+  box-shadow: 0 0 0 1px var(--home-surface-border);
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
 }
@@ -210,7 +232,7 @@
 
 .home-nav-link:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 0.25rem rgba(17, 24, 39, 0.12);
+  box-shadow: 0 0 0 0.25rem var(--home-focus-ring);
 }
 
 .home-menu-toggle {
@@ -220,7 +242,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.75rem;
-  color: rgb(55 65 81);
+  color: color-mix(in oklab, var(--foreground) 70%, transparent);
   background: transparent;
   -webkit-transition: background-color 250ms ease-in-out, color 250ms ease-in-out, -webkit-transform 250ms ease-in-out;
   transition: background-color 250ms ease-in-out, color 250ms ease-in-out, transform 250ms ease-in-out;
@@ -260,8 +282,8 @@
   height: 3rem;
   font-weight: 700;
   font-size: 1.25rem;
-  color: rgb(156 163 175);
-  opacity: 0.7;
+  color: color-mix(in oklab, var(--muted-foreground) 95%, transparent);
+  opacity: 0.82;
   -webkit-transition: color 250ms ease-in-out, opacity 250ms ease-in-out, -webkit-transform 250ms ease-in-out;
   transition: color 250ms ease-in-out, opacity 250ms ease-in-out, transform 250ms ease-in-out;
   cursor: pointer;
@@ -270,22 +292,22 @@
 }
 
 .trusted-logo:hover {
-  color: rgb(17 24 39);
+  color: var(--foreground);
   opacity: 1;
-  -webkit-transform: scale(1.1);
-  transform: scale(1.1);
+  -webkit-transform: scale(1.06);
+  transform: scale(1.06);
 }
 
 .trusted-logo:focus-visible {
   outline: none;
   border-radius: 0.5rem;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-  color: rgb(17 24 39);
+  color: var(--foreground);
   opacity: 1;
 }
 
 .home-menu-toggle:hover {
-  background-color: rgba(17, 24, 39, 0.06);
+  background-color: var(--home-hover-bg);
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
 }
@@ -297,7 +319,7 @@
 
 .home-menu-toggle:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 0.25rem rgba(17, 24, 39, 0.12);
+  box-shadow: 0 0 0 0.25rem var(--home-focus-ring);
 }
 
 .home-mobile-panel {
@@ -309,11 +331,11 @@
   width: min(16rem, calc(100vw - 2rem));
   border-radius: 1rem;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--home-panel-bg);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(17, 24, 39, 0.10);
-  box-shadow: 0 0.75rem 2rem rgba(17, 24, 39, 0.15);
+  border: 1px solid var(--home-surface-border);
+  box-shadow: 0 0.75rem 2rem rgba(17, 24, 39, 0.14);
   z-index: 50;
 }
 
@@ -328,7 +350,7 @@
 }
 
 .home-mobile-link:hover {
-  background-color: rgba(17, 24, 39, 0.06);
+  background-color: var(--home-hover-bg);
   -webkit-transform: scale(1.02);
   transform: scale(1.02);
 }
@@ -340,7 +362,7 @@
 
 .home-mobile-link:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 0.25rem rgba(17, 24, 39, 0.12);
+  box-shadow: 0 0 0 0.25rem var(--home-focus-ring);
 }
 
 /* Animated Background Shapes for Dashboard */

@@ -21,7 +21,7 @@ export function Navbar() {
       <div className="grid w-full grid-cols-[auto_1fr_auto] items-center">
         <Link
           href="/"
-          className="justify-self-start text-xl font-bold tracking-tight text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 rounded-lg"
+          className="justify-self-start text-xl font-bold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
           aria-label="Talk-Lee home"
         >
           Talk-Lee
@@ -58,7 +58,7 @@ export function Navbar() {
                   <li key={item.label}>
                     <Link
                       href={item.href}
-                      className="home-mobile-link text-sm text-gray-800"
+                      className="home-mobile-link text-sm text-foreground/90 hover:text-foreground focus-visible:outline-none"
                       role="menuitem"
                     >
                       {item.label}
@@ -75,7 +75,7 @@ export function Navbar() {
               <li key={item.label} className="relative">
                 <Link
                   href={item.href}
-                  className="home-nav-link text-sm text-gray-700"
+                  className="home-nav-link text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none"
                   aria-current={item.href === "/" ? "page" : undefined}
                 >
                   {item.label}
@@ -88,13 +88,13 @@ export function Navbar() {
         <div className="flex items-center gap-3 justify-self-end">
           <Link
             href="/dashboard"
-            className="home-nav-link text-sm text-gray-700"
+            className="home-nav-link text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none"
           >
             Dashboard
           </Link>
           <Link
             href="/dashboard"
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 hover:scale-[1.05] transition-[background-color,transform] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+            className="px-4 py-2 text-sm font-semibold text-background bg-foreground rounded-xl hover:bg-foreground/90 hover:scale-[1.03] transition-[background-color,transform,box-shadow] duration-[250ms] ease-in-out shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Start Free Trial
           </Link>

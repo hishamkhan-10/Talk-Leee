@@ -4,13 +4,13 @@ import { motion } from "framer-motion";
 
 export function TrustedBySection() {
   return (
-    <section className="py-20 px-4 md:px-6 lg:px-8 bg-white border-t border-gray-100">
+    <section className="py-20 px-4 md:px-6 lg:px-8 bg-background border-t border-border/60">
       <div className="max-w-4xl mx-auto text-center space-y-8">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl font-bold text-gray-900"
+          className="text-3xl font-bold text-foreground"
         >
           Trusted by Industry Leaders
         </motion.h2>
@@ -19,7 +19,7 @@ export function TrustedBySection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
-          className="text-lg text-gray-600 max-w-2xl mx-auto"
+          className="text-lg text-muted-foreground max-w-2xl mx-auto"
         >
           Join Fortune 500 companies and innovative startups that rely on our AI voice platform
           for critical business communications.

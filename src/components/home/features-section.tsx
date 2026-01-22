@@ -8,8 +8,9 @@ const features = [
     icon: PhoneCall,
     title: "Outbound Calling",
     description: "Automated sales calls, lead qualification, and customer outreach with AI agents that sound human.",
-    color: "text-indigo-600",
-    bg: "bg-indigo-50",
+    iconColor: "text-indigo-700 dark:text-indigo-300",
+    iconBg: "bg-indigo-500/10",
+    dotBg: "bg-indigo-500/70 dark:bg-indigo-400/70",
     points: [
       "Lead generation and qualification",
       "Sales appointment setting",
@@ -21,8 +22,9 @@ const features = [
     icon: Users,
     title: "Inbound Support",
     description: "24/7 customer service with intelligent AI agents that can handle complex inquiries.",
-    color: "text-blue-600",
-    bg: "bg-blue-50",
+    iconColor: "text-sky-700 dark:text-sky-300",
+    iconBg: "bg-sky-500/10",
+    dotBg: "bg-sky-500/70 dark:bg-sky-400/70",
     points: [
       "Customer support and helpdesk",
       "Order status and tracking",
@@ -34,8 +36,9 @@ const features = [
     icon: BarChart3,
     title: "Voice Analytics",
     description: "Advanced analytics and insights to optimize your communication strategies.",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    iconColor: "text-emerald-700 dark:text-emerald-300",
+    iconBg: "bg-emerald-500/10",
+    dotBg: "bg-emerald-500/70 dark:bg-emerald-400/70",
     points: [
       "Call performance metrics",
       "Sentiment analysis",
@@ -47,14 +50,14 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section id="services" className="py-24 px-4 md:px-6 lg:px-8 bg-white">
+    <section id="services" className="py-24 px-4 md:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-gray-900"
+            className="text-3xl md:text-4xl font-bold text-foreground"
           >
             Our Services
           </motion.h2>
@@ -63,7 +66,7 @@ export function FeaturesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-gray-600"
+            className="text-lg text-muted-foreground"
           >
             Comprehensive AI voice solutions for every business need
           </motion.p>
@@ -77,21 +80,21 @@ export function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group p-8 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              className="group p-8 rounded-2xl border border-border/70 bg-card/70 backdrop-blur-sm hover:border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
-              <div className={`w-12 h-12 rounded-lg ${feature.bg} ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+              <div className={`w-12 h-12 rounded-lg ${feature.iconBg} ${feature.iconColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className="w-6 h-6" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-indigo-900 transition-colors">
+              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
                 {feature.title}
               </h3>
-              <p className="text-gray-600 leading-relaxed mb-6">
+              <p className="text-muted-foreground leading-relaxed mb-6">
                 {feature.description}
               </p>
               <ul className="space-y-3">
                 {feature.points.map((point) => (
-                  <li key={point} className="flex items-start text-gray-500 text-sm">
-                    <span className={`mr-2 mt-1.5 w-1.5 h-1.5 rounded-full ${feature.color.replace('text-', 'bg-')}`} />
+                  <li key={point} className="flex items-start text-muted-foreground text-sm">
+                    <span className={`mr-2 mt-1.5 w-1.5 h-1.5 rounded-full ${feature.dotBg}`} />
                     {point}
                   </li>
                 ))}

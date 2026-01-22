@@ -3,7 +3,13 @@ import { JSDOM } from "jsdom";
 let currentDom: JSDOM | null = null;
 
 export function ensureDom() {
-    if (typeof window !== "undefined" && typeof document !== "undefined") return;
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+        try {
+            if (typeof window.location?.origin === "string" && window.location.origin !== "null") return;
+        } catch {
+            return;
+        }
+    }
 
     const dom = new JSDOM("<!doctype html><html><head></head><body></body></html>", {
         url: "http://localhost/",
