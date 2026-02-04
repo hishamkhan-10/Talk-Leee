@@ -60,17 +60,17 @@ export function progressColorClass(progressPct: number) {
 export function statusBadgeClass(status: CampaignStatus) {
     switch (status) {
         case "Active":
-            return "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            return "bg-transparent border border-black/70 text-emerald-800 dark:border-white/70 dark:text-emerald-300";
         case "Paused":
-            return "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
+            return "bg-transparent border border-black/70 text-amber-800 dark:border-white/70 dark:text-amber-300";
         case "Completed":
-            return "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+            return "bg-transparent border border-black/70 text-blue-800 dark:border-white/70 dark:text-blue-300";
         case "Draft":
-            return "bg-gray-500/20 text-gray-200 border border-gray-500/30";
+            return "bg-transparent border border-black/70 text-gray-800 dark:border-white/70 dark:text-gray-200";
         case "Failed":
-            return "bg-red-500/20 text-red-300 border border-red-500/30";
+            return "bg-transparent border border-black/70 text-red-800 dark:border-white/70 dark:text-red-300";
         default:
-            return "bg-gray-500/20 text-gray-200 border border-gray-500/30";
+            return "bg-transparent border border-black/70 text-gray-800 dark:border-white/70 dark:text-gray-200";
     }
 }
 
@@ -239,13 +239,13 @@ export type AlertItem = {
 export function severityBadgeClass(sev: AlertSeverity) {
     switch (sev) {
         case "Critical":
-            return "bg-red-500/20 text-red-300 border border-red-500/30";
+            return "bg-background text-red-800 border border-red-700/50 dark:text-red-300 dark:border-red-400/50";
         case "Warning":
-            return "bg-orange-500/20 text-orange-200 border border-orange-500/30";
+            return "bg-background text-amber-800 border border-amber-700/50 dark:text-amber-300 dark:border-amber-400/50";
         case "Info":
-            return "bg-blue-500/20 text-blue-200 border border-blue-500/30";
+            return "bg-background text-blue-800 border border-blue-700/50 dark:text-blue-300 dark:border-blue-400/50";
         default:
-            return "bg-gray-500/20 text-gray-200 border border-gray-500/30";
+            return "bg-background text-slate-800 border border-slate-600/50 dark:text-slate-200 dark:border-slate-500/60";
     }
 }
 

@@ -10,7 +10,7 @@ test("backendApi.assistantActions.list calls assistant actions list endpoint", a
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.assistantActions.list();
         assert.deepEqual(res, { items: [] });
@@ -31,7 +31,7 @@ test("backendApi.assistantRuns.list supports filtering and sorting query params"
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         await backendApi.assistantRuns.list({
             page: 1,
@@ -70,7 +70,7 @@ test("backendApi.assistant.plan posts payload to plan endpoint", async () => {
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const plan = await backendApi.assistant.plan({ actionType: "notes:add", source: "dashboard", leadId: "lead-1", context: { note: "hi" } });
         assert.equal(plan.planId, "plan-1");
@@ -112,7 +112,7 @@ test("backendApi.assistant.execute posts payload to execute endpoint and parses 
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const run = await backendApi.assistant.execute({ actionType: "notes:add", source: "dashboard", leadId: "lead-1", context: { note: "hi" } });
         assert.equal(run.id, "run-1");
@@ -154,7 +154,7 @@ test("backendApi.assistantRuns.retry posts to retry endpoint", async () => {
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const run = await backendApi.assistantRuns.retry("run-1");
         assert.equal(run.id, "run-2");
@@ -166,4 +166,3 @@ test("backendApi.assistantRuns.retry posts to retry endpoint", async () => {
         globalThis.fetch = prevFetch;
     }
 });
-

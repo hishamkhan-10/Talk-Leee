@@ -110,7 +110,7 @@ export default function ContactsPage() {
         <DashboardLayout title="Import Contacts" description="Upload CSV files to add contacts to campaigns">
             {loading ? (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-foreground/60" />
                 </div>
             ) : (
                 <div className="max-w-2xl space-y-6">
@@ -120,21 +120,21 @@ export default function ContactsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="content-card"
                     >
-                        <h3 className="text-lg font-semibold text-white mb-4">Upload CSV</h3>
+                        <h3 className="mb-4 text-sm font-semibold text-foreground">Upload CSV</h3>
                         <div className="space-y-4">
                             {/* Campaign Select */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <div className="group rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                                     Target Campaign
                                 </label>
                                 <select
                                     value={selectedCampaign}
                                     onChange={(e) => setSelectedCampaign(e.target.value)}
-                                    className="w-full bg-white/10 border border-white/20 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    className="mt-2 w-full rounded-xl border border-border bg-background/70 px-3 py-2 text-sm font-semibold text-foreground shadow-sm outline-none transition-colors focus:border-border focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-60"
                                     disabled={uploading}
                                 >
                                     {campaigns.map((campaign) => (
-                                        <option key={campaign.id} value={campaign.id} className="bg-gray-900">
+                                        <option key={campaign.id} value={campaign.id} className="bg-background text-foreground">
                                             {campaign.name}
                                         </option>
                                     ))}
@@ -142,13 +142,13 @@ export default function ContactsPage() {
                             </div>
 
                             {/* File Upload */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <div className="group rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                                     CSV File
                                 </label>
                                 <div
-                                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${file || dragActive ? "border-white/40 bg-white/5" : "border-white/20 hover:border-white/40"
-                                        }`}
+                                    className={`mt-2 rounded-2xl border-2 border-dashed p-8 text-center shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out ${file || dragActive ? "border-ring/60 bg-background/60" : "border-border bg-background/50 hover:border-ring/50"
+                                        } ${uploading ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"}`}
                                     onClick={() => !uploading && fileInputRef.current?.click()}
                                     onDragEnter={handleDragOver}
                                     onDragOver={handleDragOver}
@@ -164,42 +164,42 @@ export default function ContactsPage() {
                                         disabled={uploading}
                                     />
                                     {file ? (
-                                        <div className="flex items-center justify-center gap-2">
-                                            <FileText className="w-5 h-5 text-white" />
-                                            <span className="text-sm font-medium text-white">{file.name}</span>
-                                            <span className="text-sm text-gray-400">
+                                        <div className="flex flex-wrap items-center justify-center gap-2">
+                                            <FileText className="h-5 w-5 text-foreground" />
+                                            <span className="text-sm font-semibold text-foreground">{file.name}</span>
+                                            <span className="text-sm text-muted-foreground tabular-nums">
                                                 ({(file.size / 1024).toFixed(1)} KB)
                                             </span>
                                         </div>
                                     ) : (
                                         <div>
-                                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                            <p className="text-sm text-gray-300">
+                                            <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                                            <p className="text-sm font-medium text-foreground">
                                                 Click to upload or drag and drop
                                             </p>
-                                            <p className="text-xs text-gray-500 mt-1">CSV files only</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">CSV files only</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* CSV Format Info */}
-                            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                <h4 className="text-sm font-medium text-white mb-2">CSV Format</h4>
-                                <p className="text-xs text-gray-400 mb-2">
+                            <div className="group rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                <h4 className="text-sm font-semibold text-foreground mb-2">CSV Format</h4>
+                                <p className="text-xs text-muted-foreground mb-2">
                                     Your CSV should have the following columns:
                                 </p>
-                                <code className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">
+                                <code className="inline-flex rounded-lg border border-border bg-background/70 px-2 py-1 text-xs font-semibold text-foreground">
                                     phone_number, first_name, last_name, email
                                 </code>
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-muted-foreground mt-2">
                                     Only phone_number is required. Phone numbers are automatically normalized.
                                 </p>
                             </div>
 
                             {error && (
-                                <div className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                                    <AlertCircle className="w-4 h-4" />
+                                <div className="flex items-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                                    <AlertCircle className="h-4 w-4" />
                                     {error}
                                 </div>
                             )}
@@ -207,7 +207,7 @@ export default function ContactsPage() {
                             <Button
                                 onClick={handleUpload}
                                 disabled={!file || !selectedCampaign || uploading}
-                                className="w-full bg-white text-gray-900 hover:bg-gray-100"
+                                className="w-full hover:scale-[1.02] hover:shadow-md active:scale-[0.99]"
                             >
                                 {uploading ? (
                                     <>
@@ -231,55 +231,55 @@ export default function ContactsPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="content-card"
                         >
-                            <h3 className="text-lg font-semibold text-white mb-4">Import Results</h3>
+                            <h3 className="mb-4 text-sm font-semibold text-foreground">Import Results</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                <div className="text-center p-3 bg-white/5 rounded-lg border border-white/10">
-                                    <p className="text-2xl font-semibold text-white">{result.total_rows}</p>
-                                    <p className="text-sm text-gray-400">Total Rows</p>
+                                <div className="rounded-2xl border border-border bg-muted/60 p-3 text-center shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <p className="text-2xl font-black tabular-nums text-foreground">{result.total_rows}</p>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total Rows</p>
                                 </div>
-                                <div className="text-center p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
-                                    <p className="text-2xl font-semibold text-emerald-400">{result.imported}</p>
-                                    <p className="text-sm text-emerald-400">Imported</p>
+                                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
+                                    <p className="text-2xl font-black tabular-nums text-emerald-700 dark:text-emerald-300">{result.imported}</p>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700/80 dark:text-emerald-300/80">Imported</p>
                                 </div>
-                                <div className="text-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-                                    <p className="text-2xl font-semibold text-yellow-400">
+                                <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-center shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
+                                    <p className="text-2xl font-black tabular-nums text-yellow-700 dark:text-yellow-300">
                                         {result.duplicates_skipped}
                                     </p>
-                                    <p className="text-sm text-yellow-400">Duplicates</p>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-yellow-700/80 dark:text-yellow-300/80">Duplicates</p>
                                 </div>
-                                <div className="text-center p-3 bg-red-500/10 rounded-lg border border-red-500/30">
-                                    <p className="text-2xl font-semibold text-red-400">{result.failed}</p>
-                                    <p className="text-sm text-red-400">Failed</p>
+                                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-center shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
+                                    <p className="text-2xl font-black tabular-nums text-red-700 dark:text-red-300">{result.failed}</p>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-red-700/80 dark:text-red-300/80">Failed</p>
                                 </div>
                             </div>
 
                             {result.imported > 0 && (
-                                <div className="flex items-center gap-2 text-sm text-emerald-400 mb-4">
-                                    <CheckCircle className="w-4 h-4" />
+                                <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                    <CheckCircle className="h-4 w-4" />
                                     Successfully imported {result.imported} contacts
                                 </div>
                             )}
 
                             {result.errors.length > 0 && (
                                 <div>
-                                    <h4 className="text-sm font-medium text-white mb-2">
+                                    <h4 className="mb-2 text-sm font-semibold text-foreground">
                                         Errors ({result.errors.length})
                                     </h4>
-                                    <div className="max-h-48 overflow-y-auto border border-white/10 rounded-lg">
+                                    <div className="max-h-48 overflow-y-auto rounded-2xl border border-border bg-background/50">
                                         <table className="w-full text-sm">
-                                            <thead className="bg-white/5 sticky top-0">
+                                            <thead className="sticky top-0 bg-muted/60">
                                                 <tr>
-                                                    <th className="px-3 py-2 text-left text-gray-400">Row</th>
-                                                    <th className="px-3 py-2 text-left text-gray-400">Phone</th>
-                                                    <th className="px-3 py-2 text-left text-gray-400">Error</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">Row</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">Phone</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">Error</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5">
+                                            <tbody className="divide-y divide-border">
                                                 {result.errors.map((err, i) => (
                                                     <tr key={i}>
-                                                        <td className="px-3 py-2 text-white">{err.row}</td>
-                                                        <td className="px-3 py-2 text-gray-400">{err.phone || "--"}</td>
-                                                        <td className="px-3 py-2 text-red-400">{err.error}</td>
+                                                        <td className="px-3 py-2 font-semibold text-foreground">{err.row}</td>
+                                                        <td className="px-3 py-2 text-muted-foreground">{err.phone || "--"}</td>
+                                                        <td className="px-3 py-2 text-destructive">{err.error}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>

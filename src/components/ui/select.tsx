@@ -8,6 +8,7 @@ export function Select({
     onChange,
     children,
     className,
+    selectClassName,
     ariaLabel,
     disabled,
 }: {
@@ -15,6 +16,7 @@ export function Select({
     onChange: (next: string) => void;
     children: React.ReactNode;
     className?: string;
+    selectClassName?: string;
     ariaLabel: string;
     disabled?: boolean;
 }) {
@@ -26,7 +28,8 @@ export function Select({
                 aria-label={ariaLabel}
                 disabled={disabled}
                 className={cn(
-                    "h-10 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                    "h-10 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm text-foreground shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-out hover:bg-accent/20 hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 disabled:cursor-not-allowed disabled:opacity-50",
+                    selectClassName
                 )}
             >
                 {children}

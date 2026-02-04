@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test --import tsx --import ./src/test-utils/setup.ts",
     "test:visual": "playwright test",
     "check-branding": "node scripts/check-branding.js",

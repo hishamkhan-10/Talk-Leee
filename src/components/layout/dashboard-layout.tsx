@@ -5,11 +5,9 @@ import { Sidebar } from "./sidebar";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useSidebarActions, useSidebarState } from "@/lib/sidebar-client";
-import { Moon, Sun } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { HealthIndicator } from "@/components/ui/health-indicator";
 import { useAuth } from "@/lib/auth-context";
-import { useTheme } from "@/components/providers/theme-provider";
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -21,23 +19,28 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, title, description, requireAuth = true }: DashboardLayoutProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, refreshUser } = useAuth();
     const { collapsed, mobileOpen } = useSidebarState();
     const { setMobileOpen } = useSidebarActions();
     const [isDesktop, setIsDesktop] = useState(false);
-    const { theme, toggleTheme } = useTheme();
+    const [attemptedRefresh, setAttemptedRefresh] = useState(false);
 
     useEffect(() => {
         if (!requireAuth) return;
         if (authLoading) return;
         if (user) return;
+        if (!attemptedRefresh) {
+            setAttemptedRefresh(true);
+            void refreshUser();
+            return;
+        }
         const next = pathname ?? "/dashboard";
         try {
             router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
         } catch {
             window.location.href = `/auth/login?next=${encodeURIComponent(next)}`;
         }
-    }, [authLoading, pathname, requireAuth, router, user]);
+    }, [attemptedRefresh, authLoading, pathname, refreshUser, requireAuth, router, user]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -53,9 +56,6 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
         return collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-expanded-width)";
     }, [collapsed, isDesktop]);
 
-    const themeTooltip = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
-    const ThemeIcon = theme === "dark" ? Sun : Moon;
-
     if (requireAuth) {
         if (authLoading) {
             return (
@@ -69,7 +69,7 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
             return (
                 <div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status" aria-live="polite" aria-busy="true">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" aria-hidden />
-                    <span className="sr-only">Redirecting to sign in…</span>
+                    <span className="sr-only">{attemptedRefresh ? "Redirecting to sign in…" : "Loading…"}</span>
                 </div>
             );
         }
@@ -121,24 +121,13 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
                         </div>
                         <div className="flex items-center gap-2 justify-self-start md:justify-self-end">
                             <HealthIndicator />
-                            <button
-                                type="button"
-                                onClick={toggleTheme}
-                                className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
-                                aria-label={themeTooltip}
-                                aria-pressed={theme === "dark"}
-                                title={themeTooltip}
-                            >
-                                <ThemeIcon className="w-5 h-5" aria-hidden />
-                                <span className="sr-only">{themeTooltip}</span>
-                            </button>
                             <NotificationBell />
                         </div>
                     </div>
                 </header>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-auto scroll-smooth p-4 md:p-8 transition-colors duration-300">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth p-4 md:p-8 transition-colors duration-300">
                     {children}
                 </main>
             </div>

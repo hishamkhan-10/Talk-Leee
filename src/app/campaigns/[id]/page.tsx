@@ -363,27 +363,27 @@ export default function CampaignDetailPage() {
                                 <table className="w-full">
                                     <thead className="border-b border-border">
                                         <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Phone</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Name</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Attempts</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">Phone</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">Name</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">Status</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase whitespace-nowrap">Attempts</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/60">
                                         {contacts.map((contact) => (
                                             <tr key={contact.id} className="hover:bg-muted/30 transition-colors">
-                                                <td className="px-4 py-3 text-sm text-foreground">{contact.phone_number}</td>
-                                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                                <td className="px-4 py-3 text-sm text-foreground tabular-nums whitespace-nowrap">{contact.phone_number}</td>
+                                                <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                                                     {contact.first_name || contact.last_name
                                                         ? `${contact.first_name || ""} ${contact.last_name || ""}`.trim()
                                                         : "--"}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm">
+                                                <td className="px-4 py-3 text-sm whitespace-nowrap">
                                                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getContactStatusStyle(contact.last_call_result)}`}>
                                                         {contact.last_call_result}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-muted-foreground">{contact.call_attempts}</td>
+                                                <td className="px-4 py-3 text-right text-sm text-muted-foreground tabular-nums whitespace-nowrap">{contact.call_attempts}</td>
                                             </tr>
                                         ))}
                                     </tbody>

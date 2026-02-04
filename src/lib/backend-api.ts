@@ -32,9 +32,13 @@ import {
 import { extractAuthorizationUrl } from "@/lib/connectors-utils";
 import { apiBaseUrl } from "@/lib/env";
 
-const baseUrl = apiBaseUrl();
+let _httpClient: ReturnType<typeof createHttpClient> | undefined;
 
-export const httpClient = createHttpClient({ baseUrl });
+function httpClient() {
+    if (_httpClient) return _httpClient;
+    _httpClient = createHttpClient({ baseUrl: apiBaseUrl() });
+    return _httpClient;
+}
 
 function parseOrThrow<T>(schema: { parse: (v: unknown) => T }, data: unknown) {
     return schema.parse(data);
@@ -42,16 +46,16 @@ function parseOrThrow<T>(schema: { parse: (v: unknown) => T }, data: unknown) {
 
 export const backendApi = {
     health: async (signal?: AbortSignal) => {
-        const data = await httpClient.request<{ status: string }>({ path: backendEndpoints.health.path, timeoutMs: 2500, signal });
+        const data = await httpClient().request<{ status: string }>({ path: backendEndpoints.health.path, timeoutMs: 2500, signal });
         return data;
     },
     connectors: {
         list: async (signal?: AbortSignal): Promise<ListResponse<Connector>> => {
-            const data = await httpClient.request({ path: backendEndpoints.connectorsList.path, timeoutMs: 12_000, signal });
+            const data = await httpClient().request({ path: backendEndpoints.connectorsList.path, timeoutMs: 12_000, signal });
             return parseOrThrow(ListResponseSchema(ConnectorResponseSchema), data);
         },
         create: async (input: Pick<Connector, "name" | "type" | "config">): Promise<Connector> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.connectorsCreate.path,
                 method: backendEndpoints.connectorsCreate.method,
                 body: input,
@@ -60,11 +64,11 @@ export const backendApi = {
             return parseOrThrow(ConnectorResponseSchema, data);
         },
         status: async (signal?: AbortSignal): Promise<ListResponse<ConnectorProviderStatus>> => {
-            const data = await httpClient.request({ path: backendEndpoints.connectorsStatus.path, timeoutMs: 12_000, signal });
+            const data = await httpClient().request({ path: backendEndpoints.connectorsStatus.path, timeoutMs: 12_000, signal });
             return parseOrThrow(ListResponseSchema(ConnectorProviderStatusSchema), data);
         },
         authorize: async (input: { type: string; redirect_uri: string }): Promise<{ authorization_url: string }> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.connectorsAuthorize.path.replace("{type}", encodeURIComponent(input.type)),
                 method: backendEndpoints.connectorsAuthorize.method,
                 query: { redirect_uri: input.redirect_uri },
@@ -73,7 +77,7 @@ export const backendApi = {
             return { authorization_url: extractAuthorizationUrl(data) };
         },
         disconnect: async (input: { type: string }): Promise<void> => {
-            await httpClient.request({
+            await httpClient().request({
                 path: backendEndpoints.connectorsDisconnect.path.replace("{type}", encodeURIComponent(input.type)),
                 method: backendEndpoints.connectorsDisconnect.method,
                 timeoutMs: 12_000,
@@ -82,7 +86,7 @@ export const backendApi = {
     },
     connectorAccounts: {
         list: async (connectorId?: string, signal?: AbortSignal): Promise<ListResponse<ConnectorAccount>> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.connectorAccountsList.path,
                 query: connectorId ? { connector_id: connectorId } : undefined,
                 timeoutMs: 12_000,
@@ -93,7 +97,7 @@ export const backendApi = {
     },
     meetings: {
         list: async (signal?: AbortSignal): Promise<ListResponse<Meeting>> => {
-            const data = await httpClient.request({ path: backendEndpoints.meetingsList.path, timeoutMs: 12_000, signal });
+            const data = await httpClient().request({ path: backendEndpoints.meetingsList.path, timeoutMs: 12_000, signal });
             return parseOrThrow(ListResponseSchema(MeetingResponseSchema), data);
         },
     },
@@ -102,7 +106,7 @@ export const backendApi = {
             input?: { page?: number; pageSize?: number },
             signal?: AbortSignal
         ): Promise<{ items: CalendarEvent[]; total?: number; page?: number; page_size?: number }> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.calendarEventsList.path,
                 timeoutMs: 12_000,
                 signal,
@@ -121,7 +125,7 @@ export const backendApi = {
             endTime?: string;
             notes?: string;
         }): Promise<CalendarEvent> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.calendarEventsCreate.path,
                 method: backendEndpoints.calendarEventsCreate.method,
                 body: {
@@ -151,7 +155,7 @@ export const backendApi = {
                 participants?: Array<{ id?: string; name?: string; email?: string; role?: string }>;
             }
         ): Promise<CalendarEvent> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.calendarEventsUpdate.path.replace("{id}", encodeURIComponent(id)),
                 method: backendEndpoints.calendarEventsUpdate.method,
                 body: {
@@ -171,7 +175,7 @@ export const backendApi = {
             return parseOrThrow(CalendarEventResponseSchema, data);
         },
         cancel: async (id: string): Promise<void> => {
-            await httpClient.request({
+            await httpClient().request({
                 path: backendEndpoints.calendarEventsDelete.path.replace("{id}", encodeURIComponent(id)),
                 method: backendEndpoints.calendarEventsDelete.method,
                 timeoutMs: 12_000,
@@ -180,7 +184,7 @@ export const backendApi = {
     },
     reminders: {
         list: async (signal?: AbortSignal): Promise<ListResponse<Reminder>> => {
-            const data = await httpClient.request({ path: backendEndpoints.remindersList.path, timeoutMs: 12_000, signal });
+            const data = await httpClient().request({ path: backendEndpoints.remindersList.path, timeoutMs: 12_000, signal });
             return parseOrThrow(ListResponseSchema(ReminderSchema), data);
         },
         create: async (input: {
@@ -194,7 +198,7 @@ export const backendApi = {
             toEmail?: string;
             toPhone?: string;
         }): Promise<Reminder> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.remindersCreate.path,
                 method: backendEndpoints.remindersCreate.method,
                 body: {
@@ -218,7 +222,7 @@ export const backendApi = {
                 | { content?: string; status?: ReminderStatus; channel?: ReminderChannel; scheduledAt?: string }
                 | { content?: string; due_date?: string; is_completed?: boolean }
         ): Promise<Reminder> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.remindersUpdate.path.replace("{id}", encodeURIComponent(id)),
                 method: backendEndpoints.remindersUpdate.method,
                 body:
@@ -235,7 +239,7 @@ export const backendApi = {
             return parseOrThrow(ReminderSchema, data);
         },
         cancel: async (id: string): Promise<Reminder> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.remindersCancel.path.replace("{id}", encodeURIComponent(id)),
                 method: backendEndpoints.remindersCancel.method,
                 timeoutMs: 12_000,
@@ -246,12 +250,12 @@ export const backendApi = {
     email: {
         templates: {
             list: async (signal?: AbortSignal): Promise<ListResponse<EmailTemplate>> => {
-                const data = await httpClient.request({ path: backendEndpoints.emailTemplatesList.path, timeoutMs: 12_000, signal });
+                const data = await httpClient().request({ path: backendEndpoints.emailTemplatesList.path, timeoutMs: 12_000, signal });
                 return parseOrThrow(ListResponseSchema(EmailTemplateResponseSchema), data);
             },
         },
         send: async (input: { to: string[]; templateId: string; subject?: string; html?: string }): Promise<EmailSendResponse> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.emailSend.path,
                 method: backendEndpoints.emailSend.method,
                 body: {
@@ -267,7 +271,7 @@ export const backendApi = {
     },
     assistantActions: {
         list: async (signal?: AbortSignal): Promise<ListResponse<AssistantAction>> => {
-            const data = await httpClient.request({ path: backendEndpoints.assistantActionsList.path, timeoutMs: 12_000, signal });
+            const data = await httpClient().request({ path: backendEndpoints.assistantActionsList.path, timeoutMs: 12_000, signal });
             return parseOrThrow(ListResponseSchema(AssistantActionSchema), data);
         },
     },
@@ -286,7 +290,7 @@ export const backendApi = {
             },
             signal?: AbortSignal
         ): Promise<{ items: AssistantRun[]; total?: number; page?: number; page_size?: number }> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.assistantRunsList.path,
                 method: backendEndpoints.assistantRunsList.method,
                 query: {
@@ -306,7 +310,7 @@ export const backendApi = {
             return parseOrThrow(PaginatedResponseSchema(AssistantRunSchema), data);
         },
         retry: async (id: string): Promise<AssistantRun> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.assistantRunsRetry.path.replace("{id}", encodeURIComponent(id)),
                 method: backendEndpoints.assistantRunsRetry.method,
                 timeoutMs: 12_000,
@@ -316,7 +320,7 @@ export const backendApi = {
     },
     assistant: {
         plan: async (input: { actionType: string; source?: string; leadId?: string; context?: Record<string, unknown> }): Promise<AssistantPlan> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.assistantPlan.path,
                 method: backendEndpoints.assistantPlan.method,
                 body: {
@@ -330,7 +334,7 @@ export const backendApi = {
             return parseOrThrow(AssistantPlanSchema, data);
         },
         execute: async (input: { actionType: string; source?: string; leadId?: string; context?: Record<string, unknown> }): Promise<AssistantRun> => {
-            const data = await httpClient.request({
+            const data = await httpClient().request({
                 path: backendEndpoints.assistantExecute.path,
                 method: backendEndpoints.assistantExecute.method,
                 body: {

@@ -40,9 +40,9 @@ test("Theme Implementation Verification", async (t) => {
         assert.match(contents, /createContext/, "Should use createContext");
     });
 
-    await t.test("dashboard-layout.tsx uses theme provider", () => {
-        const layoutPath = path.join(srcDir, "components", "layout", "dashboard-layout.tsx");
-        const contents = readFileSync(layoutPath, "utf8");
+    await t.test("navbar.tsx includes theme toggle", () => {
+        const navbarPath = path.join(srcDir, "components", "home", "navbar.tsx");
+        const contents = readFileSync(navbarPath, "utf8");
         
         assert.match(contents, /useTheme/, "Should import and use useTheme");
         assert.match(contents, /toggleTheme/, "Should use toggleTheme function");

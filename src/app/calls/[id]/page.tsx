@@ -12,13 +12,13 @@ function getStatusStyle(status: string) {
     switch (status) {
         case "answered":
         case "completed":
-            return "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            return "bg-background text-emerald-800 border border-emerald-700/40 dark:text-emerald-300 dark:border-emerald-400/50";
         case "failed":
         case "no_answer":
         case "busy":
-            return "bg-red-500/20 text-red-400 border border-red-500/30";
+            return "bg-background text-red-800 border border-red-700/40 dark:text-red-300 dark:border-red-400/50";
         default:
-            return "bg-gray-500/20 text-gray-400 border border-gray-500/30";
+            return "bg-background text-muted-foreground border border-border";
     }
 }
 
@@ -59,21 +59,18 @@ export default function CallDetailPage() {
                 animate={{ opacity: 1, x: 0 }}
                 className="mb-6"
             >
-                <button
-                    onClick={() => router.back()}
-                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={() => router.back()} className="gap-2 px-2">
+                    <ArrowLeft className="h-4 w-4" />
                     Back to calls
-                </button>
+                </Button>
             </motion.div>
 
             {callQuery.isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-foreground/60" />
                 </div>
             ) : error ? (
-                <div className="content-card border-red-500/30 text-red-400">
+                <div className="content-card border-destructive/30 text-destructive">
                     {error}
                 </div>
             ) : call ? (
@@ -85,45 +82,46 @@ export default function CallDetailPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="content-card"
                         >
-                            <h3 className="text-lg font-semibold text-white mb-4">Call Details</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/10 rounded-lg">
-                                        <Phone className="w-5 h-5 text-white" />
+                            <div className="flex items-center justify-between gap-3 mb-4">
+                                <h3 className="text-sm font-semibold text-foreground">Call Details</h3>
+                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyle(call.status)}`}>
+                                    {call.status}
+                                </span>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/60 p-3 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/60 text-foreground transition-colors group-hover:bg-background">
+                                        <Phone className="h-5 w-5" />
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400">Phone Number</p>
-                                        <p className="font-medium text-white">{call.phone_number}</p>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Phone Number</div>
+                                        <div className="mt-0.5 truncate text-sm font-semibold text-foreground">{call.phone_number}</div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/10 rounded-lg">
-                                        <Clock className="w-5 h-5 text-white" />
+                                <div className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/60 p-3 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/60 text-foreground transition-colors group-hover:bg-background">
+                                        <Clock className="h-5 w-5" />
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400">Duration</p>
-                                        <p className="font-medium text-white">{formatDuration(call.duration_seconds)}</p>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Duration</div>
+                                        <div className="mt-0.5 text-sm font-semibold text-foreground tabular-nums">
+                                            {formatDuration(call.duration_seconds)}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-2">Status</p>
-                                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusStyle(call.status)}`}>
-                                        {call.status}
-                                    </span>
-                                </div>
-
-                                {call.outcome && (
-                                    <div>
-                                        <p className="text-sm text-gray-400 mb-1">Outcome</p>
-                                        <p className="font-medium text-white">{call.outcome}</p>
+                                {call.outcome ? (
+                                    <div className="group rounded-2xl border border-border bg-muted/60 p-3 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                        <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Outcome</div>
+                                        <div className="mt-1 text-sm font-semibold text-foreground">{call.outcome}</div>
                                     </div>
-                                )}
+                                ) : null}
 
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Date</p>
-                                    <p className="font-medium text-white">{new Date(call.created_at).toLocaleString()}</p>
+                                <div className="group rounded-2xl border border-border bg-muted/60 p-3 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Date</div>
+                                    <div className="mt-1 text-sm font-semibold text-foreground">{new Date(call.created_at).toLocaleString()}</div>
                                 </div>
                             </div>
                         </motion.div>
@@ -133,10 +131,13 @@ export default function CallDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
+                                whileHover={{ scale: 1.01 }}
                                 className="content-card"
                             >
-                                <h3 className="text-lg font-semibold text-white mb-4">Summary</h3>
-                                <p className="text-gray-300">{call.summary}</p>
+                                <h3 className="text-sm font-semibold text-foreground mb-4">Summary</h3>
+                                <div className="rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <p className="text-sm leading-relaxed text-muted-foreground">{call.summary}</p>
+                                </div>
                             </motion.div>
                         )}
 
@@ -145,13 +146,16 @@ export default function CallDetailPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
+                                whileHover={{ scale: 1.01 }}
                                 className="content-card"
                             >
-                                <h3 className="text-lg font-semibold text-white mb-4">Recording</h3>
-                                <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
-                                    <Play className="w-4 h-4" />
-                                    Play Recording
-                                </Button>
+                                <h3 className="text-sm font-semibold text-foreground mb-4">Recording</h3>
+                                <div className="rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <Button variant="outline" className="w-full hover:scale-[1.02] hover:shadow-md active:scale-[0.99]">
+                                        <Play className="w-4 h-4" />
+                                        Play Recording
+                                    </Button>
+                                </div>
                             </motion.div>
                         )}
                     </div>
@@ -164,47 +168,42 @@ export default function CallDetailPage() {
                         className="lg:col-span-2"
                     >
                         <div className="content-card">
-                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <FileText className="w-5 h-5" />
+                            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <FileText className="h-5 w-5 text-muted-foreground" />
                                 Transcript
                             </h3>
                             {transcript.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="py-8 text-center text-sm text-muted-foreground">
                                     No transcript available
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="rounded-2xl border border-border bg-muted/60 p-4 shadow-sm">
+                                    <div className="space-y-3">
                                     {transcript.map((turn, index) => (
                                         <motion.div
                                             key={index}
                                             initial={{ opacity: 0, x: turn.role === "assistant" ? -10 : 10 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: 0.4 + index * 0.05 }}
-                                            className={`flex gap-3 ${turn.role === "assistant" ? "flex-row" : "flex-row-reverse"
-                                                }`}
+                                            whileHover={{ scale: 1.01 }}
+                                            className={`flex gap-3 ${turn.role === "assistant" ? "flex-row" : "flex-row-reverse"}`}
                                         >
                                             <div
-                                                className={`p-2 rounded-full h-8 w-8 flex items-center justify-center text-sm font-medium ${turn.role === "assistant"
-                                                    ? "bg-white text-gray-900"
-                                                    : "bg-white/20 text-white"
-                                                    }`}
+                                                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-bold ${turn.role === "assistant" ? "bg-muted/60 text-foreground" : "bg-muted/80 text-foreground"}`}
                                             >
                                                 {turn.role === "assistant" ? "AI" : "U"}
                                             </div>
                                             <div
-                                                className={`flex-1 max-w-[80%] p-4 rounded-lg ${turn.role === "assistant"
-                                                    ? "bg-white/10 border border-white/10"
-                                                    : "bg-white text-gray-900"
-                                                    }`}
+                                                className={`flex-1 max-w-[82%] rounded-2xl border p-4 shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md ${turn.role === "assistant" ? "border-border bg-background" : "border-border bg-muted/60"}`}
                                             >
-                                                <p className="text-sm">{turn.content}</p>
-                                                <p className={`text-xs mt-2 ${turn.role === "assistant" ? "text-gray-500" : "text-gray-500"
-                                                    }`}>
+                                                <p className="text-sm text-foreground">{turn.content}</p>
+                                                <p className="mt-2 text-xs text-muted-foreground">
                                                     {formatTurnTimestamp(turn.timestamp)}
                                                 </p>
                                             </div>
                                         </motion.div>
                                     ))}
+                                    </div>
                                 </div>
                             )}
                         </div>

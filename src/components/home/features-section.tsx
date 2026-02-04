@@ -1,16 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Users, BarChart3, PhoneCall } from "lucide-react";
+import { motion, useAnimationControls } from "framer-motion";
+import type { Variants } from "framer-motion";
+import { Users, BarChart3, PhoneCall, Check } from "lucide-react";
 
 const features = [
   {
     icon: PhoneCall,
     title: "Outbound Calling",
     description: "Automated sales calls, lead qualification, and customer outreach with AI agents that sound human.",
-    iconColor: "text-indigo-700 dark:text-indigo-300",
-    iconBg: "bg-indigo-500/10",
-    dotBg: "bg-indigo-500/70 dark:bg-indigo-400/70",
+    iconColor: "text-primary dark:text-foreground",
+    iconBg: "bg-primary/10",
+    dotBg: "bg-primary/70 dark:bg-foreground/70",
     points: [
       "Lead generation and qualification",
       "Sales appointment setting",
@@ -49,15 +50,41 @@ const features = [
 ];
 
 export function FeaturesSection() {
+  const controls = useAnimationControls();
+
+  const gridVariants: Variants = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.14,
+        delayChildren: 0.06,
+      },
+    },
+  };
+
+  const cardVariants: Variants = {
+    hidden: { opacity: 0, y: -46 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 240,
+        damping: 18,
+        mass: 0.8,
+      },
+    },
+  };
+
   return (
-    <section id="services" className="py-24 px-4 md:px-6 lg:px-8 bg-background">
+    <section id="services" className="py-24 px-4 md:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-foreground"
+            className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground"
           >
             Our Services
           </motion.h2>
@@ -72,20 +99,29 @@ export function FeaturesSection() {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+        <motion.div
+          variants={gridVariants}
+          initial="hidden"
+          animate={controls}
+          viewport={{ amount: 0.4 }}
+          onViewportEnter={() => {
+            void controls.start("show");
+          }}
+          onViewportLeave={() => {
+            controls.set("hidden");
+          }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center"
+        >
+          {features.map((feature) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group p-8 rounded-2xl border border-border/70 bg-card/70 backdrop-blur-sm hover:border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              variants={cardVariants}
+              className="group w-full max-w-[420px] p-8 rounded-2xl border border-border/70 bg-card/70 backdrop-blur-sm hover:border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
               <div className={`w-12 h-12 rounded-lg ${feature.iconBg} ${feature.iconColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className="w-6 h-6" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
+              <h3 className="text-2xl font-bold text-primary dark:text-foreground mb-4 group-hover:text-primary/90 dark:group-hover:text-foreground/90 transition-colors">
                 {feature.title}
               </h3>
               <p className="text-muted-foreground leading-relaxed mb-6">
@@ -93,15 +129,15 @@ export function FeaturesSection() {
               </p>
               <ul className="space-y-3">
                 {feature.points.map((point) => (
-                  <li key={point} className="flex items-start text-muted-foreground text-sm">
-                    <span className={`mr-2 mt-1.5 w-1.5 h-1.5 rounded-full ${feature.dotBg}`} />
-                    {point}
+                  <li key={point} className="flex items-start gap-2.5">
+                    <Check className={`mt-[2px] h-4 w-4 shrink-0 ${feature.iconColor}`} />
+                    <span className="text-sm leading-snug text-muted-foreground">{point}</span>
                   </li>
                 ))}
               </ul>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

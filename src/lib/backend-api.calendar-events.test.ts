@@ -10,7 +10,7 @@ test("backendApi.calendarEvents.list calls calendar events list endpoint", async
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.calendarEvents.list();
         assert.deepEqual(res, { items: [] });
@@ -34,7 +34,7 @@ test("backendApi.calendarEvents.list supports pagination query params", async ()
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.calendarEvents.list({ page: 2, pageSize: 10 });
         assert.equal(res.page, 2);
@@ -72,7 +72,7 @@ test("backendApi.calendarEvents.create posts event payload to create endpoint", 
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const created = await backendApi.calendarEvents.create({
             leadId: "lead-1",
@@ -131,7 +131,7 @@ test("backendApi.calendarEvents.update patches event by id", async () => {
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const updated = await backendApi.calendarEvents.update("evt-1", {
             title: "Updated",
@@ -165,7 +165,7 @@ test("backendApi.calendarEvents.cancel deletes event by id", async () => {
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         await backendApi.calendarEvents.cancel("evt-9");
         assert.equal(calls.length, 1);

@@ -41,8 +41,8 @@ export function ContactSection() {
   };
 
   return (
-    <section id="contact" className="py-24 px-4 md:px-6 lg:px-8 bg-white">
-       <div className="max-w-7xl mx-auto">
+    <section id="contact" className="py-24 px-4 md:px-6 lg:px-8">
+       <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div 
             // initial={{ opacity: 0, y: 20 }}
@@ -50,28 +50,28 @@ export function ContactSection() {
             // viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">Contact Us</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Get in touch with our team to learn how Talk-Lee can transform your business.</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-primary dark:text-foreground mb-4">Contact Us</h2>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">Get in touch with our team to learn how Talk-Lee can help.</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 items-stretch gap-10 lg:grid-cols-2">
              {/* Form */}
              <motion.div 
                 initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                whileInView={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl p-0 md:p-4"
+                whileHover={{ scale: 1.03, y: -6 }}
+                className="mx-auto w-full max-w-[560px] self-stretch rounded-2xl border border-border/70 bg-card/70 p-6 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-border hover:shadow-xl md:p-8"
              >
                 <form onSubmit={handleSubmit} className="space-y-6" aria-busy={loading}>
                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-500 font-medium">Full Name</Label>
+                      <Label htmlFor="name" className="text-muted-foreground font-medium">Full Name</Label>
                       <Input 
                         id="name" 
                         data-testid="name-input"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className={cn("bg-white border-gray-200 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl h-12", errors.name && "border-red-500 focus-visible:ring-red-500")}
+                        className={cn("rounded-xl h-12", errors.name && "border-red-500 focus-visible:ring-red-500")}
                         aria-invalid={errors.name ? true : undefined}
                         aria-describedby={errors.name ? "contact-name-error" : undefined}
                       />
@@ -79,14 +79,14 @@ export function ContactSection() {
                    </div>
                    
                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-500 font-medium">Email Address</Label>
+                      <Label htmlFor="email" className="text-muted-foreground font-medium">Email Address</Label>
                       <Input 
                         id="email" 
                         data-testid="email-input"
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className={cn("bg-white border-gray-200 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl h-12", errors.email && "border-red-500 focus-visible:ring-red-500")}
+                        className={cn("rounded-xl h-12", errors.email && "border-red-500 focus-visible:ring-red-500")}
                         aria-invalid={errors.email ? true : undefined}
                         aria-describedby={errors.email ? "contact-email-error" : undefined}
                       />
@@ -94,18 +94,18 @@ export function ContactSection() {
                    </div>
 
                    <div className="space-y-2">
-                      <Label htmlFor="company" className="text-gray-500 font-medium">Company</Label>
+                      <Label htmlFor="company" className="text-muted-foreground font-medium">Company</Label>
                       <Input 
                         id="company" 
                         data-testid="company-input"
                         value={formData.company}
                         onChange={(e) => setFormData({...formData, company: e.target.value})}
-                        className="bg-white border-gray-200 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl h-12"
+                        className="rounded-xl h-12"
                       />
                    </div>
 
                    <div className="space-y-2">
-                      <Label htmlFor="message" className="text-gray-500 font-medium">Message</Label>
+                      <Label htmlFor="message" className="text-muted-foreground font-medium">Message</Label>
                       <textarea
                         id="message"
                         data-testid="message-input"
@@ -113,53 +113,53 @@ export function ContactSection() {
                         onChange={(e) => setFormData({...formData, message: e.target.value})}
                         rows={6}
                         className={cn(
-                          "flex w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 resize-none transition-all",
+                          "flex w-full rounded-xl border border-input bg-background px-3 py-3 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none transition-all",
                           errors.message && "border-red-500 focus-visible:ring-red-500"
                         )}
                         aria-invalid={errors.message ? true : undefined}
                         aria-describedby={[errors.message ? "contact-message-error" : null, "contact-message-count"].filter(Boolean).join(" ")}
                       />
                       {errors.message && <p id="contact-message-error" role="alert" aria-live="assertive" className="text-sm text-red-500" data-testid="message-error">{errors.message}</p>}
-                      <p id="contact-message-count" className="text-xs text-gray-400 text-right">{formData.message.length}/500</p>
+                      <p id="contact-message-count" className="text-xs text-muted-foreground text-right">{formData.message.length}/500</p>
                    </div>
 
-                   <Button type="submit" size="lg" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl" disabled={loading}>
+                   <Button type="submit" size="lg" className="w-full bg-indigo-600 text-white hover:bg-indigo-700 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl dark:bg-indigo-500 dark:hover:bg-indigo-400" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" aria-hidden /> : null}
-                      {loading ? "Sending..." : "Send Message"}
+                      {loading ? "Sending..." : "Submit"}
                    </Button>
-                   {success && <p role="status" aria-live="polite" className="text-green-600 text-center font-medium bg-green-50 p-3 rounded-lg border border-green-100" data-testid="success-message">Message sent successfully!</p>}
+                   {success && <p role="status" aria-live="polite" className="text-emerald-600 dark:text-emerald-400 text-center font-medium bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20" data-testid="success-message">Message sent successfully!</p>}
                 </form>
              </motion.div>
 
              {/* Contact Info */}
              <motion.div 
                 initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                whileInView={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="bg-gray-50 rounded-3xl p-8 lg:p-12"
+                whileHover={{ scale: 1.03, y: -6 }}
+                className="mx-auto w-full max-w-[560px] self-stretch rounded-2xl border border-border/70 bg-card/70 p-6 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-border hover:shadow-xl md:p-8"
              >
-                <h3 className="text-2xl font-bold text-gray-900 mb-8">Get in Touch</h3>
+                <h3 className="text-2xl font-bold text-primary dark:text-foreground mb-8">Get in Touch</h3>
                 
-                <div className="space-y-8">
+                <div className="space-y-6">
                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Email</h4>
-                      <a href="mailto:contact@talk-lee.com" className="text-gray-600 hover:text-indigo-600 transition-colors">contact@talk-lee.com</a>
+                      <h4 className="text-lg font-semibold text-primary dark:text-foreground mb-1">Email</h4>
+                      <a href="mailto:contact@talk-lee.com" className="text-muted-foreground hover:underline underline-offset-4">contact@talk-lee.com</a>
                    </div>
                    
                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Phone</h4>
-                      <a href="tel:+15551234567" className="text-gray-600 hover:text-indigo-600 transition-colors">+1 (555) 123-4567</a>
+                      <h4 className="text-lg font-semibold text-primary dark:text-foreground mb-1">Phone</h4>
+                      <a href="tel:+15551234567" className="text-muted-foreground hover:underline underline-offset-4">+1 (555) 123-4567</a>
                    </div>
 
                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Address</h4>
-                      <p className="text-gray-600">123 AI Street<br/>San Francisco, CA 94105<br/>United States</p>
+                      <h4 className="text-lg font-semibold text-primary dark:text-foreground mb-1">Address</h4>
+                      <p className="text-muted-foreground">123 AI Street<br/>San Francisco, CA 94105<br/>United States</p>
                    </div>
 
                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Business Hours</h4>
-                      <p className="text-gray-600">Monday - Friday: 9:00 AM - 6:00 PM PST<br/>Saturday - Sunday: Closed</p>
+                      <h4 className="text-lg font-semibold text-primary dark:text-foreground mb-1">Business Hours</h4>
+                      <p className="text-muted-foreground">Monday - Friday: 9:00 AM - 6:00 PM PST<br/>Saturday - Sunday: Closed</p>
                    </div>
                 </div>
              </motion.div>

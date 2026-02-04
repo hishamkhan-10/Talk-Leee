@@ -24,7 +24,7 @@ test("backendApi.email.templates.list parses templates and maps fields", async (
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.email.templates.list();
         assert.equal(res.items.length, 1);
@@ -54,7 +54,7 @@ test("backendApi.email.send posts template_id and returns normalized messageId",
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.email.send({
             to: ["a@x.com", "b@x.com"],

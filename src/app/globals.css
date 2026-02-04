@@ -45,10 +45,10 @@
 
 :root {
   --radius: 0.625rem;
-  --sidebar-expanded-width: 288px;
-  --sidebar-collapsed-width: 76px;
+  --sidebar-expanded-width: 232px;
+  --sidebar-collapsed-width: 72px;
   --sidebar-transition-ms: 220ms;
-  --home-navbar-height: 88px;
+  --home-navbar-height: 64px;
   --home-navbar-bg: rgba(255, 255, 255, 0.76);
   --home-navbar-border: rgba(17, 24, 39, 0.10);
   --home-navbar-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
@@ -93,15 +93,35 @@
   --sidebar-ring: #171717;
 }
 
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @media (min-width: 768px) {
   :root {
-    --home-navbar-height: 104px;
+    --home-navbar-height: 72px;
   }
 }
 
 .homepage-bg {
-  background: radial-gradient(circle at 50% 50%, transparent 60%, var(--home-bg-shadow) 100%),
-    linear-gradient(135deg, var(--home-bg-top-left) 0%, var(--home-bg-center) 50%, var(--home-bg-edge) 100%);
+  background: #ecfeff;
+  background-attachment: fixed;
+  color: var(--foreground);
+}
+
+.light .homepage-bg {
+  --primary: #083344;
+  --foreground: #155e75;
+  --muted-foreground: #155e75;
+}
+
+.dark .homepage-bg {
+  background: var(--background);
   background-attachment: fixed;
 }
 
@@ -113,9 +133,9 @@
   --home-hover-bg: rgba(255, 255, 255, 0.07);
   --home-focus-ring: rgba(255, 255, 255, 0.16);
   --home-panel-bg: rgba(18, 18, 18, 0.86);
-  --home-bg-top-left: #0B1220;
-  --home-bg-center: #0F172A;
-  --home-bg-edge: #111827;
+  --home-bg-top-left: #121212;
+  --home-bg-center: #121212;
+  --home-bg-edge: #121212;
   --home-bg-shadow: rgba(0, 0, 0, 0.55);
   --background: #121212;
   --foreground: #EDEDED;
@@ -153,6 +173,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   * {
@@ -162,6 +183,7 @@
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
   }
 }
 
@@ -193,11 +215,6 @@
   left: 0;
   right: 0;
   width: 100%;
-  background-color: var(--home-navbar-bg);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--home-navbar-border);
-  box-shadow: var(--home-navbar-shadow);
   z-index: 60;
 }
 
@@ -223,6 +240,10 @@
   box-shadow: 0 0 0 1px var(--home-surface-border);
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
+}
+
+.light .home-navbar-fixed .home-nav-link:hover {
+  box-shadow: 0 0 0 1px var(--home-surface-border), 0 14px 30px rgba(0, 0, 0, 0.22);
 }
 
 .home-nav-link:active {
@@ -310,6 +331,10 @@
   background-color: var(--home-hover-bg);
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
+}
+
+.light .home-navbar-fixed .home-menu-toggle:hover {
+  box-shadow: 0 0 0 1px var(--home-surface-border), 0 14px 30px rgba(0, 0, 0, 0.18);
 }
 
 .home-menu-toggle:active {
@@ -408,6 +433,11 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
 }
 
+.dark .shape-1,
+.dark .shape-2 {
+  opacity: 0.5;
+}
+
 @keyframes float-1 {
 
   0%,
@@ -442,18 +472,21 @@
 
 /* Content Card Glass Effect */
 .content-card {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.07);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 1rem;
   padding: 1.5rem;
-  transition: all 0.3s ease;
+  transition: transform 0.18s ease-out, background-color 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out;
+  will-change: transform;
 }
 
 .content-card:hover {
-  background: rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 .dark .content-card {
@@ -463,6 +496,7 @@
 
 .dark .content-card:hover {
   background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
 /* Subtle Float Animation */

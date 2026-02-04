@@ -5,7 +5,16 @@ import { Navbar } from "@/components/home/navbar";
 import { Footer } from "@/components/home/footer";
 import { motion } from "framer-motion";
 import { Play, Pause, Loader2 } from "lucide-react";
-import type { Voice } from "@/app/api/voices/route";
+
+type Voice = {
+  id: string;
+  name: string;
+  description: string;
+  initial: string;
+  color: string;
+  bg: string;
+  previewUrl?: string;
+};
 
 export default function AiVoicesPage() {
   const [voices, setVoices] = useState<Voice[]>([]);
@@ -16,12 +25,21 @@ export default function AiVoicesPage() {
   useEffect(() => {
     const fetchVoices = async () => {
       try {
-        const response = await fetch("/api/voices");
-        if (!response.ok) {
-          throw new Error("Failed to fetch voices");
+        const res = await fetch("/api/voices");
+        if (!res.ok) {
+          let msg = `Failed to load voices (HTTP ${res.status})`;
+          try {
+            const body = (await res.json()) as unknown;
+            if (body && typeof body === "object" && "error" in body) {
+              const errMsg = (body as { error?: unknown }).error;
+              if (typeof errMsg === "string" && errMsg.trim().length > 0) msg = errMsg;
+            }
+          } catch {
+          }
+          throw new Error(msg);
         }
-        const data = await response.json();
-        setVoices(data);
+        const data = (await res.json()) as Voice[];
+        setVoices(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
       } finally {

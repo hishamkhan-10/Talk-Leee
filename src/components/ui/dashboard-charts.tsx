@@ -99,8 +99,8 @@ export function TimeSeriesLineChart({
           const value = points[i]?.value ?? 0;
           const content = (
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">{label}</span>
-              <span className="font-black tabular-nums text-foreground">{value.toLocaleString()}</span>
+              <span className="text-gray-600">{label}</span>
+              <span className="font-black tabular-nums text-gray-900">{value.toLocaleString()}</span>
             </div>
           );
 
@@ -171,8 +171,8 @@ export function RealTimeBarChart({
   const answeredTooltipContent = useMemo(() => {
     return (
       <div className="space-y-1">
-        <div className="text-sm font-black text-foreground">Answered Calls</div>
-        <div className="text-sm font-black tabular-nums text-foreground">{answeredValue.toLocaleString()}</div>
+        <div className="text-sm font-black text-gray-900">Answered Calls</div>
+        <div className="text-sm font-black tabular-nums text-gray-900">{answeredValue.toLocaleString()}</div>
       </div>
     );
   }, [answeredValue]);
@@ -180,8 +180,8 @@ export function RealTimeBarChart({
   const failedTooltipContent = useMemo(() => {
     return (
       <div className="space-y-1">
-        <div className="text-sm font-black text-foreground">Failed Calls</div>
-        <div className="text-sm font-black tabular-nums text-foreground">{failedValue.toLocaleString()}</div>
+        <div className="text-sm font-black text-gray-900">Failed Calls</div>
+        <div className="text-sm font-black tabular-nums text-gray-900">{failedValue.toLocaleString()}</div>
       </div>
     );
   }, [failedValue]);
@@ -853,6 +853,7 @@ export function DonutChart({
   valueColor = "#10B981",
   failedColor = "#EF4444",
   trackColor = "rgba(17, 24, 39, 0.10)",
+  showSegmentLabels = true,
 }: {
   value: number;
   total: number;
@@ -861,6 +862,7 @@ export function DonutChart({
   valueColor?: string;
   failedColor?: string;
   trackColor?: string;
+  showSegmentLabels?: boolean;
 }) {
   const tooltip = useHoverTooltip();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -932,45 +934,45 @@ export function DonutChart({
 
   const summaryContent = (
     <div className="space-y-2">
-      <div className="text-sm font-black text-foreground">Calls breakdown</div>
+      <div className="text-sm font-black text-gray-900">Calls breakdown</div>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-6">
           <span className="text-emerald-700 font-bold">Answered</span>
-          <span className="tabular-nums font-black text-foreground">
+          <span className="tabular-nums font-black text-gray-900">
             {answered.toLocaleString()}{" "}
-            <span className="text-muted-foreground font-semibold">
+            <span className="text-gray-600 font-semibold">
               ({Math.round(answeredPct * 100)}%)
             </span>
           </span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-red-700 font-bold">Failed</span>
-          <span className="tabular-nums font-black text-foreground">
+          <span className="tabular-nums font-black text-gray-900">
             {failed.toLocaleString()}{" "}
-            <span className="text-muted-foreground font-semibold">({Math.round(failedPct * 100)}%)</span>
+            <span className="text-gray-600 font-semibold">({Math.round(failedPct * 100)}%)</span>
           </span>
         </div>
       </div>
-      <div className="text-xs font-semibold text-muted-foreground">Total: {total.toLocaleString()}</div>
+      <div className="text-xs font-semibold text-gray-600">Total: {total.toLocaleString()}</div>
     </div>
   );
 
   const answeredContent = (
     <div className="space-y-1">
-      <div className="text-sm font-black text-foreground">Answered</div>
+      <div className="text-sm font-black text-gray-900">Answered</div>
       <div className="flex items-center justify-between gap-6">
-        <span className="tabular-nums font-black text-foreground">{answered.toLocaleString()}</span>
-        <span className="text-muted-foreground font-semibold">{Math.round(answeredPct * 100)}%</span>
+        <span className="tabular-nums font-black text-gray-900">{answered.toLocaleString()}</span>
+        <span className="text-gray-600 font-semibold">{Math.round(answeredPct * 100)}%</span>
       </div>
     </div>
   );
 
   const failedContent = (
     <div className="space-y-1">
-      <div className="text-sm font-black text-foreground">Failed</div>
+      <div className="text-sm font-black text-gray-900">Failed</div>
       <div className="flex items-center justify-between gap-6">
-        <span className="tabular-nums font-black text-foreground">{failed.toLocaleString()}</span>
-        <span className="text-muted-foreground font-semibold">{Math.round(failedPct * 100)}%</span>
+        <span className="tabular-nums font-black text-gray-900">{failed.toLocaleString()}</span>
+        <span className="text-gray-600 font-semibold">{Math.round(failedPct * 100)}%</span>
       </div>
     </div>
   );
@@ -1055,7 +1057,7 @@ export function DonutChart({
           }}
         />
 
-        {answeredLabelVisible ? (
+        {showSegmentLabels && answeredLabelVisible ? (
           <motion.text
             x={answeredLayout.x}
             y={answeredLayout.y}
@@ -1075,7 +1077,7 @@ export function DonutChart({
           </motion.text>
         ) : null}
 
-        {failedLabelVisible ? (
+        {showSegmentLabels && failedLabelVisible ? (
           <motion.text
             x={failedLayout.x}
             y={failedLayout.y}
@@ -1133,7 +1135,7 @@ export function Heatmap({
                 return (
                   <div key={`${r}-${c}`} className="p-1">
                     <div
-                      className="h-6 rounded-md border border-black/5 transition-all duration-300 ease-in-out hover:border-gray-900/20 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                      className="h-6 rounded-md border border-black/5 transition-all duration-300 ease-in-out hover:border-gray-900/10 hover:shadow-sm dark:hover:border-gray-900/20 dark:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
                       style={{ background: bg }}
                       tabIndex={0}
                       role="img"
@@ -1373,7 +1375,7 @@ export function ActivityFeed({ items }: { items: FeedItem[] }) {
       {items.map((item) => (
         <div
           key={item.id}
-          className="group relative rounded-xl border border-transparent px-2 py-2 transition-all duration-300 ease-in-out hover:border-gray-200 hover:bg-gray-50/80 hover:shadow-sm focus-within:border-gray-200 focus-within:bg-gray-50/80 focus-within:shadow-sm"
+          className="group relative rounded-xl border border-transparent px-2 py-2 transition-all duration-300 ease-in-out hover:scale-[1.01] active:scale-[0.99] hover:border-gray-200 hover:bg-gray-50/80 hover:shadow-sm focus-within:border-gray-200 focus-within:bg-gray-50/80 focus-within:shadow-sm dark:border-border dark:bg-background/70 dark:shadow-sm dark:transition-[transform,background-color,box-shadow] dark:duration-150 dark:ease-out dark:hover:scale-[1.01] dark:hover:border-border dark:hover:bg-gray-800 dark:hover:shadow-md dark:active:scale-[0.99] dark:focus-within:border-border dark:focus-within:bg-gray-800 dark:focus-within:shadow-md"
           onMouseEnter={(e) => {
             setActiveId(item.id);
             tooltip.show(e.clientX, e.clientY, (
@@ -1438,7 +1440,7 @@ export function ActivityFeed({ items }: { items: FeedItem[] }) {
             tooltip.hide();
           }}
         >
-          <div className="absolute left-0 top-2 bottom-2 w-[2px] origin-left bg-gray-200 transition-transform duration-300 ease-in-out group-hover:scale-x-[1.2]" />
+          <div className="absolute left-0 top-2 bottom-2 w-[2px] origin-left bg-gray-200 transition-transform duration-300 ease-in-out group-hover:scale-x-[1.2] dark:bg-border dark:group-hover:scale-x-[1.2]" />
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -1453,11 +1455,11 @@ export function ActivityFeed({ items }: { items: FeedItem[] }) {
                           : `w-2.5 h-2.5 rounded-full bg-gray-400 transition-transform duration-300 ease-in-out ${activeId === item.id ? "scale-110" : ""}`
                   }
                 />
-                <p className="text-sm font-bold text-gray-900 truncate">{item.title}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">{item.title}</p>
               </div>
-              <p className="text-xs text-gray-600 mt-1">{item.detail}</p>
+              <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{item.detail}</p>
             </div>
-            <div className="text-[11px] font-semibold text-gray-500 shrink-0">{item.timeLabel}</div>
+            <div className="text-[11px] font-semibold text-gray-500 dark:text-muted-foreground shrink-0">{item.timeLabel}</div>
           </div>
         </div>
       ))}
@@ -1482,7 +1484,7 @@ export function AlertTimeline({ items }: { items: TimelineItem[] }) {
       {items.map((item) => (
         <div
           key={item.id}
-          className="group relative rounded-xl border border-transparent px-2 py-2 transition-all duration-300 ease-in-out hover:border-gray-200 hover:bg-gray-50/80 hover:shadow-sm focus-within:border-gray-200 focus-within:bg-gray-50/80 focus-within:shadow-sm"
+          className="group relative rounded-xl border border-transparent px-2 py-2 transition-all duration-300 ease-in-out hover:scale-[1.01] active:scale-[0.99] hover:border-gray-200 hover:bg-gray-50/80 hover:shadow-sm focus-within:border-gray-200 focus-within:bg-gray-50/80 focus-within:shadow-sm dark:border-border dark:bg-background/70 dark:shadow-sm dark:transition-[transform,background-color,box-shadow] dark:duration-150 dark:ease-out dark:hover:scale-[1.01] dark:hover:border-border dark:hover:bg-gray-800 dark:hover:shadow-md dark:active:scale-[0.99] dark:focus-within:border-border dark:focus-within:bg-gray-800 dark:focus-within:shadow-md"
           onMouseEnter={(e) => {
             setActiveId(item.id);
             tooltip.show(e.clientX, e.clientY, (
@@ -1577,7 +1579,7 @@ export function AlertTimeline({ items }: { items: TimelineItem[] }) {
             tooltip.hide();
           }}
         >
-          <div className="absolute left-0 top-2 bottom-2 w-[2px] origin-left bg-gray-200 transition-transform duration-300 ease-in-out group-hover:scale-x-[1.2]" />
+          <div className="absolute left-0 top-2 bottom-2 w-[2px] origin-left bg-gray-200 transition-transform duration-300 ease-in-out group-hover:scale-x-[1.2] dark:bg-border dark:group-hover:scale-x-[1.2]" />
           <div className="flex items-start gap-3">
             <div
               className={
@@ -1590,10 +1592,10 @@ export function AlertTimeline({ items }: { items: TimelineItem[] }) {
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-bold text-gray-900 truncate">{item.title}</p>
-                <span className="text-[11px] font-semibold text-gray-500 shrink-0">{item.timeLabel}</span>
+                <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">{item.title}</p>
+                <span className="text-[11px] font-semibold text-gray-500 dark:text-muted-foreground shrink-0">{item.timeLabel}</span>
               </div>
-              <p className="text-xs text-gray-600 mt-1">{item.detail}</p>
+              <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">{item.detail}</p>
             </div>
           </div>
         </div>

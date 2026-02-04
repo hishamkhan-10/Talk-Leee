@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -120,8 +120,21 @@ function Toast({ n, onClose }: { n: AppNotification; onClose: () => void }) {
 export function NotificationToaster() {
     const { toasts, settings } = useNotificationsState();
     const { dismissToast } = useNotificationsActions();
+    const [popupOpen, setPopupOpen] = useState(() => {
+        return Boolean((globalThis as unknown as { __talkleeNotificationsPopupOpen?: boolean }).__talkleeNotificationsPopupOpen);
+    });
 
     const visible = useMemo(() => toasts.slice(0, 4), [toasts]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const onPopup = (e: Event) => {
+            const detail = (e as CustomEvent<{ open?: boolean }>).detail;
+            setPopupOpen(Boolean(detail?.open));
+        };
+        window.addEventListener("talklee:notifications-popup", onPopup as EventListener);
+        return () => window.removeEventListener("talklee:notifications-popup", onPopup as EventListener);
+    }, []);
 
     useEffect(() => {
         if (!settings.soundsEnabled) return;
@@ -138,6 +151,8 @@ export function NotificationToaster() {
         );
         return () => timers.forEach((id) => window.clearTimeout(id));
     }, [dismissToast, settings.toastDurationMs, visible]);
+
+    if (popupOpen) return null;
 
     return (
         <div className="pointer-events-none fixed right-3 top-3 z-[60] flex flex-col gap-2">

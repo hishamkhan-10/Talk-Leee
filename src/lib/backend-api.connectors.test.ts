@@ -13,7 +13,7 @@ test("backendApi.connectors.authorize calls authorize endpoint with redirect_uri
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.connectors.authorize({
             type: "calendar",
@@ -37,7 +37,7 @@ test("backendApi.connectors.disconnect calls disconnect endpoint via POST", asyn
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         await backendApi.connectors.disconnect({ type: "drive" });
         assert.equal(calls.length, 1);
@@ -66,7 +66,7 @@ test("backendApi.connectors.status parses connector statuses", async () => {
     }) as typeof fetch;
 
     try {
-        process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+        process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8000/api/v1";
         const { backendApi } = await import("@/lib/backend-api");
         const res = await backendApi.connectors.status();
         assert.equal(res.items.length, 2);
@@ -76,4 +76,3 @@ test("backendApi.connectors.status parses connector statuses", async () => {
         globalThis.fetch = prevFetch;
     }
 });
-

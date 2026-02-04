@@ -1,6 +1,7 @@
-// PROTOTYPE MODE - All APIs return dummy data
+import { z } from "zod";
+import { createHttpClient } from "@/lib/http-client";
+import { apiBaseUrl } from "@/lib/env";
 
-// Types
 export interface ModelInfo {
     id: string;
     name: string;
@@ -105,7 +106,6 @@ export interface LatencyBenchmarkResponse {
     total_pipeline_ms: number;
 }
 
-// Default configuration
 export const DEFAULT_CONFIG: AIProviderConfig = {
     llm_provider: "groq",
     llm_model: "llama-3.3-70b-versatile",
@@ -120,150 +120,289 @@ export const DEFAULT_CONFIG: AIProviderConfig = {
     tts_sample_rate: 16000,
 };
 
-// Dummy data
-const DUMMY_PROVIDERS: ProviderListResponse = {
-    llm: {
-        providers: ["groq", "openai", "anthropic"],
-        models: [
-            { id: "llama-3.3-70b-versatile", name: "LLaMA 3.3 70B", description: "Fast and versatile", speed: "Ultra-fast", price: "$0.0001/1K tokens" },
-            { id: "gpt-4o", name: "GPT-4o", description: "Most capable", speed: "Fast", price: "$0.005/1K tokens" },
-            { id: "claude-3-sonnet", name: "Claude 3 Sonnet", description: "Balanced performance", speed: "Fast", price: "$0.003/1K tokens" },
-        ],
-    },
-    stt: {
-        providers: ["deepgram", "whisper"],
-        models: [
-            { id: "nova-3", name: "Nova 3", description: "Latest and most accurate", speed: "Real-time" },
-            { id: "nova-2", name: "Nova 2", description: "Proven reliability", speed: "Real-time" },
-            { id: "whisper-large-v3", name: "Whisper Large V3", description: "OpenAI's best model", speed: "Near real-time" },
-        ],
-    },
-    tts: {
-        providers: ["cartesia", "elevenlabs", "google"],
-        models: [
-            { id: "sonic-3", name: "Sonic 3", description: "Ultra-low latency", speed: "< 100ms" },
-            { id: "eleven-turbo-v2", name: "ElevenLabs Turbo V2", description: "High quality", speed: "< 200ms" },
-            { id: "chirp-3-hd", name: "Chirp 3 HD", description: "Google's latest", speed: "< 150ms" },
-        ],
-    },
-};
+const RawModelSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+        speed: z.string().optional(),
+        price: z.string().optional(),
+        context_window: z.number().optional(),
+        contextWindow: z.number().optional(),
+        is_preview: z.boolean().optional(),
+        isPreview: z.boolean().optional(),
+    })
+    .passthrough();
 
-const DUMMY_VOICES: VoiceInfo[] = [
-    {
-        id: "f786b574-daa5-4673-aa0c-cbe3e8534c02",
-        name: "Katie",
-        language: "English",
-        description: "Warm and professional female voice",
-        gender: "Female",
-        accent: "American",
-        accent_color: "#4F46E5",
-        preview_text: "Hello! I'm Katie, your AI assistant.",
-        provider: "cartesia",
-        tags: ["professional", "warm", "friendly"],
-    },
-    {
-        id: "voice-002",
-        name: "Marcus",
-        language: "English",
-        description: "Deep and authoritative male voice",
-        gender: "Male",
-        accent: "American",
-        accent_color: "#059669",
-        preview_text: "Hi there! I'm Marcus, ready to help.",
-        provider: "cartesia",
-        tags: ["authoritative", "deep", "confident"],
-    },
-    {
-        id: "voice-003",
-        name: "Sofia",
-        language: "English",
-        description: "Energetic and youthful female voice",
-        gender: "Female",
-        accent: "British",
-        accent_color: "#DC2626",
-        preview_text: "Hey! I'm Sofia, let's get started!",
-        provider: "cartesia",
-        tags: ["energetic", "youthful", "engaging"],
-    },
-    {
-        id: "voice-004",
-        name: "James",
-        language: "English",
-        description: "Calm and reassuring male voice",
-        gender: "Male",
-        accent: "British",
-        accent_color: "#7C3AED",
-        preview_text: "Good day! I'm James, how may I assist you?",
-        provider: "elevenlabs",
-        tags: ["calm", "reassuring", "sophisticated"],
-    },
-];
+const RawVoiceSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        language: z.string().optional(),
+        description: z.string(),
+        gender: z.string().optional(),
+        accent: z.string().optional(),
+        accent_color: z.string().optional(),
+        accentColor: z.string().optional(),
+        preview_text: z.string().optional(),
+        previewText: z.string().optional(),
+        provider: z.string(),
+        tags: z.array(z.string()).optional(),
+    })
+    .passthrough();
+
+const RawProvidersBucketSchema = z
+    .object({
+        providers: z.array(z.string()),
+        models: z.array(RawModelSchema),
+    })
+    .passthrough();
+
+const RawProviderListSchema = z
+    .object({
+        llm: RawProvidersBucketSchema,
+        stt: RawProvidersBucketSchema,
+        tts: RawProvidersBucketSchema,
+    })
+    .passthrough();
+
+const RawConfigSchema = z
+    .object({
+        llm_provider: z.string().optional(),
+        llmProvider: z.string().optional(),
+        llm_model: z.string().optional(),
+        llmModel: z.string().optional(),
+        llm_temperature: z.number().optional(),
+        llmTemperature: z.number().optional(),
+        llm_max_tokens: z.number().optional(),
+        llmMaxTokens: z.number().optional(),
+        stt_provider: z.string().optional(),
+        sttProvider: z.string().optional(),
+        stt_model: z.string().optional(),
+        sttModel: z.string().optional(),
+        stt_language: z.string().optional(),
+        sttLanguage: z.string().optional(),
+        tts_provider: z.string().optional(),
+        ttsProvider: z.string().optional(),
+        tts_model: z.string().optional(),
+        ttsModel: z.string().optional(),
+        tts_voice_id: z.string().optional(),
+        ttsVoiceId: z.string().optional(),
+        tts_sample_rate: z.number().optional(),
+        ttsSampleRate: z.number().optional(),
+    })
+    .passthrough();
+
+const RawVoicePreviewResponseSchema = z
+    .object({
+        voice_id: z.string().optional(),
+        voiceId: z.string().optional(),
+        voice_name: z.string().optional(),
+        voiceName: z.string().optional(),
+        audio_base64: z.string(),
+        audioBase64: z.string().optional(),
+        duration_seconds: z.number().optional(),
+        durationSeconds: z.number().optional(),
+        latency_ms: z.number().optional(),
+        latencyMs: z.number().optional(),
+    })
+    .passthrough();
+
+const RawLLMTestResponseSchema = z
+    .object({
+        response: z.string(),
+        latency_ms: z.number().optional(),
+        latencyMs: z.number().optional(),
+        first_token_ms: z.number().optional(),
+        firstTokenMs: z.number().optional(),
+        total_tokens: z.number().optional(),
+        totalTokens: z.number().optional(),
+        model: z.string(),
+    })
+    .passthrough();
+
+const RawTTSTestResponseSchema = z
+    .object({
+        audio_base64: z.string(),
+        audioBase64: z.string().optional(),
+        latency_ms: z.number().optional(),
+        latencyMs: z.number().optional(),
+        first_audio_ms: z.number().optional(),
+        firstAudioMs: z.number().optional(),
+        duration_seconds: z.number().optional(),
+        durationSeconds: z.number().optional(),
+        model: z.string(),
+        voice_id: z.string().optional(),
+        voiceId: z.string().optional(),
+    })
+    .passthrough();
+
+const RawLatencyBenchmarkResponseSchema = z
+    .object({
+        llm_first_token_ms: z.number().optional(),
+        llmFirstTokenMs: z.number().optional(),
+        llm_total_ms: z.number().optional(),
+        llmTotalMs: z.number().optional(),
+        tts_first_audio_ms: z.number().optional(),
+        ttsFirstAudioMs: z.number().optional(),
+        tts_total_ms: z.number().optional(),
+        ttsTotalMs: z.number().optional(),
+        total_pipeline_ms: z.number().optional(),
+        totalPipelineMs: z.number().optional(),
+    })
+    .passthrough();
+
+let _httpClient: ReturnType<typeof createHttpClient> | undefined;
+
+function httpClient() {
+    if (_httpClient) return _httpClient;
+    _httpClient = createHttpClient({ baseUrl: apiBaseUrl() });
+    return _httpClient;
+}
+
+function normalizeModel(model: z.infer<typeof RawModelSchema>): ModelInfo {
+    return {
+        id: model.id,
+        name: model.name,
+        description: model.description,
+        speed: model.speed,
+        price: model.price,
+        context_window: model.context_window ?? model.contextWindow,
+        is_preview: model.is_preview ?? model.isPreview,
+    };
+}
+
+function normalizeVoice(voice: z.infer<typeof RawVoiceSchema>): VoiceInfo {
+    return {
+        id: voice.id,
+        name: voice.name,
+        language: voice.language ?? "Unknown",
+        description: voice.description,
+        gender: voice.gender,
+        accent: voice.accent,
+        accent_color: voice.accent_color ?? voice.accentColor ?? "#64748B",
+        preview_text: voice.preview_text ?? voice.previewText ?? "",
+        provider: voice.provider,
+        tags: voice.tags ?? [],
+    };
+}
+
+function normalizeProviderList(raw: z.infer<typeof RawProviderListSchema>): ProviderListResponse {
+    return {
+        llm: { providers: raw.llm.providers, models: raw.llm.models.map(normalizeModel) },
+        stt: { providers: raw.stt.providers, models: raw.stt.models.map(normalizeModel) },
+        tts: { providers: raw.tts.providers, models: raw.tts.models.map(normalizeModel) },
+    };
+}
+
+function normalizeConfig(raw: z.infer<typeof RawConfigSchema>): AIProviderConfig {
+    return {
+        llm_provider: raw.llm_provider ?? raw.llmProvider ?? DEFAULT_CONFIG.llm_provider,
+        llm_model: raw.llm_model ?? raw.llmModel ?? DEFAULT_CONFIG.llm_model,
+        llm_temperature: raw.llm_temperature ?? raw.llmTemperature ?? DEFAULT_CONFIG.llm_temperature,
+        llm_max_tokens: raw.llm_max_tokens ?? raw.llmMaxTokens ?? DEFAULT_CONFIG.llm_max_tokens,
+        stt_provider: raw.stt_provider ?? raw.sttProvider ?? DEFAULT_CONFIG.stt_provider,
+        stt_model: raw.stt_model ?? raw.sttModel ?? DEFAULT_CONFIG.stt_model,
+        stt_language: raw.stt_language ?? raw.sttLanguage ?? DEFAULT_CONFIG.stt_language,
+        tts_provider: raw.tts_provider ?? raw.ttsProvider ?? DEFAULT_CONFIG.tts_provider,
+        tts_model: raw.tts_model ?? raw.ttsModel ?? DEFAULT_CONFIG.tts_model,
+        tts_voice_id: raw.tts_voice_id ?? raw.ttsVoiceId ?? DEFAULT_CONFIG.tts_voice_id,
+        tts_sample_rate: raw.tts_sample_rate ?? raw.ttsSampleRate ?? DEFAULT_CONFIG.tts_sample_rate,
+    };
+}
+
+async function requestFirstMatch<T>(paths: string[], opts: { method?: "GET" | "POST"; body?: unknown; timeoutMs?: number }) {
+    let lastErr: unknown;
+    for (const path of paths) {
+        try {
+            const data = await httpClient().request({ path, method: opts.method, body: opts.body, timeoutMs: opts.timeoutMs ?? 12_000 });
+            return data as T;
+        } catch (err) {
+            lastErr = err;
+        }
+    }
+    throw lastErr;
+}
 
 class AIOptionsApi {
     // Get available providers and models
     async getProviders(): Promise<ProviderListResponse> {
-        return DUMMY_PROVIDERS;
+        const data = await requestFirstMatch<unknown>(["/ai/options/providers", "/ai/providers"], { timeoutMs: 12_000 });
+        return normalizeProviderList(RawProviderListSchema.parse(data));
     }
 
     // Get available TTS voices
     async getVoices(): Promise<VoiceInfo[]> {
-        return DUMMY_VOICES;
+        const data = await requestFirstMatch<unknown>(["/ai/options/voices", "/ai/voices", "/voices"], { timeoutMs: 12_000 });
+        return z.array(RawVoiceSchema).parse(data).map(normalizeVoice);
     }
 
     // Preview a voice with sample audio
     async previewVoice(request: VoicePreviewRequest): Promise<VoicePreviewResponse> {
-        const voice = DUMMY_VOICES.find(v => v.id === request.voice_id) || DUMMY_VOICES[0];
+        const data = await requestFirstMatch<unknown>(["/ai/options/voices/preview", "/ai/voices/preview", "/ai/voice/preview"], {
+            method: "POST",
+            body: request,
+            timeoutMs: 30_000,
+        });
+        const parsed = RawVoicePreviewResponseSchema.parse(data);
         return {
-            voice_id: voice.id,
-            voice_name: voice.name,
-            audio_base64: "", // No actual audio in prototype
-            duration_seconds: 2.5,
-            latency_ms: 95,
+            voice_id: parsed.voice_id ?? parsed.voiceId ?? request.voice_id,
+            voice_name: parsed.voice_name ?? parsed.voiceName ?? "",
+            audio_base64: parsed.audio_base64 ?? parsed.audioBase64 ?? "",
+            duration_seconds: parsed.duration_seconds ?? parsed.durationSeconds ?? 0,
+            latency_ms: parsed.latency_ms ?? parsed.latencyMs ?? 0,
         };
     }
 
     // Get current configuration
     async getConfig(): Promise<AIProviderConfig> {
-        return DEFAULT_CONFIG;
+        const data = await requestFirstMatch<unknown>(["/ai/options/config", "/ai/config"], { timeoutMs: 12_000 });
+        return normalizeConfig(RawConfigSchema.parse(data));
     }
 
     // Save configuration
     async saveConfig(config: AIProviderConfig): Promise<AIProviderConfig> {
-        return config;
+        const data = await requestFirstMatch<unknown>(["/ai/options/config", "/ai/config"], { method: "POST", body: config, timeoutMs: 12_000 });
+        return normalizeConfig(RawConfigSchema.parse(data));
     }
 
     // Test LLM with message
     async testLLM(request: LLMTestRequest): Promise<LLMTestResponse> {
+        const data = await requestFirstMatch<unknown>(["/ai/options/test/llm", "/ai/test/llm", "/ai/llm/test"], { method: "POST", body: request, timeoutMs: 30_000 });
+        const parsed = RawLLMTestResponseSchema.parse(data);
         return {
-            response: `This is a simulated response to: "${request.message}" (Prototype mode)`,
-            latency_ms: 245,
-            first_token_ms: 85,
-            total_tokens: 42,
-            model: request.model,
+            response: parsed.response,
+            latency_ms: parsed.latency_ms ?? parsed.latencyMs ?? 0,
+            first_token_ms: parsed.first_token_ms ?? parsed.firstTokenMs ?? 0,
+            total_tokens: parsed.total_tokens ?? parsed.totalTokens ?? 0,
+            model: parsed.model,
         };
     }
 
     // Test TTS with text
     async testTTS(request: TTSTestRequest): Promise<TTSTestResponse> {
+        const data = await requestFirstMatch<unknown>(["/ai/options/test/tts", "/ai/test/tts", "/ai/tts/test"], { method: "POST", body: request, timeoutMs: 30_000 });
+        const parsed = RawTTSTestResponseSchema.parse(data);
         return {
-            audio_base64: "", // No actual audio in prototype
-            latency_ms: 120,
-            first_audio_ms: 65,
-            duration_seconds: 3.2,
-            model: request.model,
-            voice_id: request.voice_id,
+            audio_base64: parsed.audio_base64 ?? parsed.audioBase64 ?? "",
+            latency_ms: parsed.latency_ms ?? parsed.latencyMs ?? 0,
+            first_audio_ms: parsed.first_audio_ms ?? parsed.firstAudioMs ?? 0,
+            duration_seconds: parsed.duration_seconds ?? parsed.durationSeconds ?? 0,
+            model: parsed.model,
+            voice_id: parsed.voice_id ?? parsed.voiceId ?? request.voice_id,
         };
     }
 
     // Run full benchmark
     async runBenchmark(_config: AIProviderConfig): Promise<LatencyBenchmarkResponse> {
-        void _config;
+        const data = await requestFirstMatch<unknown>(["/ai/options/benchmark", "/ai/benchmark"], { method: "POST", body: _config, timeoutMs: 60_000 });
+        const parsed = RawLatencyBenchmarkResponseSchema.parse(data);
         return {
-            llm_first_token_ms: 85,
-            llm_total_ms: 340,
-            tts_first_audio_ms: 65,
-            tts_total_ms: 180,
-            total_pipeline_ms: 520,
+            llm_first_token_ms: parsed.llm_first_token_ms ?? parsed.llmFirstTokenMs ?? 0,
+            llm_total_ms: parsed.llm_total_ms ?? parsed.llmTotalMs ?? 0,
+            tts_first_audio_ms: parsed.tts_first_audio_ms ?? parsed.ttsFirstAudioMs ?? 0,
+            tts_total_ms: parsed.tts_total_ms ?? parsed.ttsTotalMs ?? 0,
+            total_pipeline_ms: parsed.total_pipeline_ms ?? parsed.totalPipelineMs ?? 0,
         };
     }
 }

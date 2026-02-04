@@ -2,6 +2,7 @@ import { Hero } from "@/components/ui/helix-hero";
 import { SecondaryHero } from "@/components/home/secondary-hero";
 import { StatsSection } from "@/components/home/stats-section";
 import { FeaturesSection } from "@/components/home/features-section";
+import { PackagesSection } from "@/components/home/packages-section";
 import { TrustedBySection } from "@/components/home/trusted-by-section";
 import { CTASection } from "@/components/home/cta-section";
 import { ContactSection } from "@/components/home/contact-section";
@@ -28,6 +29,7 @@ export default function Home() {
       <SecondaryHero />
       <StatsSection />
       <FeaturesSection />
+      <PackagesSection />
       <ContactSection />
       <TrustedBySection />
       <CTASection />

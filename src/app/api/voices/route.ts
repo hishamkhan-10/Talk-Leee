@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createHttpClient, isApiClientError } from "@/lib/http-client";
 
 export type Voice = {
   id: string;
@@ -10,65 +12,114 @@ export type Voice = {
   previewUrl: string;
 };
 
-const voices: Voice[] = [
+const VoiceApiItemSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    preview_url: z.string().optional(),
+    previewUrl: z.string().optional(),
+  })
+  .passthrough();
+
+const VoiceApiResponseSchema = z.array(VoiceApiItemSchema);
+
+const accentStyles = [
+  { color: "text-indigo-600", bg: "bg-indigo-50" },
+  { color: "text-emerald-600", bg: "bg-emerald-50" },
+  { color: "text-purple-600", bg: "bg-purple-50" },
+  { color: "text-amber-600", bg: "bg-amber-50" },
+  { color: "text-slate-900", bg: "bg-white" },
+  { color: "text-blue-600", bg: "bg-blue-50" },
+] as const;
+
+const FallbackVoices: Voice[] = [
   {
     id: "sarah",
     name: "Sarah",
-    description: "Professional, friendly female voice",
+    description: "Professional female voice",
     initial: "S",
     color: "text-indigo-600",
     bg: "bg-indigo-50",
-    previewUrl: "/audio/sarah-preview.mp3"
+    previewUrl: "",
   },
   {
     id: "michael",
     name: "Michael",
-    description: "Confident, authoritative male voice",
+    description: "Confident male voice",
     initial: "M",
     color: "text-emerald-600",
     bg: "bg-emerald-50",
-    previewUrl: "/audio/michael-preview.mp3"
+    previewUrl: "",
   },
   {
-    id: "emma",
-    name: "Emma",
-    description: "Warm, conversational female voice",
-    initial: "E",
+    id: "amelia",
+    name: "Amelia",
+    description: "Warm, friendly voice",
+    initial: "A",
     color: "text-purple-600",
     bg: "bg-purple-50",
-    previewUrl: "/audio/emma-preview.mp3"
+    previewUrl: "",
   },
   {
     id: "david",
     name: "David",
-    description: "Energetic, enthusiastic male voice",
+    description: "Clear, upbeat voice",
     initial: "D",
     color: "text-amber-600",
     bg: "bg-amber-50",
-    previewUrl: "/audio/david-preview.mp3"
+    previewUrl: "",
   },
   {
-    id: "anna",
-    name: "Anna",
-    description: "Sophisticated, elegant female voice",
-    initial: "A",
-    color: "text-slate-900",
-    bg: "bg-white",
-    previewUrl: "/audio/anna-preview.mp3"
-  },
-  {
-    id: "james",
-    name: "James",
-    description: "Mature, trustworthy male voice",
-    initial: "J",
+    id: "olivia",
+    name: "Olivia",
+    description: "Calm, modern voice",
+    initial: "O",
     color: "text-blue-600",
     bg: "bg-blue-50",
-    previewUrl: "/audio/james-preview.mp3"
+    previewUrl: "",
+  },
+] as const;
+
+function mapVoice(item: z.infer<typeof VoiceApiItemSchema>, index: number): Voice {
+  const style = accentStyles[index % accentStyles.length];
+  const initial = item.name.trim().slice(0, 1).toUpperCase() || "?";
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description ?? "",
+    initial,
+    color: style.color,
+    bg: style.bg,
+    previewUrl: item.previewUrl ?? item.preview_url ?? "",
+  };
+}
+
+async function fetchVoices(baseUrl: string) {
+  const client = createHttpClient({ baseUrl });
+  try {
+    const data = await client.request({ path: "/voices", timeoutMs: 12_000 });
+    return VoiceApiResponseSchema.parse(data);
+  } catch (err) {
+    if (isApiClientError(err) && err.status === 404) {
+      const data = await client.request({ path: "/ai/voices", timeoutMs: 12_000 });
+      return VoiceApiResponseSchema.parse(data);
+    }
+    throw err;
   }
-];
+}
 
 export async function GET() {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return NextResponse.json(voices);
+  const baseUrlRaw = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrlParsed = z.string().url().safeParse(baseUrlRaw);
+  if (!baseUrlParsed.success) {
+    return NextResponse.json(FallbackVoices, { headers: { "x-voices-source": "fallback" } });
+  }
+
+  try {
+    const voices = await fetchVoices(baseUrlParsed.data);
+    return NextResponse.json(voices.map(mapVoice));
+  } catch {
+    return NextResponse.json(FallbackVoices, { headers: { "x-voices-source": "fallback" } });
+  }
 }

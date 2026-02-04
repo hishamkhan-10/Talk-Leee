@@ -103,8 +103,15 @@ function KpiCard({
                 : "bg-red-500";
 
     return (
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="h-full">
-            <div className="content-card h-full border border-border/60 bg-card/70">
+        <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.99 }}
+            className="h-full"
+        >
+            <div className="h-full rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md">
                 <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,7.75rem)] sm:grid-cols-[minmax(0,1fr)_minmax(0,9rem)] items-start gap-4">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -1373,10 +1380,10 @@ export default function DashboardPage() {
         <DashboardLayout title="Dashboard" description="Overview of your voice campaigns">
             {loading ? (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800 dark:border-gray-200" />
                 </div>
             ) : error ? (
-                <div className="content-card border-red-500/30 text-red-600 font-bold">
+                <div className="content-card border-red-500/30 text-red-600 dark:text-red-400 font-bold">
                     {error}
                 </div>
             ) : (
@@ -1403,12 +1410,13 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.35 }}
-                            className="content-card lg:col-span-2"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md lg:col-span-2"
                         >
                             <div className="flex items-center justify-between gap-3 mb-4">
                                 <div className="min-w-0">
-                                    <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide">Live Line Chart</h3>
-                                    <p className="text-sm text-gray-600 font-medium">Call volume over time</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide">Live Line Chart</h3>
+                                    <p className="text-sm text-gray-600 dark:text-muted-foreground font-medium">Call volume over time</p>
                                 </div>
                                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-full animate-pulse">
                                     <Activity className="w-4 h-4" />
@@ -1423,8 +1431,8 @@ export default function DashboardPage() {
                                             key={h}
                                             type="button"
                                             className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${callRangeMode === "preset" && liveRangeHours === h
-                                                ? "bg-gray-900 text-white border-gray-900"
-                                                : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                ? "bg-muted text-foreground border-border"
+                                                : "bg-background/70 text-muted-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
                                                 }`}
                                             onClick={() => {
                                                 setCallRangeMode("preset");
@@ -1437,8 +1445,8 @@ export default function DashboardPage() {
                                     <button
                                         type="button"
                                         className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${callRangeMode === "custom"
-                                            ? "bg-gray-900 text-white border-gray-900"
-                                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                            ? "bg-muted text-foreground border-border"
+                                            : "bg-background/70 text-muted-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
                                             }`}
                                         onClick={() => setCallRangeMode("custom")}
                                     >
@@ -1450,12 +1458,12 @@ export default function DashboardPage() {
 
                             {callRangeMode === "custom" ? (
                                 <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <label className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                        <span className="text-xs font-bold text-gray-700">Start</span>
+                                    <label className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-3 py-2">
+                                        <span className="text-xs font-bold text-muted-foreground">Start</span>
                                         <input
                                             type="datetime-local"
                                             step={900}
-                                            className="text-xs font-bold text-gray-900 bg-transparent outline-none"
+                                            className="text-xs font-bold text-foreground bg-transparent outline-none"
                                             value={toDatetimeLocalValue(customStartMs ?? activeRange.startMs)}
                                             onChange={(e) => {
                                                 const ms = fromDatetimeLocalValue(e.target.value);
@@ -1465,12 +1473,12 @@ export default function DashboardPage() {
                                             }}
                                         />
                                     </label>
-                                    <label className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                        <span className="text-xs font-bold text-gray-700">End</span>
+                                    <label className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-3 py-2">
+                                        <span className="text-xs font-bold text-muted-foreground">End</span>
                                         <input
                                             type="datetime-local"
                                             step={900}
-                                            className="text-xs font-bold text-gray-900 bg-transparent outline-none"
+                                            className="text-xs font-bold text-foreground bg-transparent outline-none"
                                             value={toDatetimeLocalValue(customEndMs ?? activeRange.endMs)}
                                             onChange={(e) => {
                                                 const ms = fromDatetimeLocalValue(e.target.value);
@@ -1484,7 +1492,7 @@ export default function DashboardPage() {
                             ) : null}
 
                             {liveBuckets.length === 0 ? (
-                                <div className="h-40 flex items-center justify-center text-sm text-gray-600 font-semibold">Initializing…</div>
+                                <div className="h-40 flex items-center justify-center text-sm text-gray-600 dark:text-muted-foreground font-semibold">Initializing…</div>
                             ) : (
                                 <LiveCallsTimeSeriesChart
                                     buckets={liveBuckets}
@@ -1501,39 +1509,43 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="content-card"
+                            whileHover={{ scale: 1.01 }}
+                            className="flex flex-col rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md"
                         >
-                            <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">Donut Chart</h3>
-                            <div className="flex flex-col items-center">
-                                <div className="relative w-full max-w-[260px] mx-auto flex items-center justify-center">
-                                    <DonutChart
-                                        value={effectiveSummary?.answered_calls || 0}
-                                        total={effectiveSummary?.total_calls || 0}
-                                        size={200}
-                                        strokeWidth={16}
-                                    />
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                        <div
-                                            className={`${successRateFontClass} font-black text-gray-900 tabular-nums leading-none text-center`}
-                                            style={{ maxWidth: "70%" }}
-                                        >
-                                            {successRate}%
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide mb-4">Donut Chart</h3>
+                            <div className="flex flex-1 flex-col min-h-0">
+                                <div className="flex flex-1 items-center justify-center">
+                                    <div className="relative w-full max-w-[260px] mx-auto flex items-center justify-center">
+                                        <DonutChart
+                                            value={effectiveSummary?.answered_calls || 0}
+                                            total={effectiveSummary?.total_calls || 0}
+                                            size={200}
+                                            strokeWidth={16}
+                                            showSegmentLabels={false}
+                                        />
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                            <div
+                                                className={`${successRateFontClass} font-black text-gray-900 dark:text-foreground tabular-nums leading-none text-center`}
+                                                style={{ maxWidth: "70%" }}
+                                            >
+                                                {successRate}%
+                                            </div>
+                                            <div className="mt-1 text-[11px] font-semibold text-gray-600 dark:text-muted-foreground">Success rate</div>
                                         </div>
-                                        <div className="mt-1 text-[11px] font-semibold text-gray-600">Success rate</div>
                                     </div>
                                 </div>
 
-                                <div className="mt-4 w-full flex items-center justify-center gap-10">
-                                    <div className="flex flex-col items-center">
+                                <div className="mt-auto pt-6 w-full grid grid-cols-[1fr_1px_1fr] items-center">
+                                    <div className="flex flex-col items-center justify-center text-center px-3">
                                         <span className="text-sm font-semibold text-emerald-700">Answered</span>
-                                        <span className="mt-1 text-lg font-black text-gray-900 tabular-nums">
+                                        <span className="mt-1 text-lg font-black text-gray-900 dark:text-foreground tabular-nums">
                                             {effectiveSummary?.answered_calls || 0}
                                         </span>
                                     </div>
                                     <div className="h-9 w-px bg-gray-200/80" aria-hidden />
-                                    <div className="flex flex-col items-center">
+                                    <div className="flex flex-col items-center justify-center text-center px-3">
                                         <span className="text-sm font-semibold text-red-700">Failed</span>
-                                        <span className="mt-1 text-lg font-black text-gray-900 tabular-nums">
+                                        <span className="mt-1 text-lg font-black text-gray-900 dark:text-foreground tabular-nums">
                                             {effectiveSummary?.failed_calls || 0}
                                         </span>
                                     </div>
@@ -1545,12 +1557,13 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.45 }}
-                            className="content-card"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md"
                         >
-                            <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-wide">Minutes Usage</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-foreground mb-4 uppercase tracking-wide">Minutes Usage</h3>
                             <HoverTooltip state={minutesTooltip.state} className="w-[280px] text-sm font-semibold" />
                             <motion.div
-                                className="group rounded-2xl p-3 -m-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                                className="group rounded-2xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                 tabIndex={0}
                                 role="img"
                                 aria-label={`Minutes usage: used ${minutesUsed} of ${minutesTotal} minutes, remaining ${minutesRemaining} minutes`}
@@ -1570,24 +1583,23 @@ export default function DashboardPage() {
                                 }}
                                 onBlur={() => minutesTooltip.hide()}
                             >
-                                <div className="relative flex flex-col min-h-[160px]">
+                                <div className="relative flex flex-col min-h-[200px] py-1">
                                     <div className="absolute inset-0 grid grid-cols-2 rounded-2xl overflow-hidden pointer-events-none">
                                         <div className="bg-emerald-500/6" />
-                                        <div className="bg-gray-900/[0.03]" />
+                                        <div className="bg-muted/40" />
                                     </div>
-                                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-200/80 pointer-events-none" aria-hidden />
 
-                                    <div className="relative flex-1 flex flex-col justify-center">
+                                    <div className="relative flex-1 flex flex-col justify-center gap-5">
                                         <div className="text-center">
-                                            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Minutes used</div>
-                                            <div className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold text-gray-700">
-                                                <Clock className="w-4 h-4 text-gray-600" aria-hidden />
-                                                <span className="tabular-nums font-black text-gray-900">{minutesUsedPct}%</span>
+                                            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-muted-foreground">Minutes used</div>
+                                            <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-gray-700 dark:text-muted-foreground">
+                                                <Clock className="w-4 h-4 text-gray-600 dark:text-muted-foreground" aria-hidden />
+                                                <span className="tabular-nums font-black text-gray-900 dark:text-foreground">{minutesUsedPct}%</span>
                                                 <span>used</span>
                                             </div>
                                         </div>
 
-                                        <div className="mt-4 px-3">
+                                        <div className="px-4">
                                             <div className="relative w-full h-3 rounded-full overflow-hidden bg-gray-200 shadow-inner">
                                                 <motion.div
                                                     initial={{ width: 0 }}
@@ -1597,7 +1609,7 @@ export default function DashboardPage() {
                                                 >
                                                     <div className="absolute inset-0 bg-emerald-500/30 blur-sm" aria-hidden />
                                                     <div
-                                                        className="relative h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-[0_0_0_1px_rgba(16,185,129,0.18),0_10px_18px_rgba(16,185,129,0.18)] transition-shadow duration-300 ease-in-out group-hover:shadow-[0_0_0_1px_rgba(16,185,129,0.20),0_14px_24px_rgba(16,185,129,0.22)]"
+                                                        className="relative h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-[0_0_0_1px_rgba(16,185,129,0.18),0_10px_18px_rgba(16,185,129,0.18)] transition-shadow duration-300 ease-in-out dark:group-hover:shadow-[0_0_0_1px_rgba(16,185,129,0.20),0_14px_24px_rgba(16,185,129,0.22)]"
                                                         aria-hidden
                                                     />
                                                 </motion.div>
@@ -1605,13 +1617,13 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
 
-                                    <div className="relative mt-auto pt-4">
+                                    <div className="relative mt-auto pt-6 pb-2">
                                         <div ref={minutesLayoutRef} className="grid grid-cols-[1fr_1px_1fr] items-center">
                                             <div className="min-w-0 flex flex-col items-center text-center px-3">
                                                 <span className="text-sm font-semibold text-emerald-700">Used</span>
                                                 <motion.span
                                                     key={minutesUsedText}
-                                                    className="mt-1 font-black text-gray-900 tabular-nums leading-none transition-[font-size] duration-300 ease-in-out"
+                                                    className="mt-1 font-black text-gray-900 dark:text-foreground tabular-nums leading-none transition-[font-size] duration-300 ease-in-out"
                                                     initial={{ opacity: 0, y: 3 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ duration: 0.28, ease: "easeOut" }}
@@ -1621,13 +1633,11 @@ export default function DashboardPage() {
                                                 </motion.span>
                                             </div>
 
-                                            <div className="h-9 w-px bg-gray-200/80" aria-hidden />
-
                                             <div className="min-w-0 flex flex-col items-center text-center px-3">
-                                                <span className="text-sm font-semibold text-gray-700">Remaining</span>
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-muted-foreground">Remaining</span>
                                                 <motion.span
                                                     key={minutesRemainingText}
-                                                    className="mt-1 font-black text-gray-900 tabular-nums leading-none transition-[font-size] duration-300 ease-in-out"
+                                                    className="mt-1 font-black text-gray-900 dark:text-foreground tabular-nums leading-none transition-[font-size] duration-300 ease-in-out"
                                                     initial={{ opacity: 0, y: 3 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ duration: 0.28, ease: "easeOut" }}
@@ -1637,10 +1647,8 @@ export default function DashboardPage() {
                                                 </motion.span>
                                             </div>
                                         </div>
-
-                                        <div className="mt-2 flex items-center justify-between px-3 text-[11px] font-semibold text-gray-600">
-                                            <span className="tabular-nums">0</span>
-                                            <span className="tabular-nums">{minutesTotal.toLocaleString()} min</span>
+                                        <div className="mt-4 text-center text-[11px] font-bold uppercase tracking-wide text-gray-700 dark:text-muted-foreground">
+                                            Total = <span className="tabular-nums">{minutesTotal.toLocaleString()} min</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1651,19 +1659,20 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="content-card lg:col-span-2"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md lg:col-span-2"
                         >
                             <div className="flex items-center justify-between gap-3 mb-4">
                                 <div className="min-w-0">
-                                    <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide">Stacked Area Chart</h3>
-                                    <p className="text-sm text-gray-600 font-medium">Answered vs failed trend</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide">Stacked Area Chart</h3>
+                                    <p className="text-sm text-gray-600 dark:text-muted-foreground font-medium">Answered vs failed trend</p>
                                 </div>
-                                <div className="text-xs font-bold text-gray-700 bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-full">
+                                <div className="text-xs font-bold text-gray-700 dark:text-muted-foreground bg-gray-100 dark:bg-muted/30 border border-gray-200 dark:border-border px-3 py-1.5 rounded-full">
                                     Last {stackedPoints.length} points
                                 </div>
                             </div>
                             {stackedPoints.length === 0 ? (
-                                <div className="h-40 flex items-center justify-center text-sm text-gray-600 font-semibold">No series data</div>
+                                <div className="h-40 flex items-center justify-center text-sm text-gray-600 dark:text-muted-foreground font-semibold">No series data</div>
                             ) : (
                                 <StackedAreaChart points={stackedPoints} />
                             )}
@@ -1673,12 +1682,13 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.55 }}
-                            className="content-card lg:col-span-3"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md lg:col-span-3"
                         >
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
                                 <div className="min-w-0">
-                                    <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide">Real-Time Call Statistics</h3>
-                                    <p className="text-sm text-gray-600 font-medium">
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide">Real-Time Call Statistics</h3>
+                                    <p className="text-sm text-gray-600 dark:text-muted-foreground font-medium">
                                         {new Date(activeRange.startMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}–{new Date(activeRange.endMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                     </p>
                                 </div>
@@ -1687,8 +1697,8 @@ export default function DashboardPage() {
                                     <button
                                         type="button"
                                         className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${callStatsView === "status"
-                                            ? "bg-gray-900 text-white border-gray-900"
-                                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                            ? "bg-muted text-foreground border-border"
+                                            : "bg-background/70 text-muted-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
                                             }`}
                                         onClick={() => setCallStatsView("status")}
                                     >
@@ -1697,8 +1707,8 @@ export default function DashboardPage() {
                                     <button
                                         type="button"
                                         className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${callStatsView === "campaigns"
-                                            ? "bg-gray-900 text-white border-gray-900"
-                                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                            ? "bg-muted text-foreground border-border"
+                                            : "bg-background/70 text-muted-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
                                             }`}
                                         onClick={() => setCallStatsView("campaigns")}
                                     >
@@ -1707,8 +1717,8 @@ export default function DashboardPage() {
                                     <button
                                         type="button"
                                         className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${callStatsView === "outcomes"
-                                            ? "bg-gray-900 text-white border-gray-900"
-                                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                            ? "bg-muted text-foreground border-border"
+                                            : "bg-background/70 text-muted-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
                                             }`}
                                         onClick={() => setCallStatsView("outcomes")}
                                     >
@@ -1718,21 +1728,21 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Active calls</div>
-                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900">{Math.round(hoverStats.activeCalls).toLocaleString()}</div>
+                                <div className="rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-muted/30 px-3 py-2">
+                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-muted-foreground">Active calls</div>
+                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900 dark:text-foreground">{Math.round(hoverStats.activeCalls).toLocaleString()}</div>
                                 </div>
-                                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Queue size</div>
-                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900">{Math.round(hoverStats.queueSize).toLocaleString()}</div>
+                                <div className="rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-muted/30 px-3 py-2">
+                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-muted-foreground">Queue size</div>
+                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900 dark:text-foreground">{Math.round(hoverStats.queueSize).toLocaleString()}</div>
                                 </div>
-                                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">In progress</div>
-                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900">{Math.round(hoverStats.inProgress).toLocaleString()}</div>
+                                <div className="rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-muted/30 px-3 py-2">
+                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-muted-foreground">In progress</div>
+                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900 dark:text-foreground">{Math.round(hoverStats.inProgress).toLocaleString()}</div>
                                 </div>
-                                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Success rate</div>
-                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900">{hoverStats.successRate.toFixed(1)}%</div>
+                                <div className="rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-muted/30 px-3 py-2">
+                                    <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-muted-foreground">Success rate</div>
+                                    <div className="mt-1 text-lg font-black tabular-nums text-gray-900 dark:text-foreground">{hoverStats.successRate.toFixed(1)}%</div>
                                 </div>
                             </div>
 
@@ -1752,8 +1762,8 @@ export default function DashboardPage() {
                                                 key={c.id}
                                                 type="button"
                                                 className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${campaignEnabled[c.id] !== false
-                                                    ? "bg-white text-gray-900 border-gray-200 hover:bg-gray-50"
-                                                    : "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-50"
+                                                    ? "bg-background/70 text-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
+                                                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/50 dark:hover:bg-muted/50"
                                                     }`}
                                                 onClick={() => setCampaignEnabled((prev) => ({ ...prev, [c.id]: !(prev[c.id] !== false) }))}
                                             >
@@ -1791,14 +1801,15 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.55 }}
-                            className="content-card lg:col-span-2"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md lg:col-span-2"
                         >
                             <div className="flex items-center justify-between gap-3 mb-4">
                                 <div className="min-w-0">
-                                    <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide">Heatmap</h3>
-                                    <p className="text-sm text-gray-600 font-medium">Activity intensity by day and time</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide">Heatmap</h3>
+                                    <p className="text-sm text-gray-600 dark:text-muted-foreground font-medium">Activity intensity by day and time</p>
                                 </div>
-                                <div className="text-xs font-bold text-gray-700 bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-full">
+                                <div className="text-xs font-bold text-gray-700 dark:text-muted-foreground bg-gray-100 dark:bg-muted/30 border border-gray-200 dark:border-border px-3 py-1.5 rounded-full">
                                     7×8
                                 </div>
                             </div>
@@ -1809,9 +1820,10 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.6 }}
-                            className="content-card"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md"
                         >
-                            <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">Event Stream</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide mb-4">Event Stream</h3>
                             <ActivityFeed items={feedItems} />
                         </motion.div>
 
@@ -1819,20 +1831,21 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.65 }}
-                            className="content-card lg:col-span-3"
+                            whileHover={{ scale: 1.01 }}
+                            className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md lg:col-span-3"
                         >
                             <div className="flex items-center justify-between gap-3 mb-4">
                                 <div className="min-w-0">
-                                    <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide">Error & Alert Timeline</h3>
-                                    <p className="text-sm text-gray-600 font-medium">Recent delivery health signals</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide">Error & Alert Timeline</h3>
+                                    <p className="text-sm text-gray-600 dark:text-muted-foreground font-medium">Recent delivery health signals</p>
                                 </div>
-                                <div className="flex items-center gap-2 text-xs font-bold text-gray-700 bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-full">
+                                <div className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-muted-foreground bg-gray-100 dark:bg-muted/30 border border-gray-200 dark:border-border px-3 py-1.5 rounded-full">
                                     <AlertTriangle className="w-4 h-4" />
                                     Monitoring
                                 </div>
                             </div>
                             {timelineItems.length === 0 ? (
-                                <div className="text-sm text-gray-600 font-semibold py-2">No alerts</div>
+                                <div className="text-sm text-gray-600 dark:text-muted-foreground font-semibold py-2">No alerts</div>
                             ) : (
                                 <AlertTimeline items={timelineItems} />
                             )}
@@ -1844,24 +1857,25 @@ export default function DashboardPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="content-card"
+                        whileHover={{ scale: 1.01 }}
+                        className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md"
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-gray-900 uppercase tracking-wide">Recent Campaigns</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-foreground uppercase tracking-wide">Recent Campaigns</h3>
                             <Link
                                 href="/campaigns"
-                                className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors duration-300 ease-in-out"
+                                className="text-sm font-semibold text-gray-700 dark:text-muted-foreground transition-colors duration-300 ease-in-out dark:hover:text-foreground"
                             >
                                 View all
                             </Link>
                         </div>
                         {campaigns.length === 0 ? (
-                            <div className="text-center py-8 text-gray-600">
-                                <Megaphone className="w-12 h-12 mx-auto mb-4 opacity-50 text-gray-500" />
+                            <div className="text-center py-8 text-gray-600 dark:text-muted-foreground">
+                                <Megaphone className="w-12 h-12 mx-auto mb-4 opacity-50 text-gray-500 dark:text-muted-foreground" />
                                 <p className="font-medium">No campaigns yet</p>
                                 <Link
                                     href="/campaigns/new"
-                                    className="mt-4 inline-block text-sm font-bold text-gray-900 hover:underline"
+                                    className="mt-4 inline-block text-sm font-bold text-gray-900 dark:text-foreground dark:hover:underline"
                                 >
                                     Create your first campaign
                                 </Link>
@@ -1877,28 +1891,28 @@ export default function DashboardPage() {
                                     >
                                         <Link
                                             href={`/campaigns/${campaign.id}`}
-                                            className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-all duration-300 ease-in-out shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                                            className="flex items-center justify-between rounded-xl border border-border bg-background/70 px-4 py-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:scale-[1.02] hover:bg-gray-50/80 hover:shadow-md active:scale-[0.99] dark:hover:scale-[1.02] dark:active:scale-[0.99] dark:hover:bg-gray-800 dark:hover:shadow-md"
                                         >
                                             <div>
-                                                <h4 className="font-bold text-gray-900">{campaign.name}</h4>
-                                                <p className="text-sm font-medium text-gray-600">
+                                                <h4 className="font-bold text-gray-900 dark:text-foreground">{campaign.name}</h4>
+                                                <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">
                                                     {campaign.total_leads} leads | {campaign.calls_completed} completed
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <span
                                                     className={`px-2 py-1 text-xs font-bold rounded-full ${campaign.status === "running"
-                                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-500/30"
                                                         : campaign.status === "paused"
-                                                            ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                                                            ? "bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-500/20 dark:text-yellow-200 dark:border-yellow-500/30"
                                                             : campaign.status === "completed"
-                                                                ? "bg-gray-100 text-gray-800 border border-gray-300"
-                                                                : "bg-gray-100 text-gray-800"
+                                                                ? "bg-gray-100 text-gray-800 border border-gray-300 dark:bg-gray-500/20 dark:text-gray-200 dark:border-gray-500/30"
+                                                                : "bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-200"
                                                         }`}
                                                 >
                                                     {campaign.status}
                                                 </span>
-                                                <ArrowUpRight className="w-4 h-4 text-gray-700" />
+                                                <ArrowUpRight className="w-4 h-4 text-gray-700 dark:text-muted-foreground" />
                                             </div>
                                         </Link>
                                     </motion.div>

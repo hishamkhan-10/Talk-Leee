@@ -1,5 +1,3 @@
-"use client";
-
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export type UnifiedApiError = {
@@ -160,8 +158,24 @@ export function createHttpClient(config: HttpClientConfig) {
             headers.Authorization = `Bearer ${token}`;
         }
 
-        const body = opts.body === undefined ? undefined : JSON.stringify(opts.body);
-        if (body && !headers["Content-Type"] && !headers["content-type"]) {
+        const rawBody = opts.body as unknown;
+        let body: BodyInit | undefined;
+        let isJson = false;
+        if (rawBody !== undefined) {
+            if (
+                typeof rawBody === "string" ||
+                rawBody instanceof FormData ||
+                rawBody instanceof URLSearchParams ||
+                rawBody instanceof Blob ||
+                rawBody instanceof ArrayBuffer
+            ) {
+                body = rawBody;
+            } else {
+                body = JSON.stringify(rawBody);
+                isJson = true;
+            }
+        }
+        if (isJson && body && !headers["Content-Type"] && !headers["content-type"]) {
             headers["Content-Type"] = "application/json";
         }
 

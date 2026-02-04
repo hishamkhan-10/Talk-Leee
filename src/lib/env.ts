@@ -7,7 +7,7 @@ const EnvSchema = z.object({
     NODE_ENV: z.string().optional(),
     NEXT_PUBLIC_APP_ENV: AppEnvironmentSchema.optional(),
     VERCEL_ENV: VercelEnvironmentSchema.optional(),
-    NEXT_PUBLIC_API_URL: z.string().url().optional(),
+    NEXT_PUBLIC_API_BASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_COMMIT_SHA: z.string().min(7).optional(),
     VERCEL_GIT_COMMIT_SHA: z.string().min(7).optional(),
     COMMIT_SHA: z.string().min(7).optional(),
@@ -22,7 +22,7 @@ function parseEnv() {
         NODE_ENV: process.env.NODE_ENV,
         NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
         VERCEL_ENV: process.env.VERCEL_ENV,
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
         NEXT_PUBLIC_COMMIT_SHA: process.env.NEXT_PUBLIC_COMMIT_SHA,
         VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
         COMMIT_SHA: process.env.COMMIT_SHA,
@@ -53,15 +53,8 @@ export function appEnvironment(): "development" | "staging" | "production" {
 }
 
 export function apiBaseUrl(): string {
-    if (env.NEXT_PUBLIC_API_URL) return env.NEXT_PUBLIC_API_URL;
-
-    if (typeof window !== "undefined") {
-        return `${window.location.origin}/api/v1`;
-    }
-
-    const fallback = appEnvironment() === "production" ? undefined : "http://localhost:8000/api/v1";
-    if (!fallback) throw new Error("Missing NEXT_PUBLIC_API_URL");
-    return fallback;
+    if (!env.NEXT_PUBLIC_API_BASE_URL) throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+    return env.NEXT_PUBLIC_API_BASE_URL;
 }
 
 export function commitSha(): string | undefined {

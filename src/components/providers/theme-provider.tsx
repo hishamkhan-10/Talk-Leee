@@ -37,7 +37,7 @@ export function ThemeProvider({
         const savedTheme = localStorage.getItem(storageKey) as Theme;
         if (savedTheme) {
             setThemeState(savedTheme);
-        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        } else if (window.matchMedia?.("(prefers-color-scheme: dark)")?.matches) {
             setThemeState("dark");
         }
     }, [storageKey]);

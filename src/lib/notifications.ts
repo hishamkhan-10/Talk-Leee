@@ -260,7 +260,8 @@ class NotificationsStore {
         const enabled = categoryDefaults.enabled;
         const showInApp = routing === "inApp" || routing === "both";
         if (enabled && showInApp) {
-            this.state = { ...this.state, toasts: [n, ...this.state.toasts].slice(0, 5) };
+            const nextToasts = [n, ...this.state.toasts.filter((t) => t.type !== n.type)].slice(0, 5);
+            this.state = { ...this.state, toasts: nextToasts };
         }
 
         this.persist();

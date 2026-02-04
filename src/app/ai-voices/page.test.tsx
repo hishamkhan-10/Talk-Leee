@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import AiVoicesPage from "./page";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 // Mock global fetch
 const originalFetch = global.fetch;
@@ -51,7 +52,11 @@ describe("AiVoicesPage", () => {
       json: async () => mockVoices,
     }) as unknown as Promise<Response>;
 
-    render(<AiVoicesPage />);
+    render(
+      <ThemeProvider>
+        <AiVoicesPage />
+      </ThemeProvider>
+    );
 
     // Wait for "Sarah" to appear
     await waitFor(() => {
@@ -68,7 +73,11 @@ describe("AiVoicesPage", () => {
        throw new Error("API Error");
     };
 
-    render(<AiVoicesPage />);
+    render(
+      <ThemeProvider>
+        <AiVoicesPage />
+      </ThemeProvider>
+    );
 
     await waitFor(() => {
       assert.ok(screen.getByText("Error: API Error"));
@@ -95,7 +104,11 @@ describe("AiVoicesPage", () => {
       json: async () => mockVoices,
     }) as unknown as Promise<Response>;
 
-    render(<AiVoicesPage />);
+    render(
+      <ThemeProvider>
+        <AiVoicesPage />
+      </ThemeProvider>
+    );
 
     await waitFor(() => {
       assert.ok(screen.getByText("Sarah"));

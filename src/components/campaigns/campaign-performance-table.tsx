@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Copy, Ellipsis, Pause, Play, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
 type ColumnDef = { key: CampaignSortKey; label: string; numeric?: boolean };
 
@@ -37,8 +38,10 @@ const COLUMNS: ColumnDef[] = [
     { key: "leads", label: "Leads", numeric: true },
     { key: "completed", label: "Completed", numeric: true },
     { key: "failed", label: "Failed", numeric: true },
-    { key: "createdAt", label: "Created", numeric: true },
 ];
+
+const TABLE_GRID_COLS =
+    "grid-cols-[36px_minmax(0,1.5fr)_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1.6fr)_110px_170px_120px_90px_90px_90px_44px]";
 
 const ALL_STATUSES: CampaignStatus[] = ["Active", "Paused", "Completed", "Draft", "Failed"];
 
@@ -304,6 +307,7 @@ export function CampaignPerformanceTable({
     const [rowsPerPage, setRowsPerPage] = useState<RowsPerPage>(25);
     const [page, setPage] = useState(1);
     const [statusOpen, setStatusOpen] = useState(false);
+    const [statusPanelStyle, setStatusPanelStyle] = useState<CSSProperties | null>(null);
     const [suggestOpen, setSuggestOpen] = useState(false);
     const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -324,6 +328,47 @@ export function CampaignPerformanceTable({
     const suggestRef = useRef<HTMLDivElement | null>(null);
     const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const tableScrollRef = useRef<HTMLDivElement | null>(null);
+    const headerRef = useRef<HTMLDivElement | null>(null);
+
+    useLayoutEffect(() => {
+        if (!statusOpen) {
+            setStatusPanelStyle(null);
+            return;
+        }
+
+        const margin = 8;
+
+        const update = () => {
+            const btn = statusButtonRef.current;
+            if (!btn) return;
+
+            const rect = btn.getBoundingClientRect();
+            const width = rect.width;
+
+            let left = rect.left;
+            left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+
+            let top = rect.bottom + margin;
+
+            const panel = statusPanelRef.current;
+            if (panel) {
+                const h = panel.offsetHeight;
+                if (top + h > window.innerHeight - margin) {
+                    top = Math.max(margin, window.innerHeight - h - margin);
+                }
+            }
+
+            setStatusPanelStyle({ left, top, width });
+        };
+
+        update();
+        window.addEventListener("resize", update);
+        window.addEventListener("scroll", update, true);
+        return () => {
+            window.removeEventListener("resize", update);
+            window.removeEventListener("scroll", update, true);
+        };
+    }, [statusOpen]);
 
     useEffect(() => {
         const savedSort = fromLocalStorage<CampaignSortSpec[]>("campaigns.performance.sort", []);
@@ -371,7 +416,7 @@ export function CampaignPerformanceTable({
     }, [exportCols, exportFrom, exportPreset, exportTo]);
 
     useEffect(() => {
-        const onMouseDown = (e: MouseEvent) => {
+        const onClick = (e: MouseEvent) => {
             const t = e.target as Node | null;
             if (!t) return;
             if (statusOpen) {
@@ -392,8 +437,8 @@ export function CampaignPerformanceTable({
                 setMenuOpenFor(null);
             }
         };
-        window.addEventListener("mousedown", onMouseDown);
-        return () => window.removeEventListener("mousedown", onMouseDown);
+        window.addEventListener("click", onClick);
+        return () => window.removeEventListener("click", onClick);
     }, [menuOpenFor, statusOpen, suggestOpen]);
 
     useEffect(() => {
@@ -467,6 +512,12 @@ export function CampaignPerformanceTable({
     };
 
     const detailsCampaign = useMemo(() => campaigns.find((c) => c.id === detailsId) || null, [campaigns, detailsId]);
+    const detailsStatus = useMemo(
+        () => (detailsCampaign ? normalizeCampaignStatus(detailsCampaign.status) : null),
+        [detailsCampaign]
+    );
+    const detailsCanPause = detailsStatus === "Active";
+    const detailsCanResume = detailsStatus === "Paused" || detailsStatus === "Draft" || detailsStatus === "Failed";
     const editCampaign = useMemo(() => campaigns.find((c) => c.id === editId) || null, [campaigns, editId]);
 
     const [editDraft, setEditDraft] = useState<{ name: string; description: string; maxConcurrent: number; voiceId: string } | null>(null);
@@ -491,6 +542,7 @@ export function CampaignPerformanceTable({
     const rowHeight = 56;
     const [scrollTop, setScrollTop] = useState(0);
     const [viewportH, setViewportH] = useState(520);
+    const [headerH, setHeaderH] = useState(0);
 
     useEffect(() => {
         if (!useVirtual) return;
@@ -499,7 +551,10 @@ export function CampaignPerformanceTable({
         const onScroll = () => setScrollTop(el.scrollTop);
         onScroll();
         el.addEventListener("scroll", onScroll, { passive: true });
-        const ro = new ResizeObserver(() => setViewportH(el.clientHeight));
+        const ro = new ResizeObserver(() => {
+            setViewportH(el.clientHeight);
+            setHeaderH(headerRef.current?.offsetHeight ?? 0);
+        });
         ro.observe(el);
         return () => {
             el.removeEventListener("scroll", onScroll);
@@ -510,10 +565,12 @@ export function CampaignPerformanceTable({
     const virtual = useMemo(() => {
         if (!useVirtual) return null;
         const total = paged.slice.length;
-        const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - 6);
-        const endIndex = Math.min(total, startIndex + Math.ceil(viewportH / rowHeight) + 12);
+        const effectiveScrollTop = Math.max(0, scrollTop - headerH);
+        const effectiveViewportH = Math.max(0, viewportH - headerH);
+        const startIndex = Math.max(0, Math.floor(effectiveScrollTop / rowHeight) - 6);
+        const endIndex = Math.min(total, startIndex + Math.ceil(effectiveViewportH / rowHeight) + 12);
         return { total, startIndex, endIndex, topPad: startIndex * rowHeight, bottomPad: (total - endIndex) * rowHeight };
-    }, [paged.slice.length, rowHeight, scrollTop, useVirtual, viewportH]);
+    }, [headerH, paged.slice.length, rowHeight, scrollTop, useVirtual, viewportH]);
 
     const visibleRows = useMemo(() => {
         if (!useVirtual || !virtual) return paged.slice;
@@ -559,7 +616,14 @@ export function CampaignPerformanceTable({
     };
 
     const TableHeader = (
-        <div role="row" className="grid grid-cols-[40px_1.4fr_120px_160px_140px_110px_110px_110px_170px_44px] gap-2 border-b border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
+        <div
+            ref={headerRef}
+            role="row"
+            className={cn(
+                "sticky top-0 z-20 grid gap-2 border-b border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground",
+                TABLE_GRID_COLS
+            )}
+        >
             <div className="flex items-center justify-center">
                 <input
                     aria-label="Select all visible campaigns"
@@ -569,33 +633,52 @@ export function CampaignPerformanceTable({
                     className="h-4 w-4 rounded border-input bg-background accent-primary"
                 />
             </div>
-            {COLUMNS.map((c) => (
+            <button
+                type="button"
+                onClick={(e) => onHeaderClick("name", e)}
+                className="flex items-center gap-2 rounded-md px-2 py-1 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Sort by Campaign"
+            >
+                <span aria-hidden className="w-6 shrink-0" />
+                <span className="truncate">Campaign</span>
+                <span className="text-muted-foreground">{sortIndicator(sort, "name")}</span>
+            </button>
+            <button
+                type="button"
+                onClick={(e) => onHeaderClick("progress", e)}
+                className="flex items-center justify-end gap-2 rounded-md px-2 py-1 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+                aria-label="Sort by Metrics"
+            >
+                <span className="truncate">Metrics</span>
+                <span className="text-muted-foreground">{sortIndicator(sort, "progress")}</span>
+            </button>
+            {COLUMNS.filter((c) => c.key !== "name").map((c) => (
                 <button
-                                key={c.key}
-                                type="button"
-                                onClick={(e) => onHeaderClick(c.key, e)}
-                                className={cn(
-                                    "flex items-center gap-2 rounded-md px-2 py-1 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    c.numeric ? "justify-end" : "justify-start"
-                                )}
-                                aria-label={`Sort by ${c.label}`}
-                            >
+                    key={c.key}
+                    type="button"
+                    onClick={(e) => onHeaderClick(c.key, e)}
+                    className={cn(
+                        "hidden items-center gap-2 rounded-md px-2 py-1 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex",
+                        c.numeric ? "justify-end" : "justify-start"
+                    )}
+                    aria-label={`Sort by ${c.label}`}
+                >
                     <span className="truncate">{c.label}</span>
                     <span className="text-muted-foreground">{sortIndicator(sort, c.key)}</span>
                 </button>
             ))}
-            <div />
+            <div className="hidden sm:block" />
         </div>
     );
 
     return (
         <div className="space-y-4">
-            <div className={cn("content-card relative", statusOpen || suggestOpen ? "z-50" : "")}>
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                    <div className="flex-1">
+            <div className="content-card relative">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-start">
+                    <div className="min-w-0">
                         <div className="text-sm font-semibold text-foreground">Filters</div>
-                        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
-                            <div className="relative" ref={suggestRef}>
+                        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3 md:items-start">
+                            <div className="relative flex min-w-0 flex-col" ref={suggestRef}>
                                 <label className="text-xs font-semibold text-muted-foreground">Campaign name</label>
                                 <Input
                                     value={filters.query}
@@ -608,12 +691,12 @@ export function CampaignPerformanceTable({
                                     onFocus={() => {
                                         if (nameSuggestions.length > 0) setSuggestOpen(true);
                                     }}
-                                    className="mt-1 border-input bg-background/50 text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                                    className="mt-1 border-0 bg-background/50 text-foreground placeholder:text-muted-foreground hover:bg-background focus-visible:ring-0 focus-visible:ring-offset-0"
                                 />
                                 {suggestOpen && nameSuggestions.length > 0 ? (
                                     <div
                                         role="listbox"
-                                        className="absolute left-0 top-full z-50 mt-2 w-full origin-top overflow-hidden rounded-xl border border-border bg-popover shadow-xl animate-in fade-in-0 zoom-in-95"
+                                        className="absolute left-0 top-full z-50 mt-2 w-full max-h-64 origin-top overflow-auto rounded-xl border border-border bg-popover shadow-xl animate-in fade-in-0 zoom-in-95"
                                     >
                                         {nameSuggestions.map((n) => (
                                             <button
@@ -634,13 +717,26 @@ export function CampaignPerformanceTable({
                                 ) : null}
                             </div>
 
-                            <div className="relative">
+                            <div className="relative flex min-w-0 flex-col">
                                 <label className="text-xs font-semibold text-muted-foreground">Status</label>
                                 <button
                                     ref={statusButtonRef}
                                     type="button"
-                                    onClick={() => setStatusOpen((v) => !v)}
-                                    className="mt-1 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    onClick={() =>
+                                        setStatusOpen((v) => {
+                                            const next = !v;
+                                            if (!next) {
+                                                setStatusPanelStyle(null);
+                                                return next;
+                                            }
+                                            const btn = statusButtonRef.current;
+                                            if (!btn) return next;
+                                            const rect = btn.getBoundingClientRect();
+                                            setStatusPanelStyle({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+                                            return next;
+                                        })
+                                    }
+                                    className="mt-1 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 text-sm text-foreground hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     aria-haspopup="listbox"
                                     aria-expanded={statusOpen}
                                 >
@@ -649,124 +745,118 @@ export function CampaignPerformanceTable({
                                     </span>
                                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                 </button>
-                                <div
-                                    ref={statusPanelRef}
-                                    role="listbox"
-                                    aria-hidden={!statusOpen}
-                                    data-state={statusOpen ? "open" : "closed"}
-                                    className="absolute left-0 top-full z-50 mt-2 w-full origin-top overflow-hidden rounded-xl border border-border bg-popover p-2 shadow-xl invisible opacity-0 scale-95 -translate-y-1 pointer-events-none transition-[opacity,transform] duration-150 ease-out will-change-transform data-[state=open]:visible data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:translate-y-0 data-[state=open]:pointer-events-auto"
-                                >
-                                    <div className="max-h-[240px] overflow-auto">
-                                        {ALL_STATUSES.map((s) => {
-                                            const checked = filters.statuses.includes(s);
-                                            return (
-                                                <label
-                                                    key={s}
-                                                    className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
-                                                >
-                                                    <span className="flex items-center gap-2">
-                                                        <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(s))}>
-                                                            {s}
-                                                        </span>
-                                                    </span>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checked}
-                                                        onChange={(e) => {
-                                                            const next = e.target.checked;
-                                                            setFilters((p) => {
-                                                                const set = new Set(p.statuses);
-                                                                if (next) set.add(s);
-                                                                else set.delete(s);
-                                                                return { ...p, statuses: Array.from(set) };
-                                                            });
-                                                        }}
-                                                        className="h-4 w-4 rounded border-input bg-background accent-primary"
-                                                    />
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="mt-2 flex items-center justify-between gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            onClick={() => setFilters((p) => ({ ...p, statuses: [] }))}
-                                        >
-                                            Clear
-                                        </Button>
-                                        <Button type="button" variant="outline" size="sm" onClick={() => setStatusOpen(false)}>
-                                            Done
-                                        </Button>
-                                    </div>
-                                </div>
+                                {statusOpen && typeof document !== "undefined"
+                                    ? createPortal(
+                                          <div className="fixed inset-0 z-50">
+                                              <button
+                                                  type="button"
+                                                  className="absolute inset-0 bg-transparent"
+                                                  aria-label="Close status filter"
+                                                  onClick={() => setStatusOpen(false)}
+                                              />
+                                              <div
+                                                  ref={statusPanelRef}
+                                                  role="listbox"
+                                                  className="absolute overflow-hidden rounded-xl border border-border bg-popover p-2 shadow-xl animate-in fade-in-0 zoom-in-95"
+                                                  style={statusPanelStyle ?? undefined}
+                                              >
+                                                  <div className="max-h-[108px] overflow-y-auto overscroll-contain pr-1 scrollbar-gutter-stable">
+                                                      {ALL_STATUSES.map((s) => {
+                                                          const checked = filters.statuses.includes(s);
+                                                          return (
+                                                              <label
+                                                                  key={s}
+                                                                  className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-foreground transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground"
+                                                              >
+                                                                  <span className="flex items-center gap-2">
+                                                                      <span
+                                                                          className={cn(
+                                                                              "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                                                                              statusBadgeClass(s)
+                                                                          )}
+                                                                      >
+                                                                          {s}
+                                                                      </span>
+                                                                  </span>
+                                                                  <input
+                                                                      type="checkbox"
+                                                                      checked={checked}
+                                                                      onChange={(e) => {
+                                                                          const next = e.target.checked;
+                                                                          setFilters((p) => {
+                                                                              const set = new Set(p.statuses);
+                                                                              if (next) set.add(s);
+                                                                              else set.delete(s);
+                                                                              return { ...p, statuses: Array.from(set) };
+                                                                          });
+                                                                      }}
+                                                                      className="h-4 w-4 rounded border-input bg-background accent-primary"
+                                                                  />
+                                                              </label>
+                                                          );
+                                                      })}
+                                                  </div>
+                                                  <div className="mt-2 flex items-center justify-between gap-2">
+                                                      <Button
+                                                          type="button"
+                                                          variant="secondary"
+                                                          size="sm"
+                                                          onClick={() => setFilters((p) => ({ ...p, statuses: [] }))}
+                                                      >
+                                                          Clear
+                                                      </Button>
+                                                      <Button type="button" variant="outline" size="sm" onClick={() => setStatusOpen(false)}>
+                                                          Done
+                                                      </Button>
+                                                  </div>
+                                              </div>
+                                          </div>,
+                                          document.body
+                                      )
+                                    : null}
                             </div>
 
-                            <div>
+                            <div className="flex min-w-0 flex-col">
                                 <label className="text-xs font-semibold text-muted-foreground">Success rate</label>
-                                <div className="mt-1 rounded-md border border-input bg-background/50 p-3">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            aria-label="Minimum success rate"
-                                            type="number"
-                                            min={0}
-                                            max={100}
-                                            value={filters.successMin}
-                                            onChange={(e) => {
-                                                const v = Number(e.target.value);
-                                                setFilters((p) => ({ ...p, successMin: Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0 }));
-                                            }}
-                                            className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                                        />
-                                        <span className="text-sm text-muted-foreground">to</span>
-                                        <input
-                                            aria-label="Maximum success rate"
-                                            type="number"
-                                            min={0}
-                                            max={100}
-                                            value={filters.successMax}
-                                            onChange={(e) => {
-                                                const v = Number(e.target.value);
-                                                setFilters((p) => ({ ...p, successMax: Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 100 }));
-                                            }}
-                                            className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                                        />
-                                        <div className="flex-1 text-right text-xs font-semibold text-muted-foreground">
-                                            {Math.min(filters.successMin, filters.successMax)}–{Math.max(filters.successMin, filters.successMax)}%
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 grid grid-cols-2 gap-3">
-                                        <input
-                                            aria-label="Minimum success rate slider"
-                                            type="range"
-                                            min={0}
-                                            max={100}
-                                            value={filters.successMin}
-                                            onChange={(e) => setFilters((p) => ({ ...p, successMin: Number(e.target.value) }))}
-                                            className="accent-primary"
-                                        />
-                                        <input
-                                            aria-label="Maximum success rate slider"
-                                            type="range"
-                                            min={0}
-                                            max={100}
-                                            value={filters.successMax}
-                                            onChange={(e) => setFilters((p) => ({ ...p, successMax: Number(e.target.value) }))}
-                                            className="accent-primary"
-                                        />
-                                    </div>
+                                <div className="mt-1 flex h-10 items-center gap-2 rounded-md border-0 bg-background/50 px-2">
+                                    <input
+                                        aria-label="Minimum success rate"
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        value={filters.successMin}
+                                        onChange={(e) => {
+                                            const v = Number(e.target.value);
+                                            setFilters((p) => ({ ...p, successMin: Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0 }));
+                                        }}
+                                        className="h-8 flex-1 min-w-0 rounded-md border-0 bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-0"
+                                    />
+                                    <span className="text-sm text-muted-foreground">to</span>
+                                    <input
+                                        aria-label="Maximum success rate"
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        value={filters.successMax}
+                                        onChange={(e) => {
+                                            const v = Number(e.target.value);
+                                            setFilters((p) => ({ ...p, successMax: Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 100 }));
+                                        }}
+                                        className="h-8 flex-1 min-w-0 rounded-md border-0 bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-0"
+                                    />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" onClick={() => setExportOpen(true)}>
+                    <div className="flex items-center justify-end gap-2 md:flex-col md:items-end md:justify-between md:self-stretch">
+                        <Button type="button" variant="outline" onClick={() => setExportOpen(true)} className="h-10">
                             Export
                         </Button>
-                        <Link href="/campaigns/new">
-                            <Button type="button">New Campaign</Button>
+                        <Link href="/campaigns/new" className="shrink-0">
+                            <Button type="button" variant="outline" className="h-10">
+                                New Campaign
+                            </Button>
                         </Link>
                     </div>
                 </div>
@@ -798,11 +888,11 @@ export function CampaignPerformanceTable({
             ) : null}
 
             <div className="content-card overflow-hidden">
-                <div className="flex flex-col gap-3 border-b border-border px-3 py-3 md:flex-row md:items-center md:justify-between">
-                    <div className="text-sm text-muted-foreground">
+                <div className="flex flex-col gap-3 border-b border-border px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <div className="text-sm text-muted-foreground text-center sm:text-left">
                         {paged.start}-{paged.end} of {sorted.length}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                         <div className="text-xs font-semibold text-muted-foreground">Rows</div>
                         <select
                             aria-label="Rows per page"
@@ -821,7 +911,7 @@ export function CampaignPerformanceTable({
                             <option value={100}>100</option>
                             <option value="All">All</option>
                         </select>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center justify-center gap-1">
                             <Button type="button" variant="outline" size="sm" onClick={() => setPage(1)} disabled={paged.page <= 1}>
                                 First
                             </Button>
@@ -853,15 +943,14 @@ export function CampaignPerformanceTable({
                         <div className="mt-1 text-sm text-muted-foreground">Try adjusting status or success rate.</div>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <div className="min-w-[980px]">
-                            {TableHeader}
-                            <div
-                                ref={tableScrollRef}
-                                className={cn("scrollbar-gutter-stable relative max-h-[520px] overflow-y-auto overflow-x-hidden overscroll-contain", useVirtual ? "pb-2" : "")}
-                                role="rowgroup"
-                            >
-                                {useVirtual && virtual ? <div style={{ height: virtual.topPad }} /> : null}
+                    <div
+                        ref={tableScrollRef}
+                        data-testid="campaigns-performance-table"
+                        className={cn("scrollbar-gutter-stable relative max-h-[520px] overflow-y-auto overflow-x-hidden overscroll-contain", useVirtual ? "pb-2" : "")}
+                        role="rowgroup"
+                    >
+                        {TableHeader}
+                        {useVirtual && virtual ? <div style={{ height: virtual.topPad }} /> : null}
 
                                 {visibleRows.map((campaign) => {
                                     const st = normalizeCampaignStatus(campaign.status);
@@ -874,10 +963,7 @@ export function CampaignPerformanceTable({
 
                                     return (
                                         <div key={campaign.id} className="border-b border-border">
-                                            <div
-                                                role="row"
-                                                className="grid grid-cols-[40px_1.4fr_120px_160px_140px_110px_110px_110px_170px_44px] items-center gap-2 px-3 py-2 text-sm text-foreground"
-                                            >
+                                            <div role="row" className={cn("grid items-center gap-2 px-3 py-2 text-sm text-foreground", TABLE_GRID_COLS)}>
                                                 <div className="flex items-center justify-center">
                                                     <input
                                                         aria-label={`Select ${campaign.name}`}
@@ -901,16 +987,44 @@ export function CampaignPerformanceTable({
                                                         className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                         onClick={() => setDetailsId(campaign.id)}
                                                     >
-                                                        <div className="truncate font-semibold hover:underline">{campaign.name}</div>
+                                                        <div className="min-w-0 flex items-center gap-2">
+                                                            <div className="min-w-0 truncate font-semibold hover:underline">{campaign.name}</div>
+                                                            <span
+                                                                className={cn(
+                                                                    "sm:hidden inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                                                    statusBadgeClass(st)
+                                                                )}
+                                                            >
+                                                                {st}
+                                                            </span>
+                                                        </div>
                                                         <div className="truncate text-xs text-muted-foreground">{campaign.description || "—"}</div>
                                                     </button>
                                                 </div>
-                                                <div className="px-2">
+                                                <div className="px-2 sm:hidden">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                                                            <div className={cn("h-full", progressColorClass(progress))} style={{ width: `${progress.toFixed(1)}%` }} />
+                                                        </div>
+                                                        <div className="w-12 text-right text-xs font-semibold tabular-nums text-foreground">
+                                                            {formatPct(progress)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-1 overflow-x-auto">
+                                                        <div className="flex min-w-max items-center gap-3 text-[11px] tabular-nums text-muted-foreground whitespace-nowrap">
+                                                            <span className="text-foreground font-semibold">SR {formatPct(success)}</span>
+                                                            <span>L {Number(campaign.total_leads || 0).toLocaleString()}</span>
+                                                            <span>C {Number(campaign.calls_completed || 0).toLocaleString()}</span>
+                                                            <span>F {Number(campaign.calls_failed || 0).toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="hidden px-2 sm:block">
                                                     <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", statusBadgeClass(st))}>
                                                         {st}
                                                     </span>
                                                 </div>
-                                                <div className="px-2">
+                                                <div className="hidden px-2 sm:block">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
                                                             <div className={cn("h-full", progressColorClass(progress))} style={{ width: `${progress.toFixed(1)}%` }} />
@@ -920,14 +1034,11 @@ export function CampaignPerformanceTable({
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="px-2 text-right text-sm font-semibold tabular-nums text-foreground">{formatPct(success)}</div>
-                                                <div className="px-2 text-right tabular-nums text-foreground">{Number(campaign.total_leads || 0).toLocaleString()}</div>
-                                                <div className="px-2 text-right tabular-nums text-foreground">{Number(campaign.calls_completed || 0).toLocaleString()}</div>
-                                                <div className="px-2 text-right tabular-nums text-foreground">{Number(campaign.calls_failed || 0).toLocaleString()}</div>
-                                                <div className="px-2 text-right text-xs font-semibold tabular-nums text-muted-foreground">
-                                                    {new Date(campaign.created_at).toLocaleDateString()}
-                                                </div>
-                                                <div className="relative flex items-center justify-end">
+                                                <div className="hidden px-2 text-right text-sm font-semibold tabular-nums text-foreground sm:block">{formatPct(success)}</div>
+                                                <div className="hidden px-2 text-right tabular-nums text-foreground sm:block">{Number(campaign.total_leads || 0).toLocaleString()}</div>
+                                                <div className="hidden px-2 text-right tabular-nums text-foreground sm:block">{Number(campaign.calls_completed || 0).toLocaleString()}</div>
+                                                <div className="hidden px-2 text-right tabular-nums text-foreground sm:block">{Number(campaign.calls_failed || 0).toLocaleString()}</div>
+                                                <div className="relative hidden items-center justify-end sm:flex">
                                                     <button
                                                         type="button"
                                                         aria-label="Row actions"
@@ -1090,8 +1201,6 @@ export function CampaignPerformanceTable({
                                 })}
 
                                 {useVirtual && virtual ? <div style={{ height: virtual.bottomPad }} /> : null}
-                            </div>
-                        </div>
                     </div>
                 )}
             </div>
@@ -1238,6 +1347,28 @@ export function CampaignPerformanceTable({
                                     Open Page
                                 </Button>
                             </Link>
+                            {detailsCanPause || detailsCanResume ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={async () => {
+                                        if (!detailsCampaign) return;
+                                        if (detailsCanPause) await onPause(detailsCampaign.id);
+                                        else if (detailsCanResume) await onResume(detailsCampaign.id);
+                                    }}
+                                >
+                                    {detailsCanPause ? "Pause" : "Resume"}
+                                </Button>
+                            ) : null}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={async () => {
+                                    await onDuplicate(detailsCampaign.id);
+                                }}
+                            >
+                                Duplicate
+                            </Button>
                             <Button
                                 type="button"
                                 variant="outline"
@@ -1254,6 +1385,16 @@ export function CampaignPerformanceTable({
                                 onClick={() => router.push(`/analytics?campaign=${encodeURIComponent(detailsCampaign.id)}`)}
                             >
                                 View Analytics
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={() => {
+                                    setDetailsId(null);
+                                    setConfirmDeleteId(detailsCampaign.id);
+                                }}
+                            >
+                                Delete
                             </Button>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { useNotificationsActions, useNotificationsState } from "@/lib/notifications-client";
-import type { NotificationPriority, NotificationRouting, NotificationType, ThemePreference } from "@/lib/notifications";
+import type { NotificationPriority, NotificationRouting, NotificationType } from "@/lib/notifications";
 import { Download, Trash2 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,27 +34,8 @@ const priorities: NotificationPriority[] = ["low", "normal", "high"];
 const routings: NotificationRouting[] = ["inApp", "webhook", "both", "none"];
 
 export default function SettingsPage() {
-    const { settings, hydrated } = useNotificationsState();
+    const { settings } = useNotificationsState();
     const { setSettings, setCategory, setPrivacy, exportHistoryJson, clearAll } = useNotificationsActions();
-
-    const [themeLocal, setThemeLocal] = useState<ThemePreference>("system");
-
-    useEffect(() => {
-        setThemeLocal(settings.theme);
-    }, [settings.theme]);
-
-    useEffect(() => {
-        if (!hydrated) return;
-        const root = document.documentElement;
-        if (themeLocal === "dark") root.classList.add("dark");
-        else if (themeLocal === "light") root.classList.remove("dark");
-        else {
-            const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
-            if (prefersDark) root.classList.add("dark");
-            else root.classList.remove("dark");
-        }
-        setSettings({ theme: themeLocal });
-    }, [hydrated, setSettings, themeLocal]);
 
     const retentionDaysLabel = useMemo(() => {
         const v = settings.historyRetentionDays;
@@ -66,7 +47,7 @@ export default function SettingsPage() {
     return (
         <DashboardLayout title="Settings" description="Configure notifications, privacy, integrations, and account.">
             <div className="mx-auto w-full max-w-5xl space-y-6">
-                <div className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-4">
+                <div className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-4 transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-gray-50 hover:shadow-md">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div className="min-w-0">
                             <div className="text-sm font-semibold text-foreground">Quick links</div>
@@ -75,7 +56,7 @@ export default function SettingsPage() {
                         <div className="flex flex-wrap gap-2">
                             <Link
                                 href="/settings/connectors"
-                                className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground hover:bg-foreground/5 transition-colors"
+                                className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-[transform,background-color,color,border-color] duration-150 ease-out hover:bg-foreground/5 hover:scale-[1.02] active:scale-[0.99]"
                             >
                                 Connectors
                             </Link>
@@ -85,10 +66,10 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Display Preferences</CardTitle>
-                        <CardDescription>Toast timing, sound, and theme.</CardDescription>
+                        <CardDescription>Toast timing and sound.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="toastDuration">Notification display duration (ms)</Label>
                                 <Input
@@ -104,7 +85,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Notification sounds</Label>
-                                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                     <div className="text-sm font-semibold text-gray-900">Enable sounds</div>
                                     <Switch
                                         checked={settings.soundsEnabled}
@@ -112,18 +93,6 @@ export default function SettingsPage() {
                                         ariaLabel="Enable notification sounds"
                                     />
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Theme</Label>
-                                <Select
-                                    value={themeLocal}
-                                    onChange={(v) => setThemeLocal(v as ThemePreference)}
-                                    ariaLabel="Theme preference"
-                                >
-                                    <option value="system">System</option>
-                                    <option value="light">Light</option>
-                                    <option value="dark">Dark</option>
-                                </Select>
                             </div>
                         </div>
                     </CardContent>
@@ -136,14 +105,14 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {notificationTypes.map((type) => (
-                            <div key={type} className="rounded-2xl border border-gray-200 bg-white p-4">
+                            <div key={type} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                     <div className="min-w-0">
                                         <div className="text-sm font-semibold capitalize text-gray-900">{type}</div>
                                         <div className="mt-1 text-sm text-gray-600">Toggle delivery and adjust priority.</div>
                                     </div>
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 sm:w-[220px]">
+                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md sm:w-[220px]">
                                             <div className="text-sm font-semibold text-gray-900">Enabled</div>
                                             <Switch
                                                 checked={settings.category[type].enabled}
@@ -191,7 +160,7 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         <div className="text-sm font-semibold text-gray-900">Store notification history</div>
@@ -220,7 +189,7 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         <div className="text-sm font-semibold text-gray-900">Third-party consent</div>
@@ -265,7 +234,7 @@ export default function SettingsPage() {
                         <CardDescription>Webhook setup and routing rules.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <div className="text-sm font-semibold text-gray-900">Webhook</div>
@@ -297,7 +266,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                             <div className="text-sm font-semibold text-gray-900">Routing rules</div>
                             <div className="text-sm text-gray-600">
                                 Webhook routing requires third-party consent and an enabled webhook URL.
@@ -313,7 +282,7 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                 <div className="text-sm font-semibold text-gray-900">Profile</div>
                                 <div className="space-y-2">
                                     <Label htmlFor="profileName">Name</Label>
@@ -348,12 +317,12 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                 <div>
                                     <div className="text-sm font-semibold text-gray-900">Authentication</div>
                                     <div className="mt-1 text-sm text-gray-600">Security options.</div>
                                 </div>
-                                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                     <div className="text-sm font-semibold text-gray-900">Two-factor authentication</div>
                                     <Switch
                                         checked={settings.account.auth.twoFactorEnabled}
@@ -372,7 +341,7 @@ export default function SettingsPage() {
                                 <div>
                                     <div className="text-sm font-semibold text-gray-900">Account linking</div>
                                     <div className="mt-2 space-y-2">
-                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                             <div className="text-sm font-semibold text-gray-900">Google</div>
                                             <Switch
                                                 checked={settings.account.linking.google}
@@ -387,7 +356,7 @@ export default function SettingsPage() {
                                                 ariaLabel="Link Google account"
                                             />
                                         </div>
-                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md">
                                             <div className="text-sm font-semibold text-gray-900">GitHub</div>
                                             <Switch
                                                 checked={settings.account.linking.github}

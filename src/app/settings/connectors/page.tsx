@@ -66,6 +66,7 @@ export default function ConnectorsPage() {
     const searchParams = useSearchParams();
     const q = useConnectorStatuses();
     const seenEvents = useRef(new Set<string>());
+    const lastRefreshEventRaw = useRef<string | null>(null);
 
     useEffect(() => {
         const handleUpdated = (data: unknown) => {
@@ -102,16 +103,41 @@ export default function ConnectorsPage() {
         bc?.addEventListener("message", onBc);
 
         const onStorage = (e: StorageEvent) => {
-            if (e.key !== "connectors.refresh") return;
+            if (e.key === "connectors.refresh.event") {
+                if (typeof e.newValue === "string" && e.newValue.trim().length > 0) {
+                    try {
+                        handleUpdated(JSON.parse(e.newValue) as unknown);
+                    } catch {
+                    }
+                }
+            }
+            if (e.key !== "connectors.refresh" && e.key !== "connectors.refresh.event") return;
             void qc.invalidateQueries({ queryKey: queryKeys.connectorStatuses() });
         };
         window.addEventListener("storage", onStorage);
+
+        const pollId = window.setInterval(() => {
+            let raw: string | null = null;
+            try {
+                raw = window.localStorage.getItem("connectors.refresh.event");
+            } catch {
+                return;
+            }
+            if (!raw || raw === lastRefreshEventRaw.current) return;
+            lastRefreshEventRaw.current = raw;
+            try {
+                handleUpdated(JSON.parse(raw) as unknown);
+            } catch {
+            }
+            void qc.invalidateQueries({ queryKey: queryKeys.connectorStatuses() });
+        }, 500);
 
         return () => {
             window.removeEventListener("message", onMessage);
             bc?.removeEventListener("message", onBc);
             bc?.close();
             window.removeEventListener("storage", onStorage);
+            window.clearInterval(pollId);
         };
     }, [qc]);
 

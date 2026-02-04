@@ -68,12 +68,12 @@ function AudioPlayer({ recordingId }: { recordingId: string }) {
             />
             <button
                 onClick={togglePlay}
-                className="p-2 rounded-full bg-white text-gray-900 hover:bg-gray-200 transition-colors"
+                className="p-2 rounded-full bg-foreground/5 text-foreground transition-[transform,background-color] duration-150 ease-out hover:bg-foreground/10 hover:scale-[1.06] active:scale-[0.98]"
             >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </button>
             <div className="flex-1 flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-10">
+                <span className="text-xs text-foreground/70 w-10 tabular-nums">
                     {formatDuration(Math.floor(currentTime))}
                 </span>
                 <input
@@ -82,9 +82,9 @@ function AudioPlayer({ recordingId }: { recordingId: string }) {
                     max={duration || 100}
                     value={currentTime}
                     onChange={handleSeek}
-                    className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white"
+                    className="flex-1 h-1 bg-foreground/15 rounded-lg appearance-none cursor-pointer accent-foreground"
                 />
-                <span className="text-xs text-gray-400 w-10">
+                <span className="text-xs text-foreground/70 w-10 tabular-nums">
                     {formatDuration(Math.floor(duration))}
                 </span>
             </div>
@@ -157,19 +157,21 @@ export default function RecordingsPage() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="content-card"
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                className="rounded-2xl border border-border bg-muted/60 p-6 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-background hover:shadow-md"
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-4">
-                                        <span className="text-sm font-medium text-white">
+                                        <span className="text-sm font-semibold text-foreground">
                                             Call {recording.call_id.slice(0, 8)}...
                                         </span>
-                                        <span className="text-sm text-gray-400 flex items-center gap-1">
+                                        <span className="text-sm text-foreground/70 flex items-center gap-1">
                                             <Clock className="w-4 h-4" />
                                             {formatDuration(recording.duration_seconds)}
                                         </span>
                                     </div>
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-foreground/70">
                                         {new Date(recording.created_at).toLocaleString()}
                                     </span>
                                 </div>
@@ -194,14 +196,14 @@ export default function RecordingsPage() {
                                 <button
                                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                                     disabled={page === 1}
-                                    className="px-3 py-1 text-sm border border-white/20 rounded-md text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+                                    className="px-3 py-1 text-sm border border-white/20 rounded-md text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:bg-white/10 hover:border-white/30 hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
                                 >
                                     Previous
                                 </button>
                                 <button
                                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                     disabled={page === totalPages}
-                                    className="px-3 py-1 text-sm border border-white/20 rounded-md text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+                                    className="px-3 py-1 text-sm border border-white/20 rounded-md text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:bg-white/10 hover:border-white/30 hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
                                 >
                                     Next
                                 </button>

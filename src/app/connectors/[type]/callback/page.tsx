@@ -19,21 +19,39 @@ function ConnectorsTypedCallbackInner({ providerType }: { providerType: string }
     const parsed = useMemo(() => parseConnectorsCallback(new URLSearchParams(searchParams.toString()), providerType), [providerType, searchParams]);
 
     useEffect(() => {
+        try {
+            if (sessionStorage.getItem("connectors.callback.sent") === "1") return;
+            sessionStorage.setItem("connectors.callback.sent", "1");
+        } catch {
+        }
+
+        let stableEventId = randomEventId();
+        try {
+            const existing = sessionStorage.getItem("connectors.callback.eventId");
+            if (existing) stableEventId = existing;
+            else sessionStorage.setItem("connectors.callback.eventId", stableEventId);
+        } catch {
+        }
+
         const payload = {
             type: "connectors:updated",
-            eventId: randomEventId(),
+            eventId: stableEventId,
             ok: parsed.ok,
             providerType: parsed.providerType,
             message: parsed.message,
         };
 
+        let deliveredToOpener = false;
         try {
-            if (window.opener && !window.opener.closed) window.opener.postMessage(payload, "*");
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage(payload, "*");
+                deliveredToOpener = true;
+            }
         } catch {
         }
 
         try {
-            if (typeof BroadcastChannel !== "undefined") {
+            if (!deliveredToOpener && typeof BroadcastChannel !== "undefined") {
                 const bc = new BroadcastChannel("connectors");
                 bc.postMessage(payload);
                 bc.close();
@@ -45,6 +63,10 @@ function ConnectorsTypedCallbackInner({ providerType }: { providerType: string }
             localStorage.setItem("connectors.refresh", String(Date.now()));
         } catch {
         }
+        try {
+            if (!deliveredToOpener) localStorage.setItem("connectors.refresh.event", JSON.stringify({ ...payload, ts: Date.now() }));
+        } catch {
+        }
 
         const t = window.setTimeout(() => {
             try {
@@ -52,7 +74,7 @@ function ConnectorsTypedCallbackInner({ providerType }: { providerType: string }
             } catch {
                 setCanClose(false);
             }
-        }, 350);
+        }, 900);
         return () => window.clearTimeout(t);
     }, [parsed.message, parsed.ok, parsed.providerType]);
 

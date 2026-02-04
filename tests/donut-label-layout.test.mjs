@@ -105,8 +105,8 @@ test("produces stable snapshot for a typical segment", () => {
       truncated: false,
       fontPx: 12,
       lines: ["Answered 2,345"],
-      x: 121.44,
-      y: 86.18,
+      x: 119.56,
+      y: 85.5,
     }
   );
 });

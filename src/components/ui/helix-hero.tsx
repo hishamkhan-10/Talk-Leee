@@ -6,8 +6,9 @@ import { KernelSize } from "postprocessing";
 import type React from "react";
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import * as THREE from "three";
-import BlurEffect from "react-progressive-blur";
 import { MagneticText } from "./morphing-cursor";
+import { apiBaseUrl } from "@/lib/env";
+import { AnimatePresence, motion } from "framer-motion";
 
 type AIState = "idle" | "connecting" | "browsing" | "listening" | "processing" | "speaking";
 
@@ -232,7 +233,7 @@ const AudioVisualizer: React.FC<{ isActive: boolean; audioLevel: number }> = ({ 
 
 interface HeroProps {
     title: string;
-    description: string;
+    description: string | string[];
     stats?: Array<{ label: string; value: string }>;
     adjustForNavbar?: boolean;
 }
@@ -245,6 +246,10 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const [currentVoiceName, setCurrentVoiceName] = useState("");
     const [voiceSelected, setVoiceSelected] = useState(false);
     const [hasSwiped, setHasSwiped] = useState(false);
+
+    const sectionRef = useRef<HTMLElement | null>(null);
+    const askAreaRef = useRef<HTMLDivElement | null>(null);
+    const heroContentRef = useRef<HTMLDivElement | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -262,6 +267,71 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const titleParts = title.split(/\s+/).filter(Boolean);
     const headlineA = (titleParts[0] || "AI").toUpperCase();
     const headlineB = (titleParts.slice(1).join(" ") || "DIALER").toUpperCase();
+    const descriptionParagraphs = useMemo(() => {
+        const paragraphs = Array.isArray(description) ? description : [description];
+        return paragraphs
+            .map((text) => text.replace(/\s+/g, " ").trim())
+            .filter(Boolean);
+    }, [description]);
+    const descriptionSizerParagraph = useMemo(() => {
+        let longest = "";
+        for (const paragraph of descriptionParagraphs) {
+            if (paragraph.length > longest.length) longest = paragraph;
+        }
+        return longest;
+    }, [descriptionParagraphs]);
+    const [descriptionIndex, setDescriptionIndex] = useState(0);
+    const [descriptionRenderId, setDescriptionRenderId] = useState(0);
+    const [typedChars, setTypedChars] = useState(0);
+    const activeParagraph = descriptionParagraphs[descriptionIndex] ?? "";
+
+    useEffect(() => {
+        setDescriptionIndex((prev) => {
+            const max = Math.max(0, descriptionParagraphs.length - 1);
+            return Math.min(prev, max);
+        });
+    }, [descriptionParagraphs.length]);
+
+    useEffect(() => {
+        const fullText = activeParagraph;
+        setTypedChars(0);
+        if (!fullText) return;
+
+        const targetTotalMs = 2600;
+        const perCharMs = Math.max(12, Math.min(34, Math.round(targetTotalMs / Math.max(1, fullText.length))));
+        const startDelayMs = 180;
+
+        let index = 0;
+        let timeoutId = 0;
+
+        const tick = () => {
+            index += 1;
+            setTypedChars(index);
+            if (index >= fullText.length) return;
+            timeoutId = window.setTimeout(tick, perCharMs);
+        };
+
+        timeoutId = window.setTimeout(tick, startDelayMs);
+        return () => {
+            if (timeoutId) window.clearTimeout(timeoutId);
+        };
+    }, [activeParagraph, descriptionRenderId]);
+
+    useEffect(() => {
+        if (!activeParagraph) return;
+        if (typedChars < activeParagraph.length) return;
+
+        const holdMs = 1400;
+        const timeoutId = window.setTimeout(() => {
+            setDescriptionRenderId((prev) => prev + 1);
+            setDescriptionIndex((prev) => {
+                const total = Math.max(1, descriptionParagraphs.length);
+                return (prev + 1) % total;
+            });
+        }, holdMs);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [activeParagraph, typedChars, descriptionParagraphs.length]);
 
     const playNextAudioChunk = useCallback(async () => {
         // Start IMMEDIATELY with first chunk - no pre-buffering delay
@@ -449,7 +519,11 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
         setHasSwiped(false);
         setVoiceSelected(false);
         const sessionId = `ask-ai-${Date.now()}`;
-        const ws = new WebSocket(`ws://localhost:8000/api/v1/ws/ai-test/${sessionId}`);
+        const apiUrl = apiBaseUrl();
+        const u = new URL(apiUrl);
+        u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+        u.pathname = `${u.pathname.replace(/\/$/, "")}/ws/ai-test/${sessionId}`;
+        const ws = new WebSocket(u.toString());
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -518,13 +592,17 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const heroHeightClass = adjustForNavbar ? "h-[calc(100vh-var(--home-navbar-height))]" : "h-screen";
 
     return (
-        <section className={`relative ${heroHeightClass} w-screen font-sans tracking-tight text-foreground bg-transparent overflow-hidden`}>
+        <section
+            ref={sectionRef}
+            className={`relative ${heroHeightClass} w-full font-sans tracking-tight text-foreground bg-transparent overflow-hidden select-none`}
+        >
             <div className="absolute inset-0 z-0">
                 <Scene aiState={aiState} audioLevel={audioLevel} />
             </div>
 
             {/* Ask AI Button - Always at center of waveform/helix (right side) */}
             <div
+                ref={askAreaRef}
                 className="absolute z-20 flex items-center gap-3"
                 style={{
                     left: '50%',
@@ -536,7 +614,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {showSwipeArrows && hasSwiped && (
                     <button
                         onClick={() => switchVoice('prev')}
-                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-primary hover:text-primary/90 dark:text-foreground dark:hover:text-foreground/90 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
@@ -545,9 +623,9 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {/* Main Circle Button */}
                 <button
                     onClick={handleMainButtonClick}
-                    className={`relative rounded-full flex flex-col items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
-                        ? "w-32 h-32 bg-background/55 hover:bg-background/75 border border-border/60 hover:border-border shadow-2xl hover:shadow-2xl hover:scale-105"
-                        : "w-40 h-40 bg-background/70 border-2 border-indigo-400/40"
+                    className={`relative rounded-full flex flex-col items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
+                        ? "w-32 h-32 bg-cyan-100 hover:bg-cyan-100 border border-cyan-200/80 hover:border-cyan-300 shadow-2xl hover:shadow-2xl hover:scale-105"
+                        : "w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
                         }`}
                     style={{
                         boxShadow: isActive
@@ -562,19 +640,19 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                     <div className="text-center z-10">
                         {!isActive && (
                             <>
-                                <h3 className="text-xl font-semibold text-foreground mb-1">Ask AI</h3>
-                                <p className="text-xs text-muted-foreground">{getStatusText()}</p>
+                                <h3 className="text-xl font-semibold text-primary dark:text-foreground mb-1">Ask AI</h3>
+                                <p className="text-xs text-primary/80 dark:text-foreground/80">{getStatusText()}</p>
                             </>
                         )}
 
                         {isActive && (
                             <>
-                                <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-0.5">
+                                <div className="text-2xl font-bold text-primary dark:text-foreground mb-0.5">
                                     {currentVoiceName || selectedVoice.name}
                                 </div>
-                                <div className="text-xs text-indigo-600/80 dark:text-indigo-300/80 mb-1">{selectedVoice.description}</div>
+                                <div className="text-xs text-primary/80 dark:text-foreground/80 mb-1">{selectedVoice.description}</div>
                                 <AudioVisualizer isActive={voiceSelected && (aiState === "listening" || aiState === "speaking")} audioLevel={audioLevel} />
-                                <p className="text-[10px] text-indigo-600/70 dark:text-indigo-300/70 mt-1">{getStatusText()}</p>
+                                <p className="text-[10px] text-primary/70 dark:text-foreground/70 mt-1">{getStatusText()}</p>
                             </>
                         )}
                     </div>
@@ -584,7 +662,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {showSwipeArrows && (
                     <button
                         onClick={() => switchVoice('next')}
-                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-primary hover:text-primary/90 dark:text-foreground dark:hover:text-foreground/90 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
@@ -594,28 +672,67 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             </div>
 
             {/* Hero content */}
-            <div className="absolute bottom-8 left-8 md:bottom-16 md:left-16 z-20 max-w-2xl">
-                <div className="flex flex-col gap-2 mb-6">
-                    <MagneticText text={headlineA} hoverText={headlineA} />
-                    <MagneticText text={headlineB} hoverText={headlineB} />
+            <div ref={heroContentRef} className="absolute bottom-8 left-8 md:bottom-16 md:left-16 z-20 max-w-2xl">
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: {},
+                        visible: {
+                            transition: { staggerChildren: 0.14, delayChildren: 0.05 },
+                        },
+                    }}
+                    className="flex flex-col gap-2 mb-6"
+                >
+                    <motion.div
+                        variants={{
+                            hidden: { opacity: 0, x: -44 },
+                            visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                        }}
+                    >
+                        <MagneticText text={headlineA} hoverText={headlineA} />
+                    </motion.div>
+                    <motion.div
+                        variants={{
+                            hidden: { opacity: 0, x: -44 },
+                            visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                        }}
+                    >
+                        <MagneticText text={headlineB} hoverText={headlineB} />
+                    </motion.div>
+                </motion.div>
+
+                <div className="mb-8 max-w-lg">
+                    <div className="relative">
+                        <p className="invisible pointer-events-none text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line">
+                            {descriptionSizerParagraph}
+                        </p>
+                        <div className="absolute inset-0">
+                            <AnimatePresence mode="wait">
+                                <motion.p
+                                    key={descriptionRenderId}
+                                    initial={{ opacity: 0, x: 28 }}
+                                    animate={{ opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } }}
+                                    exit={{ opacity: 0, x: -28, transition: { duration: 0.35, ease: "easeIn" } }}
+                                    className="text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line w-full"
+                                >
+                                    {activeParagraph.slice(0, typedChars)}
+                                </motion.p>
+                            </AnimatePresence>
+                        </div>
+                    </div>
                 </div>
-                <p className="text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight mb-8 max-w-lg">
-                    {description}
-                </p>
                 {stats && stats.length > 0 && (
                     <div className="flex flex-wrap gap-8">
                         {stats.map((stat, index) => (
                             <div key={index} className="text-left">
-                                <div className="text-3xl md:text-4xl font-semibold text-foreground">{stat.value}</div>
+                                <div className="text-3xl md:text-4xl font-semibold text-primary dark:text-foreground">{stat.value}</div>
                                 <div className="text-sm text-muted-foreground uppercase tracking-wide mt-1">{stat.label}</div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
-
-            <BlurEffect className="absolute bg-gradient-to-b from-transparent to-background/55 h-1/2 md:h-1/3 w-full bottom-0" intensity={50} />
-            <BlurEffect className="absolute bg-gradient-to-b from-background/55 to-transparent h-1/2 md:h-1/3 w-full top-0" intensity={50} />
 
             <style jsx>{`
                 @keyframes ping {

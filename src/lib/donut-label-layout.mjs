@@ -70,7 +70,18 @@ export function computeDonutSegmentTextLayout(input) {
   const thickness = Math.max(0, rOuter - rInner);
   const usableInner = rInner + padding;
   const usableOuter = rOuter - padding;
-  const radius = clamp((usableInner + usableOuter) / 2, usableInner, usableOuter);
+  const radius = (() => {
+    if (usableOuter <= usableInner) return usableInner;
+    if (sweep <= 0) return clamp((usableInner + usableOuter) / 2, usableInner, usableOuter);
+
+    const thetaHalf = sweep / 2;
+    const k = thetaHalf === 0 ? 0 : Math.sin(thetaHalf) / thetaHalf;
+    const ri = usableInner;
+    const ro = usableOuter;
+    const radialMoment = (ro * ro * ro - ri * ri * ri) / Math.max(1e-9, ro * ro - ri * ri);
+    const centroidRadius = (2 / 3) * radialMoment * k;
+    return clamp(centroidRadius, usableInner, usableOuter);
+  })();
 
   const area = 0.5 * sweep * Math.max(0, rOuter * rOuter - rInner * rInner);
   const areaScale = Math.sqrt(Math.max(0, area));
@@ -115,4 +126,3 @@ export function computeDonutSegmentTextLayout(input) {
     fullText,
   };
 }
-

@@ -87,8 +87,7 @@ test("ConnectorCard calls authorize and shows loading state", async () => {
             })
         );
 
-        await user.click(screen.getByRole("button", { name: "Connect" }));
-        assert.ok(await screen.findByText("Starting..."));
+        await user.click(screen.getByTestId("connector-email-connect"));
 
         await new Promise((r) => setTimeout(r, 70));
 

@@ -35,28 +35,28 @@ function fromLocalStorage<T>(key: string, fallback: T) {
 function typeBadgeClass(type: AlertType) {
     switch (type) {
         case "Network":
-            return "bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/25";
+            return "bg-background text-fuchsia-800 border border-fuchsia-700/50 dark:text-fuchsia-300 dark:border-fuchsia-400/50";
         case "API":
-            return "bg-cyan-500/15 text-cyan-200 border border-cyan-500/25";
+            return "bg-background text-cyan-800 border border-cyan-700/50 dark:text-cyan-300 dark:border-cyan-400/50";
         case "Campaign":
-            return "bg-emerald-500/15 text-emerald-200 border border-emerald-500/25";
+            return "bg-background text-emerald-800 border border-emerald-700/50 dark:text-emerald-300 dark:border-emerald-400/50";
         case "System":
-            return "bg-slate-500/15 text-slate-200 border border-slate-500/25";
+            return "bg-background text-slate-800 border border-slate-600/50 dark:text-slate-200 dark:border-slate-500/60";
         default:
-            return "bg-slate-500/15 text-slate-200 border border-slate-500/25";
+            return "bg-background text-slate-800 border border-slate-600/50 dark:text-slate-200 dark:border-slate-500/60";
     }
 }
 
 function statusBadgeClass(status: AlertStatus) {
     switch (status) {
         case "Active":
-            return "bg-red-500/10 text-red-200 border border-red-500/20";
+            return "bg-background text-red-800 border border-red-700/50 dark:text-red-300 dark:border-red-400/50";
         case "Investigating":
-            return "bg-orange-500/10 text-orange-200 border border-orange-500/20";
+            return "bg-background text-orange-800 border border-orange-700/50 dark:text-orange-300 dark:border-orange-400/50";
         case "Resolved":
-            return "bg-emerald-500/10 text-emerald-200 border border-emerald-500/20";
+            return "bg-background text-emerald-800 border border-emerald-700/50 dark:text-emerald-300 dark:border-emerald-400/50";
         default:
-            return "bg-slate-500/10 text-slate-200 border border-slate-500/20";
+            return "bg-background text-slate-800 border border-slate-600/50 dark:text-slate-200 dark:border-slate-500/60";
     }
 }
 
@@ -237,7 +237,7 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                     <button
                         key={a.id}
                         type="button"
-                        className="flex w-full items-start justify-between gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex w-full items-start justify-between gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-[background-color,border-color,box-shadow,color] duration-150 ease-out hover:bg-accent hover:text-accent-foreground hover:border-border/80 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => {
                             setTab("Impact Analysis");
                             setDetailsId(a.id);
@@ -255,11 +255,11 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                                     {a.status}
                                 </span>
                                 {!a.acknowledged ? (
-                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                    <span className="inline-flex items-center rounded-full bg-background border border-indigo-700/50 px-2 py-0.5 text-xs font-semibold text-indigo-800 dark:border-indigo-400/50 dark:text-indigo-300">
                                         New
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                                    <span className="inline-flex items-center rounded-full bg-background border border-slate-400/70 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-500/70 dark:text-slate-200">
                                         Ack
                                     </span>
                                 )}
@@ -345,8 +345,8 @@ function FilterPills<T extends string>({
                         key={o}
                         type="button"
                         className={cn(
-                            "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            value.has(o) ? classFor(o) : "border border-border bg-muted/50 text-foreground hover:bg-accent hover:text-accent-foreground"
+                            "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-[background-color,border-color,box-shadow] duration-150 ease-out hover:bg-muted/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            value.has(o) ? classFor(o) : "border border-border bg-background text-foreground"
                         )}
                         aria-pressed={value.has(o)}
                         onClick={() => toggle(o)}

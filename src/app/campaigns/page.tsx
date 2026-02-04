@@ -82,24 +82,18 @@ export default function CampaignsPage() {
         <DashboardLayout title="Campaign Performance" description="Sorting, filtering, bulk actions, and live ops signals">
             <div className="space-y-6">
                 <CommandBar campaigns={campaigns} onPause={handlePause} onResume={handleResume} />
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr]">
-                    <div className="min-w-0">
-                        <CampaignPerformanceTable
-                            campaigns={campaigns}
-                            loading={loading}
-                            error={error}
-                            onPause={handlePause}
-                            onResume={handleResume}
-                            onDelete={handleDelete}
-                            onDuplicate={handleDuplicate}
-                            onUpdate={handleUpdate}
-                        />
-                    </div>
-                    <div className="space-y-6">
-                        <EventStream campaigns={campaigns} />
-                        <AlertTimeline campaigns={campaigns} />
-                    </div>
-                </div>
+                <CampaignPerformanceTable
+                    campaigns={campaigns}
+                    loading={loading}
+                    error={error}
+                    onPause={handlePause}
+                    onResume={handleResume}
+                    onDelete={handleDelete}
+                    onDuplicate={handleDuplicate}
+                    onUpdate={handleUpdate}
+                />
+                <EventStream campaigns={campaigns} />
+                <AlertTimeline campaigns={campaigns} />
             </div>
         </DashboardLayout>
     );

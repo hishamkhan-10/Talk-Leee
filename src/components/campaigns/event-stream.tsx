@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Campaign } from "@/lib/dashboard-api";
 import {
     eventCategoryIcon,
@@ -70,11 +70,14 @@ export function EventStream({
     campaigns: Campaign[];
     initialEvents?: StreamEvent[];
 }) {
+    const TODAY_VISIBLE = 3;
+    const todayFirstItemRef = useRef<HTMLButtonElement | null>(null);
     const [events, setEvents] = useState<StreamEvent[]>(() => initialEvents || seedEvents(campaigns));
     const [quick, setQuick] = useState<EventQuickFilter>("All");
     const [sound, setSound] = useState(false);
     const [desktop, setDesktop] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
+    const [todayMaxHeightPx, setTodayMaxHeightPx] = useState<number | null>(null);
 
     useEffect(() => {
         const saved = fromLocalStorage<{ sound: boolean; desktop: boolean; quick: EventQuickFilter }>("campaigns.performance.eventPrefs", {
@@ -117,12 +120,37 @@ export function EventStream({
 
     const filtered = useMemo(() => filterEvents(events, quick), [events, quick]);
     const grouped = useMemo(() => group(filtered), [filtered]);
+    const todayCount = grouped.Today.length;
     const details = useMemo(() => events.find((e) => e.id === detailsId) || null, [detailsId, events]);
     const relatedCampaigns = useMemo(() => {
         if (!details?.relatedCampaignIds || details.relatedCampaignIds.length === 0) return [];
         const set = new Set(details.relatedCampaignIds);
         return campaigns.filter((c) => set.has(c.id));
     }, [campaigns, details]);
+
+    useEffect(() => {
+        const gapPx = 8;
+
+        const measure = () => {
+            const el = todayFirstItemRef.current;
+            if (!el) {
+                setTodayMaxHeightPx(null);
+                return;
+            }
+            const h = el.getBoundingClientRect().height;
+            if (!Number.isFinite(h) || h <= 0) return;
+            const visible = Math.max(1, TODAY_VISIBLE);
+            const maxHeight = Math.round(h * visible + gapPx * (visible - 1));
+            setTodayMaxHeightPx(maxHeight);
+        };
+
+        const raf = window.requestAnimationFrame(measure);
+        window.addEventListener("resize", measure, { passive: true });
+        return () => {
+            window.cancelAnimationFrame(raf);
+            window.removeEventListener("resize", measure);
+        };
+    }, [TODAY_VISIBLE, todayCount]);
 
     return (
         <div className="content-card">
@@ -147,7 +175,7 @@ export function EventStream({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2">
+                <label className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 transition-shadow duration-150 ease-out hover:shadow-sm">
                     <div className="text-sm font-semibold text-foreground">Sound notifications</div>
                     <input
                         type="checkbox"
@@ -156,7 +184,7 @@ export function EventStream({
                         className="h-4 w-4 rounded border-input bg-background accent-primary"
                     />
                 </label>
-                <label className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2">
+                <label className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 transition-shadow duration-150 ease-out hover:shadow-sm">
                     <div className="text-sm font-semibold text-foreground">Desktop notifications</div>
                     <input
                         type="checkbox"
@@ -171,9 +199,21 @@ export function EventStream({
                 <AnimatePresence initial={false}>
                     {Object.entries(grouped).map(([grp, items]) => (
                         <div key={grp} className="space-y-2">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{grp}</div>
-                            <div className="space-y-2">
-                                {items.map((e) => {
+                            {grp === "Today" || grp === "Yesterday" || grp === "Last 7 Days" ? (
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{grp}</div>
+                                    <div className="inline-flex items-center rounded-lg border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-muted-foreground tabular-nums">
+                                        {items.length}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{grp}</div>
+                            )}
+                            <div
+                                className={grp === "Today" ? "space-y-2 overflow-y-auto overscroll-contain pr-1" : "space-y-2"}
+                                style={grp === "Today" && todayMaxHeightPx ? { maxHeight: todayMaxHeightPx } : undefined}
+                            >
+                                {items.map((e, idx) => {
                                     const icon = eventCategoryIcon(e.category);
                                     return (
                                         <motion.button
@@ -183,10 +223,11 @@ export function EventStream({
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: 10 }}
                                             type="button"
-                                            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card/50 px-3 py-3 text-left transition-colors duration-150 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            ref={grp === "Today" && idx === 0 ? todayFirstItemRef : undefined}
+                                            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-background px-3 py-3 text-left transition-shadow duration-150 ease-out hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                             onClick={() => setDetailsId(e.id)}
                                         >
-                                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+                                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                                                 <span className="text-base leading-none" aria-hidden>
                                                     {icon}
                                                 </span>
@@ -198,7 +239,7 @@ export function EventStream({
                                                         {new Date(e.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                                     </div>
                                                 </div>
-                                                <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground group-hover:text-foreground/80">
+                                                <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                                                     {e.description}
                                                 </div>
                                             </div>

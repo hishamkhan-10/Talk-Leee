@@ -33,6 +33,7 @@ export function ViewportDrawer({
     overlayClassName,
     className,
     panelClassName,
+    hideScrollbar = false,
     ariaLabel,
     children,
 }: {
@@ -45,6 +46,7 @@ export function ViewportDrawer({
     overlayClassName?: string;
     className?: string;
     panelClassName?: string;
+    hideScrollbar?: boolean;
     ariaLabel: string;
     children: React.ReactNode;
 }) {
@@ -190,7 +192,9 @@ export function ViewportDrawer({
                         exit={exit}
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
                     >
-                        <div className="h-full w-full overflow-y-auto overscroll-contain">{children}</div>
+                        <div className={cn("h-full w-full overflow-y-auto overscroll-contain", hideScrollbar ? "hide-scrollbar" : undefined)}>
+                            {children}
+                        </div>
                     </motion.aside>
                 </div>
             ) : null}

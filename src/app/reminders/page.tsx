@@ -321,7 +321,13 @@ function RemindersContent() {
                         }}
                     />
                 ) : groups.length === 0 ? (
-                    <EmptyState title="No reminders yet" message="Create your first reminder to follow up with leads." actionLabel="Create reminder" onAction={() => setCreateOpen(true)} />
+                    <EmptyState
+                        title="No reminders yet"
+                        message="Create your first reminder to follow up with leads."
+                        actionLabel="Create reminder"
+                        actionAriaLabel="New reminder (empty state)"
+                        onAction={() => setCreateOpen(true)}
+                    />
                 ) : (
                     <div className="space-y-4">
                         {groups.map((g) => (

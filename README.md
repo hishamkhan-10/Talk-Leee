@@ -40,7 +40,7 @@ npm run docs:openapi:check
 
 ### Environment variables
 
-- `NEXT_PUBLIC_API_URL` (optional): API base URL for generated docs and client configuration.
+- `NEXT_PUBLIC_API_BASE_URL` (optional): API base URL for generated docs and client configuration.
 
 ## Notifications
 

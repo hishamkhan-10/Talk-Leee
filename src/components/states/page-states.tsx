@@ -247,12 +247,14 @@ export function EmptyState({
     primaryActionLabel,
     onPrimaryAction,
     primaryActionHref,
+    primaryActionAriaLabel,
     secondaryActionLabel,
     onSecondaryAction,
     secondaryActionHref,
     actionLabel,
     onAction,
     actionHref,
+    actionAriaLabel,
     className,
 }: {
     title: string;
@@ -262,12 +264,14 @@ export function EmptyState({
     primaryActionLabel?: string;
     onPrimaryAction?: () => void;
     primaryActionHref?: string;
+    primaryActionAriaLabel?: string;
     secondaryActionLabel?: string;
     onSecondaryAction?: () => void;
     secondaryActionHref?: string;
     actionLabel?: string;
     onAction?: () => void;
     actionHref?: string;
+    actionAriaLabel?: string;
     className?: string;
 }) {
     const Icon: ComponentType<{ className?: string }> =
@@ -286,6 +290,7 @@ export function EmptyState({
     const resolvedPrimaryLabel = primaryActionLabel ?? actionLabel;
     const resolvedPrimaryHref = primaryActionHref ?? actionHref;
     const resolvedOnPrimary = onPrimaryAction ?? onAction;
+    const resolvedPrimaryAriaLabel = primaryActionAriaLabel ?? actionAriaLabel;
 
     return (
         <Card className={className}>
@@ -318,7 +323,7 @@ export function EmptyState({
                     ) : null}
 
                     <Button asChild>
-                        <Link href={resolvedPrimaryHref}>
+                        <Link href={resolvedPrimaryHref} aria-label={resolvedPrimaryAriaLabel}>
                             <Plus className="h-4 w-4" aria-hidden />
                             {resolvedPrimaryLabel}
                         </Link>
@@ -340,7 +345,7 @@ export function EmptyState({
                         </Button>
                     ) : null}
 
-                    <Button type="button" onClick={resolvedOnPrimary}>
+                    <Button type="button" onClick={resolvedOnPrimary} aria-label={resolvedPrimaryAriaLabel}>
                         <Plus className="h-4 w-4" aria-hidden />
                         {resolvedPrimaryLabel}
                     </Button>

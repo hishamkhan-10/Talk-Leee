@@ -138,7 +138,14 @@ export function ConnectorCard({
     const lastSyncLabel = useMemo(() => formatLastSync(lastSync), [lastSync]);
 
     return (
-        <div className={cn("rounded-2xl border p-4 backdrop-blur-sm", accentClassName, className)} data-testid={`connector-card-${type}`}>
+        <div
+            className={cn(
+                "rounded-2xl border p-4 backdrop-blur-sm shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background/40 hover:shadow-md",
+                accentClassName,
+                className
+            )}
+            data-testid={`connector-card-${type}`}
+        >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="flex items-center gap-3">

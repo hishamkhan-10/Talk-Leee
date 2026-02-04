@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTheme } from "@/components/providers/theme-provider";
 import { useConnectorStatuses } from "@/lib/api-hooks";
 import { useAuth } from "@/lib/auth-context";
 import type { ConnectorProviderStatus } from "@/lib/models";
@@ -65,6 +66,8 @@ export function RouteGuard({
     children: React.ReactNode;
 }) {
     const { user, loading } = useAuth();
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
@@ -127,9 +130,81 @@ export function RouteGuard({
     if (shouldBlockOnConnectors) {
         const href = `/settings/connectors?required=${encodeURIComponent(requiredParam)}&next=${encodeURIComponent(next)}`;
 
+        if (isDark) {
+            return (
+                <div className="mx-auto w-full max-w-5xl px-4 py-10">
+                    <div className="content-card">
+                        <h3 className="mb-1 text-sm font-semibold text-foreground">Connector setup required</h3>
+                        <p className="text-sm text-muted-foreground">Connect required providers to unlock this feature.</p>
+
+                        <div className="mt-4 space-y-4">
+                            {statusesQ.isLoading ? (
+                                <div className="group rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <div className="space-y-3">
+                                        <div className="h-4 w-2/3 animate-pulse rounded bg-foreground/10" />
+                                        <div className="h-4 w-1/2 animate-pulse rounded bg-foreground/10" />
+                                        <div className="h-4 w-3/5 animate-pulse rounded bg-foreground/10" />
+                                    </div>
+                                </div>
+                            ) : statusesQ.isError ? (
+                                <div className="group rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
+                                    <div className="text-sm font-medium text-foreground">Failed to load connector status.</div>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => void statusesQ.refetch()}
+                                            className="hover:scale-[1.02] active:scale-[0.99]"
+                                        >
+                                            Retry
+                                        </Button>
+                                        <Button asChild className="hover:scale-[1.02] active:scale-[0.99]">
+                                            <Link href={href}>Open Connectors</Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : connectorIssues.length > 0 ? (
+                                <div className="space-y-3">
+                                    <div className="text-sm text-muted-foreground">
+                                        This page requires: {required.map((t) => connectorLabel(t)).join(", ")}.
+                                    </div>
+                                    <div className="space-y-2">
+                                        {connectorIssues.map((x) => (
+                                            <div
+                                                key={x.type}
+                                                className="group rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100 shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+                                            >
+                                                <div className="font-semibold">{connectorLabel(x.type)}</div>
+                                                <div className="mt-1 text-amber-100/80">{x.message}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button asChild className="hover:scale-[1.02] active:scale-[0.99]">
+                                            <Link href={href}>Fix connectors</Link>
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => void statusesQ.refetch()}
+                                            className="hover:scale-[1.02] active:scale-[0.99]"
+                                        >
+                                            Refresh status
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-muted-foreground">Checking connectors…</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="mx-auto w-full max-w-5xl px-4 py-10">
-                <Card>
+                <Card className={statusesQ.isError ? "border-red-500/30 bg-red-500/10" : undefined}>
                     <CardHeader>
                         <CardTitle>Connector setup required</CardTitle>
                         <CardDescription>Connect required providers to unlock this feature.</CardDescription>
@@ -142,13 +217,13 @@ export function RouteGuard({
                                 <div className="h-4 w-3/5 animate-pulse rounded bg-foreground/10" />
                             </div>
                         ) : statusesQ.isError ? (
-                            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-                                <div>Failed to load connector status.</div>
+                            <div className="rounded-xl border border-border bg-background p-4 text-sm text-foreground shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md">
+                                <div className="font-semibold text-destructive">Failed to load connector status.</div>
                                 <div className="mt-3 flex flex-wrap gap-2">
-                                    <Button type="button" variant="outline" onClick={() => void statusesQ.refetch()}>
+                                    <Button type="button" variant="outline" onClick={() => void statusesQ.refetch()} className="hover:scale-[1.02] active:scale-[0.99]">
                                         Retry
                                     </Button>
-                                    <Button asChild>
+                                    <Button asChild className="hover:scale-[1.02] active:scale-[0.99]">
                                         <Link href={href}>Open Connectors</Link>
                                     </Button>
                                 </div>

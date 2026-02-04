@@ -20,8 +20,7 @@ export function NotificationCenterDrawer({
             ariaLabel="Notification center"
             panelClassName="bg-background/90 border border-border"
         >
-            <NotificationCenter maxHeightClassName="max-h-[calc(100vh-140px)]" />
+            <NotificationCenter />
         </ViewportDrawer>
     );
 }
-
