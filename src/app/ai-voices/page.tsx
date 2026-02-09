@@ -65,7 +65,7 @@ export default function AiVoicesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background home-navbar-offset">
+    <main className="min-h-screen bg-transparent home-navbar-offset">
       <Navbar />
       
       <div className="pt-10 md:pt-6 pb-24 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -111,7 +111,12 @@ export default function AiVoicesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group p-8 rounded-2xl border border-border bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center"
+                className="group p-8 rounded-2xl border border-gray-200 bg-transparent shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:brightness-[1.02] hover:border-gray-200 hover:shadow-md dark:border-border/70 flex flex-col items-center text-center"
+                style={{
+                  backgroundImage: "linear-gradient(120deg, #fff3a3 0%, #b7f6d1 40%, #6ee7ff 100%)",
+                  backgroundSize: "cover",
+                  backgroundRepeat: "no-repeat",
+                }}
               >
                 <div className={`w-20 h-20 rounded-full ${voice.bg} ${voice.color} flex items-center justify-center mb-6 text-3xl font-bold group-hover:scale-110 transition-transform duration-300`}>
                   {voice.initial}

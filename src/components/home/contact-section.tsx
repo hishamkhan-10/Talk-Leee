@@ -61,7 +61,7 @@ export function ContactSection() {
                 whileInView={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
                 viewport={{ once: true }}
                 whileHover={{ scale: 1.03, y: -6 }}
-                className="mx-auto w-full max-w-[560px] self-stretch rounded-2xl border border-border/70 bg-card/70 p-6 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-border hover:shadow-xl md:p-8"
+                className="mx-auto w-full max-w-[560px] self-stretch rounded-2xl border border-border/70 bg-card/70 dark:bg-white/5 p-6 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-border hover:shadow-xl md:p-8"
              >
                 <form onSubmit={handleSubmit} className="space-y-6" aria-busy={loading}>
                    <div className="space-y-2">
@@ -137,7 +137,7 @@ export function ContactSection() {
                 whileInView={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
                 viewport={{ once: true }}
                 whileHover={{ scale: 1.03, y: -6 }}
-                className="mx-auto w-full max-w-[560px] self-stretch rounded-2xl border border-border/70 bg-card/70 p-6 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-border hover:shadow-xl md:p-8"
+                className="mx-auto w-full max-w-[560px] self-stretch rounded-2xl border border-border/70 bg-card/70 dark:bg-white/5 p-6 backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-border hover:shadow-xl md:p-8"
              >
                 <h3 className="text-2xl font-bold text-primary dark:text-foreground mb-8">Get in Touch</h3>
                 

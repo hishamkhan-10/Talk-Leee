@@ -2,51 +2,39 @@
 
 import { motion, useAnimationControls } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { Users, BarChart3, PhoneCall, Check } from "lucide-react";
+import { BarChart3, Bot, Mic, PhoneCall, Settings, Users } from "lucide-react";
 
-const features = [
+const services = [
   {
     icon: PhoneCall,
-    title: "Outbound Calling",
-    description: "Automated sales calls, lead qualification, and customer outreach with AI agents that sound human.",
-    iconColor: "text-primary dark:text-foreground",
-    iconBg: "bg-primary/10",
-    dotBg: "bg-primary/70 dark:bg-foreground/70",
-    points: [
-      "Lead generation and qualification",
-      "Sales appointment setting",
-      "Customer surveys and feedback",
-      "Event reminders and confirmations"
-    ]
+    title: "Outbound Dialing",
+    description: "Run high-volume outbound campaigns with natural, human-sounding AI voices and instant lead qualification.",
   },
   {
     icon: Users,
     title: "Inbound Support",
-    description: "24/7 customer service with intelligent AI agents that can handle complex inquiries.",
-    iconColor: "text-sky-700 dark:text-sky-300",
-    iconBg: "bg-sky-500/10",
-    dotBg: "bg-sky-500/70 dark:bg-sky-400/70",
-    points: [
-      "Customer support and helpdesk",
-      "Order status and tracking",
-      "Technical troubleshooting",
-      "Account management"
-    ]
+    description: "Provide 24/7 customer assistance with AI agents that can resolve questions and route complex requests.",
   },
   {
     icon: BarChart3,
     title: "Voice Analytics",
-    description: "Advanced analytics and insights to optimize your communication strategies.",
-    iconColor: "text-emerald-700 dark:text-emerald-300",
-    iconBg: "bg-emerald-500/10",
-    dotBg: "bg-emerald-500/70 dark:bg-emerald-400/70",
-    points: [
-      "Call performance metrics",
-      "Sentiment analysis",
-      "Conversation insights",
-      "ROI tracking and reporting"
-    ]
-  }
+    description: "Track outcomes, sentiment, and performance trends to continuously improve conversations and conversions.",
+  },
+  {
+    icon: Bot,
+    title: "AI Agents",
+    description: "Deploy conversational agents tailored to your business goals, scripts, and knowledge base.",
+  },
+  {
+    icon: Mic,
+    title: "Voice Studio",
+    description: "Select voices, tune tone, and keep brand consistency across every call and customer interaction.",
+  },
+  {
+    icon: Settings,
+    title: "Workflow Automation",
+    description: "Trigger CRMs, webhooks, and internal actions automatically from call events and intent signals.",
+  },
 ];
 
 export function FeaturesSection() {
@@ -63,28 +51,26 @@ export function FeaturesSection() {
   };
 
   const cardVariants: Variants = {
-    hidden: { opacity: 0, y: -46 },
+    hidden: { opacity: 0, y: 16 },
     show: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
-        stiffness: 240,
-        damping: 18,
-        mass: 0.8,
+        duration: 0.35,
+        ease: "easeOut",
       },
     },
   };
 
   return (
-    <section id="services" className="py-24 px-4 md:px-6 lg:px-8">
+    <section id="services" className="bg-transparent py-24 px-4 md:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-primary dark:text-foreground"
+            className="text-3xl md:text-4xl font-bold tracking-tight text-gray-950 dark:text-foreground"
           >
             Our Services
           </motion.h2>
@@ -93,9 +79,9 @@ export function FeaturesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-muted-foreground"
+            className="text-base sm:text-lg font-light text-gray-600 dark:text-muted-foreground"
           >
-            Comprehensive AI voice solutions for every business need
+            Clean, scalable AI voice capabilities designed for modern teams.
           </motion.p>
         </div>
 
@@ -110,31 +96,30 @@ export function FeaturesSection() {
           onViewportLeave={() => {
             controls.set("hidden");
           }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
         >
-          {features.map((feature) => (
+          {services.map((service) => (
             <motion.div
-              key={feature.title}
+              key={service.title}
               variants={cardVariants}
-              className="group w-full max-w-[420px] p-8 rounded-2xl border border-border/70 bg-card/70 backdrop-blur-sm hover:border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              className="home-services-card group h-full rounded-2xl border border-gray-200 bg-transparent p-8 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:brightness-[1.02] hover:border-gray-200 hover:shadow-md dark:border-border/70"
+              style={{
+                backgroundImage: "var(--home-card-gradient)",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+              }}
             >
-              <div className={`w-12 h-12 rounded-lg ${feature.iconBg} ${feature.iconColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                <feature.icon className="w-6 h-6" />
+              <div className="mb-6 flex items-center justify-start">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm transition-[background-color,border-color] duration-200 ease-out group-hover:bg-gray-100 dark:border-border/70 dark:bg-white/10 dark:group-hover:bg-white/20">
+                  <service.icon className="h-6 w-6 text-gray-900 dark:text-foreground" aria-hidden />
+                </div>
               </div>
-              <h3 className="text-2xl font-bold text-primary dark:text-foreground mb-4 group-hover:text-primary/90 dark:group-hover:text-foreground/90 transition-colors">
-                {feature.title}
+              <h3 className="text-lg sm:text-xl font-bold text-gray-950 dark:text-foreground transition-colors duration-200 ease-out">
+                {service.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                {feature.description}
+              <p className="mt-2 text-sm sm:text-base font-light leading-relaxed text-gray-600 dark:text-muted-foreground">
+                {service.description}
               </p>
-              <ul className="space-y-3">
-                {feature.points.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5">
-                    <Check className={`mt-[2px] h-4 w-4 shrink-0 ${feature.iconColor}`} />
-                    <span className="text-sm leading-snug text-muted-foreground">{point}</span>
-                  </li>
-                ))}
-              </ul>
             </motion.div>
           ))}
         </motion.div>

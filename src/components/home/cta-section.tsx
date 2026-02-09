@@ -14,7 +14,7 @@ export function CTASection() {
           whileInView={{ opacity: 1, y: 0, transition: { duration: 0.5 } }}
           viewport={{ once: true }}
           whileHover={{ scale: 1.02, y: -6 }}
-          className="relative rounded-3xl bg-background backdrop-blur-sm border border-border p-12 md:p-20 text-center overflow-hidden shadow-2xl transition-[transform,box-shadow] duration-200 ease-out hover:shadow-[0_30px_120px_rgba(17,24,39,0.16)]"
+          className="relative rounded-3xl bg-background dark:bg-white/5 backdrop-blur-sm border border-border p-12 md:p-20 text-center overflow-hidden shadow-2xl transition-[transform,box-shadow] duration-200 ease-out hover:shadow-[0_30px_120px_rgba(17,24,39,0.16)]"
         >
           {/* Decorative background effects */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">

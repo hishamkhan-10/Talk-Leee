@@ -1,14 +1,12 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { KernelSize } from "postprocessing";
 import type React from "react";
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
-import * as THREE from "three";
 import { MagneticText } from "./morphing-cursor";
 import { apiBaseUrl } from "@/lib/env";
 import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle } from "lucide-react";
+import { TrustedByMarquee } from "../home/trusted-by-section";
 
 type AIState = "idle" | "connecting" | "browsing" | "listening" | "processing" | "speaking";
 
@@ -24,179 +22,6 @@ const VOICE_AGENTS: VoiceAgent[] = [
     { id: "emma", name: "Emma", gender: "female", description: "Energetic & Friendly" },
     { id: "alex", name: "Alex", gender: "male", description: "Confident & Clear" },
 ];
-
-interface HelixRingsProps {
-    levelsUp?: number;
-    levelsDown?: number;
-    stepY?: number;
-    rotationStep?: number;
-    aiState?: AIState;
-    audioLevel?: number;
-}
-
-const HelixRings: React.FC<HelixRingsProps> = ({
-    levelsUp = 10,
-    levelsDown = 10,
-    stepY = 0.85,
-    rotationStep = Math.PI / 16,
-    aiState = "idle",
-    audioLevel = 0,
-}) => {
-    const groupRef = useRef<THREE.Group>(new THREE.Group());
-    const meshRefs = useRef<THREE.Mesh[]>([]);
-    const timeRef = useRef(0);
-    const transitionRef = useRef(0);
-
-    const isActive = aiState !== "idle";
-
-    useFrame((_, delta) => {
-        if (groupRef.current) {
-            timeRef.current += delta;
-
-            // Smooth transition (0 = helix, 1 = sound wave) - FAST
-            const targetTransition = isActive ? 1 : 0;
-            transitionRef.current += (targetTransition - transitionRef.current) * 0.15; // Faster!
-            const t = transitionRef.current;
-
-            // ROTATE ONLY WHEN IDLE (helix mode) - stop when active (wave mode)
-            if (!isActive) {
-                groupRef.current.rotation.y += 0.005;
-            }
-
-            // STAY IN RIGHT SECTION - don't move!
-            groupRef.current.position.x = 5;
-            groupRef.current.position.y = 0;
-            groupRef.current.position.z = 0;
-
-            // Animate rings from helix to SOUND WAVE pattern
-            const totalRings = levelsUp + levelsDown + 1;
-
-            meshRefs.current.forEach((mesh, index) => {
-                if (mesh) {
-                    // Original helix position
-                    const helixY = (index - levelsDown) * stepY;
-                    const helixRotY = (index - levelsDown) * rotationStep;
-
-                    // SOUND WAVE pattern: bars spread horizontally, height varies with audio
-                    const waveSpacing = 0.5;
-                    const centerIndex = totalRings / 2;
-                    const distanceFromCenter = Math.abs(index - centerIndex);
-
-                    // X position: spread rings horizontally across the wave
-                    const waveX = (index - centerIndex) * waveSpacing;
-
-                    // Height of each bar based on REAL audio level only
-                    // Bars in center are taller, edges are shorter (like real waveform)
-                    const baseHeight = 0.15; // Static minimum height when silent
-                    const maxHeight = 2.5;
-                    const falloff = 1 - (distanceFromCenter / (totalRings / 2)) * 0.85;
-
-                    // ONLY react to real audio - no random motion!
-                    const audioReaction = audioLevel > 0.01 ? audioLevel * maxHeight * falloff : 0;
-                    const finalHeight = baseHeight + audioReaction;
-
-                    // Lerp positions - all bars at Y=0 in wave mode
-                    mesh.position.x = 0 * (1 - t) + waveX * t;
-                    mesh.position.y = helixY * (1 - t) + 0 * t;
-                    mesh.position.z = 0;
-
-                    // Scale: make bars stretch along their tube length (Z axis when facing camera)
-                    // Tube is originally along Z axis, so scale.z = height
-                    mesh.scale.x = 1 * (1 - t) + 0.15 * t; // Thin bars
-                    mesh.scale.y = 1 * (1 - t) + 0.15 * t; // Thin bars
-                    mesh.scale.z = 1 * (1 - t) + finalHeight * t; // Height = length of tube
-
-                    // Rotation: in wave mode, tubes face camera (point along Z axis toward viewer)
-                    // rotation.y = 0 makes tube point toward camera, then we tilt it up
-                    mesh.rotation.y = (Math.PI / 2 + helixRotY) * (1 - t) + 0 * t; // Face camera
-                    mesh.rotation.x = 0 * (1 - t) + (Math.PI / 2) * t; // Tilt up so tube points UP (Y axis)
-                    mesh.rotation.z = 0;
-                }
-            });
-        }
-    });
-
-    const ringGeometry = useMemo(() => {
-        const shape = new THREE.Shape();
-        const radius = 0.35;
-        shape.absarc(0, 0, radius, 0, Math.PI * 2, false);
-        const depth = 10;
-        const extrudeSettings: THREE.ExtrudeGeometryOptions = {
-            depth,
-            bevelEnabled: true,
-            bevelThickness: 0.05,
-            bevelSize: 0.05,
-            bevelSegments: 4,
-            curveSegments: 64,
-        };
-        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geometry.translate(0, 0, -depth / 2);
-        return geometry;
-    }, []);
-
-    // Original colors (no color shift)
-    const getRingColor = (index: number, total: number) => {
-        const t = (index + levelsDown) / total;
-        const r = Math.floor(26 + t * 20);
-        const g = Math.floor(26 + t * 30);
-        const b = Math.floor(46 + t * 40);
-        return `rgb(${r}, ${g}, ${b})`;
-    };
-
-    const elements = [];
-    const totalRings = levelsUp + levelsDown + 1;
-    for (let i = -levelsDown; i <= levelsUp; i++) {
-        elements.push({ id: `helix-ring-${i}`, y: i * stepY, rotation: i * rotationStep, index: i + levelsDown });
-    }
-
-    return (
-        <group ref={groupRef} position={[5, 0, 0]}>
-            {elements.map((el, idx) => (
-                <mesh
-                    key={el.id}
-                    ref={(ref: THREE.Mesh | null) => { if (ref) meshRefs.current[idx] = ref; }}
-                    geometry={ringGeometry}
-                    position={[0, el.y, 0]}
-                    rotation={[0, Math.PI / 2 + el.rotation, 0]}
-                    castShadow
-                >
-                    <meshPhysicalMaterial
-                        color={getRingColor(el.index, totalRings)}
-                        metalness={0.7}
-                        roughness={0.5}
-                        clearcoat={isActive ? 0.3 : 0}
-                        clearcoatRoughness={0.15}
-                        reflectivity={isActive ? 0.3 : 0}
-                        iridescence={0.96}
-                        iridescenceIOR={1.5}
-                        iridescenceThicknessRange={[100, 400]}
-                        emissive={getRingColor(el.index, totalRings)}
-                        emissiveIntensity={isActive ? 0.08 + audioLevel * 0.2 : 0}
-                    />
-                </mesh>
-            ))}
-        </group>
-    );
-};
-
-const Scene: React.FC<{ aiState: AIState; audioLevel: number }> = ({ aiState, audioLevel }) => (
-    <Canvas
-        className="h-full w-full"
-        orthographic
-        shadows
-        camera={{ zoom: 70, position: [0, 0, 20], near: 0.1, far: 1000 }}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: "transparent" }}
-    >
-        <hemisphereLight color={"#e0e0e0"} groundColor={"#ffffff"} intensity={2} />
-        <directionalLight position={[10, 10, 5]} intensity={2} castShadow color={"#ffffff"} />
-        <HelixRings aiState={aiState} audioLevel={audioLevel} />
-        <EffectComposer multisampling={8}>
-            <Bloom kernelSize={3} luminanceThreshold={0} luminanceSmoothing={0.4} intensity={0.6 + audioLevel * 0.3} />
-            <Bloom kernelSize={KernelSize.HUGE} luminanceThreshold={0} luminanceSmoothing={0} intensity={0.5 + audioLevel * 0.2} />
-        </EffectComposer>
-    </Canvas>
-);
 
 const AudioVisualizer: React.FC<{ isActive: boolean; audioLevel: number }> = ({ isActive, audioLevel }) => {
     const [time, setTime] = useState(0);
@@ -297,9 +122,9 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
         setTypedChars(0);
         if (!fullText) return;
 
-        const targetTotalMs = 2600;
-        const perCharMs = Math.max(12, Math.min(34, Math.round(targetTotalMs / Math.max(1, fullText.length))));
-        const startDelayMs = 180;
+        const targetTotalMs = descriptionParagraphs.length > 1 ? 5200 : 2600;
+        const basePerCharMs = Math.max(16, Math.min(38, Math.round(targetTotalMs / Math.max(1, fullText.length))));
+        const startDelayMs = 200;
 
         let index = 0;
         let timeoutId = 0;
@@ -308,20 +133,25 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             index += 1;
             setTypedChars(index);
             if (index >= fullText.length) return;
-            timeoutId = window.setTimeout(tick, perCharMs);
+
+            const justTyped = fullText[index - 1] ?? "";
+            const isSpace = justTyped === " ";
+            const isPunct = /[.,!?;:]/.test(justTyped);
+            const delay = basePerCharMs + (isSpace ? 70 : 0) + (isPunct ? 160 : 0);
+            timeoutId = window.setTimeout(tick, delay);
         };
 
         timeoutId = window.setTimeout(tick, startDelayMs);
         return () => {
             if (timeoutId) window.clearTimeout(timeoutId);
         };
-    }, [activeParagraph, descriptionRenderId]);
+    }, [activeParagraph, descriptionRenderId, descriptionParagraphs.length]);
 
     useEffect(() => {
         if (!activeParagraph) return;
         if (typedChars < activeParagraph.length) return;
 
-        const holdMs = 1400;
+        const holdMs = descriptionParagraphs.length > 1 ? 900 : 1400;
         const timeoutId = window.setTimeout(() => {
             setDescriptionRenderId((prev) => prev + 1);
             setDescriptionIndex((prev) => {
@@ -596,19 +426,24 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             ref={sectionRef}
             className={`relative ${heroHeightClass} w-full font-sans tracking-tight text-foreground bg-transparent overflow-hidden select-none`}
         >
-            <div className="absolute inset-0 z-0">
-                <Scene aiState={aiState} audioLevel={audioLevel} />
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 heroAnimatedGradientBase" />
+                <div className="absolute -inset-[30%] heroAnimatedGradientBlobs" />
+                <div className="absolute inset-0 heroAnimatedGradientVignette" />
             </div>
 
-            {/* Ask AI Button - Always at center of waveform/helix (right side) */}
+            <motion.div
+                whileHover={{ scale: 1.04, y: -2 }}
+                transition={{ duration: 0.2 }}
+                className="pointer-events-auto absolute top-6 md:top-8 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted/60 border border-border text-sm font-medium text-muted-foreground"
+            >
+                <CheckCircle className="w-4 h-4 text-foreground" />
+                <span>Trusted by 10,000+ businesses worldwide</span>
+            </motion.div>
+
             <div
                 ref={askAreaRef}
-                className="absolute z-20 flex items-center gap-3"
-                style={{
-                    left: '50%',
-                    top: '50%',
-                    transform: 'translate(calc(-50% + 22.5vw), -50%)'
-                }}
+                className="pointer-events-auto absolute bottom-[4.5rem] right-4 md:right-10 z-20 flex items-center gap-3"
             >
                 {/* Left Arrow */}
                 {showSwipeArrows && hasSwiped && (
@@ -624,7 +459,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 <button
                     onClick={handleMainButtonClick}
                     className={`relative rounded-full flex flex-col items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
-                        ? "w-32 h-32 bg-cyan-100 hover:bg-cyan-100 border border-cyan-200/80 hover:border-cyan-300 shadow-2xl hover:shadow-2xl hover:scale-105"
+                        ? "w-32 h-32 bg-cyan-100 hover:bg-cyan-100 border border-cyan-200/80 hover:border-cyan-300 shadow-2xl hover:shadow-2xl hover:scale-105 dark:bg-cyan-950 dark:hover:bg-cyan-900 dark:border-cyan-800/80 dark:hover:border-cyan-700"
                         : "w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
                         }`}
                     style={{
@@ -671,72 +506,135 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {error && <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-red-500 whitespace-nowrap">{error}</p>}
             </div>
 
-            {/* Hero content */}
-            <div ref={heroContentRef} className="absolute bottom-8 left-8 md:bottom-16 md:left-16 z-20 max-w-2xl">
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                        hidden: {},
-                        visible: {
-                            transition: { staggerChildren: 0.14, delayChildren: 0.05 },
-                        },
-                    }}
-                    className="flex flex-col gap-2 mb-6"
-                >
-                    <motion.div
-                        variants={{
-                            hidden: { opacity: 0, x: -44 },
-                            visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                        }}
-                    >
-                        <MagneticText text={headlineA} hoverText={headlineA} />
-                    </motion.div>
-                    <motion.div
-                        variants={{
-                            hidden: { opacity: 0, x: -44 },
-                            visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                        }}
-                    >
-                        <MagneticText text={headlineB} hoverText={headlineB} />
-                    </motion.div>
-                </motion.div>
+            <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-[720px]">
+                <TrustedByMarquee />
+            </div>
 
-                <div className="mb-8 max-w-lg">
-                    <div className="relative">
-                        <p className="invisible pointer-events-none text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line">
-                            {descriptionSizerParagraph}
-                        </p>
-                        <div className="absolute inset-0">
-                            <AnimatePresence mode="wait">
-                                <motion.p
-                                    key={descriptionRenderId}
-                                    initial={{ opacity: 0, x: 28 }}
-                                    animate={{ opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } }}
-                                    exit={{ opacity: 0, x: -28, transition: { duration: 0.35, ease: "easeIn" } }}
-                                    className="text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line w-full"
-                                >
-                                    {activeParagraph.slice(0, typedChars)}
-                                </motion.p>
-                            </AnimatePresence>
+            {/* Hero content */}
+            <div ref={heroContentRef} className="absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16">
+                <div className="w-full max-w-4xl text-center">
+                    <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                            hidden: {},
+                            visible: {
+                                transition: { staggerChildren: 0.14, delayChildren: 0.05 },
+                            },
+                        }}
+                        className="flex flex-col items-center gap-2 mb-6"
+                    >
+                        <div className="md:hidden">
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, x: 0 },
+                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                                }}
+                                className="text-5xl font-bold tracking-tighter text-primary dark:text-foreground leading-none"
+                            >
+                                {headlineA}
+                            </motion.div>
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, x: 0 },
+                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                                }}
+                                className="mt-2 text-4xl font-bold tracking-tighter text-primary dark:text-foreground leading-none break-words"
+                            >
+                                {headlineB}
+                            </motion.div>
+                        </div>
+                        <div className="hidden md:block">
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, x: 0 },
+                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                                }}
+                            >
+                                <MagneticText text={headlineA} hoverText={headlineA} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
+                            </motion.div>
+                            <motion.div
+                                variants={{
+                                    hidden: { opacity: 0, x: 0 },
+                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                                }}
+                                className="mt-3"
+                            >
+                                <MagneticText text={headlineB} hoverText={headlineB} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
+                            </motion.div>
+                        </div>
+                    </motion.div>
+
+                    <div className="mb-8 max-w-2xl mx-auto">
+                        <div className="relative">
+                            <p className="invisible pointer-events-none text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line break-words max-w-full">
+                                {descriptionSizerParagraph}
+                            </p>
+                            <div className="absolute inset-0">
+                                <AnimatePresence mode="wait">
+                                    <motion.p
+                                        key={descriptionRenderId}
+                                        initial={{ opacity: 0, x: 28 }}
+                                        animate={{ opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } }}
+                                        exit={{ opacity: 0, x: -28, transition: { duration: 0.5, ease: "easeIn" } }}
+                                        className="text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line break-words max-w-full w-full"
+                                    >
+                                        {activeParagraph.slice(0, typedChars)}
+                                    </motion.p>
+                                </AnimatePresence>
+                            </div>
                         </div>
                     </div>
+                    {stats && stats.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-8">
+                            {stats.map((stat, index) => (
+                                <div key={index} className="text-center">
+                                    <div className="text-3xl md:text-4xl font-semibold text-primary dark:text-foreground">{stat.value}</div>
+                                    <div className="text-sm text-muted-foreground uppercase tracking-wide mt-1">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
-                {stats && stats.length > 0 && (
-                    <div className="flex flex-wrap gap-8">
-                        {stats.map((stat, index) => (
-                            <div key={index} className="text-left">
-                                <div className="text-3xl md:text-4xl font-semibold text-primary dark:text-foreground">{stat.value}</div>
-                                <div className="text-sm text-muted-foreground uppercase tracking-wide mt-1">{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
 
             <style jsx>{`
                 @keyframes ping {
                     75%, 100% { transform: scale(1.15); opacity: 0; }
+                }
+                .heroAnimatedGradientBase {
+                    background: var(--home-gradient-base);
+                    background-size: 200% 200%;
+                    animation: heroGradientShift 14s ease-in-out infinite;
+                    filter: saturate(1.1);
+                }
+                .heroAnimatedGradientBlobs {
+                    background: var(--home-gradient-blobs);
+                    filter: blur(28px) saturate(1.15);
+                    animation: heroBlobFloat 10s ease-in-out infinite;
+                    transform: translate3d(0, 0, 0);
+                    will-change: transform;
+                }
+                .heroAnimatedGradientVignette {
+                    background: var(--home-gradient-vignette);
+                    pointer-events: none;
+                }
+                @keyframes heroGradientShift {
+                    0% { background-position: 0% 40%; }
+                    50% { background-position: 100% 60%; }
+                    100% { background-position: 0% 40%; }
+                }
+                @keyframes heroBlobFloat {
+                    0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+                    33% { transform: translate3d(2%, -3%, 0) scale(1.04); }
+                    66% { transform: translate3d(-1%, 2%, 0) scale(1.02); }
+                    100% { transform: translate3d(-2%, -1%, 0) scale(1); }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .heroAnimatedGradientBase,
+                    .heroAnimatedGradientBlobs {
+                        animation: none;
+                    }
                 }
             `}</style>
         </section>

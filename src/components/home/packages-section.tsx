@@ -146,9 +146,14 @@ export function PackagesSection() {
             <motion.div
               key={pkg.title}
               variants={cardVariants}
-              className="group w-full h-full p-6 lg:p-7 rounded-2xl border border-border/70 bg-card/70 backdrop-blur-sm hover:border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col"
+              className="home-packages-card group w-full h-full p-6 lg:p-7 rounded-2xl border border-border/70 bg-transparent backdrop-blur-sm hover:border-border hover:shadow-lg transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 flex flex-col"
+              style={{
+                backgroundImage: "var(--home-card-gradient)",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+              }}
             >
-              <div className={`w-11 h-11 rounded-lg ${pkg.iconBg} ${pkg.iconColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+              <div className={`w-11 h-11 rounded-lg bg-white dark:bg-white/10 ${pkg.iconColor} flex items-center justify-center mb-4 transition-transform duration-300`}>
                 <pkg.icon className="w-[22px] h-[22px]" />
               </div>
 

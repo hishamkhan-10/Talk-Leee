@@ -2,11 +2,12 @@
 
 import { motion, useAnimationControls } from "framer-motion";
 import type { Variants } from "framer-motion";
+import { Clock, PhoneCall, Smile } from "lucide-react";
 
 const stats = [
-  { label: "Uptime", value: "99.9%" },
-  { label: "Calls Handled", value: "10M+" },
-  { label: "Customer Satisfaction", value: "95%" },
+  { label: "Uptime", value: "99.9%", icon: Clock },
+  { label: "Calls Handled", value: "10M+", icon: PhoneCall },
+  { label: "Customer Satisfaction", value: "95%", icon: Smile },
 ];
 
 export function StatsSection() {
@@ -64,15 +65,23 @@ export function StatsSection() {
               transition={{
                 scale: { duration: 0.25, ease: "easeInOut" },
               }}
-              className="stats-card bg-card/80 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-border/70 flex flex-col items-center justify-center text-center"
+              className="stats-card bg-transparent backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-border/70 flex flex-col items-center justify-center text-center"
               tabIndex={0}
+              style={{
+                backgroundImage: "var(--home-card-gradient)",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+              }}
             >
+              <div className="mb-5 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-primary dark:text-foreground" aria-hidden />
+                </div>
+              </div>
               <div className="text-4xl md:text-5xl font-bold text-primary dark:text-foreground mb-2">
                 {stat.value}
               </div>
-              <div className="text-muted-foreground font-medium">
-                {stat.label}
-              </div>
+              <div className="text-muted-foreground font-medium">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>
