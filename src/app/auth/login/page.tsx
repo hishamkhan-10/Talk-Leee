@@ -123,8 +123,15 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+        <div className="relative min-h-screen bg-transparent flex items-center justify-center p-4 overflow-hidden">
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 authHeroGradientBase" />
+                <div className="absolute -inset-[30%] authHeroGradientBlobs" />
+                <div className="absolute inset-0 authHeroGradientVignette" />
+                <div className="absolute inset-0 authServicesGrid" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-block">
@@ -294,6 +301,64 @@ export default function LoginPage() {
                     By continuing, you agree to our Terms of Service and Privacy Policy.
                 </p>
             </div>
+
+            <style jsx>{`
+                .authHeroGradientBase {
+                    background: var(--home-gradient-base);
+                    background-size: 200% 200%;
+                    animation: authHeroGradientShift 14s ease-in-out infinite;
+                    filter: saturate(1.1);
+                }
+                .authHeroGradientBlobs {
+                    background: var(--home-gradient-blobs);
+                    filter: blur(28px) saturate(1.15);
+                    animation: authHeroBlobFloat 10s ease-in-out infinite;
+                    transform: translate3d(0, 0, 0);
+                    will-change: transform;
+                }
+                .authHeroGradientVignette {
+                    background: var(--home-gradient-vignette);
+                    pointer-events: none;
+                }
+                .authServicesGrid {
+                    background-image:
+                        linear-gradient(to right, rgba(21, 94, 117, 0.14) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(21, 94, 117, 0.12) 1px, transparent 1px);
+                    background-size: 72px 72px;
+                    opacity: 0.35;
+                }
+                @keyframes authHeroGradientShift {
+                    0% {
+                        background-position: 0% 40%;
+                    }
+                    50% {
+                        background-position: 100% 60%;
+                    }
+                    100% {
+                        background-position: 0% 40%;
+                    }
+                }
+                @keyframes authHeroBlobFloat {
+                    0% {
+                        transform: translate3d(-2%, -1%, 0) scale(1);
+                    }
+                    33% {
+                        transform: translate3d(2%, -3%, 0) scale(1.04);
+                    }
+                    66% {
+                        transform: translate3d(-1%, 2%, 0) scale(1.02);
+                    }
+                    100% {
+                        transform: translate3d(-2%, -1%, 0) scale(1);
+                    }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .authHeroGradientBase,
+                    .authHeroGradientBlobs {
+                        animation: none;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

@@ -113,7 +113,7 @@ export default function AiVoicesPage() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="group p-8 rounded-2xl border border-gray-200 bg-transparent shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:brightness-[1.02] hover:border-gray-200 hover:shadow-md dark:border-border/70 flex flex-col items-center text-center"
                 style={{
-                  backgroundImage: "linear-gradient(120deg, #fff3a3 0%, #b7f6d1 40%, #6ee7ff 100%)",
+                  backgroundImage: "var(--home-card-gradient)",
                   backgroundSize: "cover",
                   backgroundRepeat: "no-repeat",
                 }}
