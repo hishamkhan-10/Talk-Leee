@@ -57,7 +57,12 @@ if "%BRANCH%"=="HEAD" (
 
 git ls-remote --exit-code --heads origin "%BRANCH%" >nul 2>&1
 if not errorlevel 1 (
-  git fetch origin "%BRANCH%" || exit /b 1
+  git fetch origin "+refs/heads/%BRANCH%:refs/remotes/origin/%BRANCH%" || exit /b 1
+  git merge-base HEAD "origin/%BRANCH%" >nul 2>&1
+  if errorlevel 1 (
+    echo Remote and local history do not share a common base. Aborting to avoid rewriting remote history.
+    exit /b 1
+  )
   git rebase "origin/%BRANCH%"
   if errorlevel 1 (
     echo Conflicts during rebase detected. Aborting rebase; resolve manually.
