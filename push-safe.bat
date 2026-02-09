@@ -29,7 +29,13 @@ if errorlevel 1 (
   git init || exit /b 1
 )
 
-git config credential.helper manager-core >nul 2>&1
+where git-credential-manager-core.exe >nul 2>&1
+if not errorlevel 1 (
+  git config credential.helper manager-core >nul 2>&1
+) else (
+  where git-credential-manager.exe >nul 2>&1
+  if not errorlevel 1 git config credential.helper manager >nul 2>&1
+)
 
 git remote get-url origin >nul 2>&1
 if errorlevel 1 (
@@ -57,13 +63,13 @@ if "%BRANCH%"=="HEAD" (
 
 git ls-remote --exit-code --heads origin "%BRANCH%" >nul 2>&1
 if not errorlevel 1 (
-  git fetch origin "+refs/heads/%BRANCH%:refs/remotes/origin/%BRANCH%" || exit /b 1
-  git merge-base HEAD "origin/%BRANCH%" >nul 2>&1
+  git fetch origin "%BRANCH%" || exit /b 1
+  git merge-base HEAD FETCH_HEAD >nul 2>&1
   if errorlevel 1 (
     set "FALLBACK_BRANCH=trae/auto-!TS!"
     echo Remote and local history do not share a common base.
     echo Pushing current HEAD to a new branch: !FALLBACK_BRANCH!
-    git push -u origin "HEAD:refs/heads/!FALLBACK_BRANCH!"
+    git push origin "HEAD:refs/heads/!FALLBACK_BRANCH!"
     if errorlevel 1 (
       echo Push failed! Check remote or authentication.
       exit /b 1
@@ -72,7 +78,7 @@ if not errorlevel 1 (
     echo Push completed.
     exit /b 0
   )
-  git rebase "origin/%BRANCH%"
+  git rebase FETCH_HEAD
   if errorlevel 1 (
     echo Conflicts during rebase detected. Aborting rebase; resolve manually.
     git rebase --abort >nul 2>&1
@@ -80,7 +86,7 @@ if not errorlevel 1 (
   )
 )
 
-git push -u origin "%BRANCH%"
+git push origin "%BRANCH%"
 if errorlevel 1 (
   echo Push failed! Check remote or authentication.
   exit /b 1
