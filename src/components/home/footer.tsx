@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Phone } from "lucide-react";
 import React from "react";
 
 export function Footer() {
@@ -25,9 +24,6 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
-              <Phone className="w-5 h-5 text-white fill-current" />
-            </div>
             <span className="text-2xl font-bold text-primary dark:text-foreground tracking-tight transition-colors">
               Talk-Lee
             </span>

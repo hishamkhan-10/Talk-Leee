@@ -5,7 +5,7 @@ import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { MagneticText } from "./morphing-cursor";
 import { apiBaseUrl } from "@/lib/env";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, MessageCircle } from "lucide-react";
 import { TrustedByMarquee } from "../home/trusted-by-section";
 
 type AIState = "idle" | "connecting" | "browsing" | "listening" | "processing" | "speaking";
@@ -73,7 +73,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const [hasSwiped, setHasSwiped] = useState(false);
 
     const sectionRef = useRef<HTMLElement | null>(null);
-    const askAreaRef = useRef<HTMLDivElement | null>(null);
     const heroContentRef = useRef<HTMLDivElement | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
@@ -435,15 +434,14 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <motion.div
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="pointer-events-auto absolute top-6 md:top-8 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted/60 border border-border text-sm font-medium text-muted-foreground"
+                className="pointer-events-auto absolute top-6 md:top-8 left-1/2 -translate-x-1/2 z-30 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
             >
                 <CheckCircle className="w-4 h-4 text-foreground" />
                 <span>Trusted by 10,000+ businesses worldwide</span>
             </motion.div>
 
             <div
-                ref={askAreaRef}
-                className="pointer-events-auto absolute bottom-[4.5rem] right-4 md:right-10 z-20 flex items-center gap-3"
+                className="pointer-events-auto absolute bottom-6 right-6 z-20 flex items-center gap-3"
             >
                 {/* Left Arrow */}
                 {showSwipeArrows && hasSwiped && (
@@ -458,39 +456,41 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {/* Main Circle Button */}
                 <button
                     onClick={handleMainButtonClick}
-                    className={`relative rounded-full flex flex-col items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
-                        ? "w-32 h-32 bg-cyan-100 hover:bg-cyan-100 border border-cyan-200/80 hover:border-cyan-300 shadow-2xl hover:shadow-2xl hover:scale-105 dark:bg-cyan-950 dark:hover:bg-cyan-900 dark:border-cyan-800/80 dark:hover:border-cyan-700"
-                        : "w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
+                    className={`relative rounded-full transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
+                        ? "stats-card inline-flex items-center justify-start gap-3 px-5 h-14 w-[200px] bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] hover:scale-105 backdrop-blur-sm dark:bg-cyan-950/30 dark:border-cyan-200/20"
+                        : "flex flex-col items-center justify-center w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
                         }`}
                     style={{
                         boxShadow: isActive
                             ? `0 0 40px rgba(99, 102, 241, ${0.2 + audioLevel * 0.2}), 0 0 80px rgba(129, 140, 248, ${0.1 + audioLevel * 0.15})`
-                            : "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                            : undefined,
                     }}
                 >
                     {isActive && (
                         <div className="absolute inset-0 rounded-full border-2 border-indigo-400/30" style={{ animation: "ping 2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
                     )}
 
-                    <div className="text-center z-10">
-                        {!isActive && (
-                            <>
-                                <h3 className="text-xl font-semibold text-primary dark:text-foreground mb-1">Ask AI</h3>
-                                <p className="text-xs text-primary/80 dark:text-foreground/80">{getStatusText()}</p>
-                            </>
-                        )}
-
-                        {isActive && (
-                            <>
-                                <div className="text-2xl font-bold text-primary dark:text-foreground mb-0.5">
-                                    {currentVoiceName || selectedVoice.name}
-                                </div>
-                                <div className="text-xs text-primary/80 dark:text-foreground/80 mb-1">{selectedVoice.description}</div>
-                                <AudioVisualizer isActive={voiceSelected && (aiState === "listening" || aiState === "speaking")} audioLevel={audioLevel} />
-                                <p className="text-[10px] text-primary/70 dark:text-foreground/70 mt-1">{getStatusText()}</p>
-                            </>
-                        )}
-                    </div>
+                    {!isActive ? (
+                        <div className="relative z-10 flex items-center gap-3">
+                            <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">
+                                <MessageCircle className="h-5 w-5 text-white" />
+                                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-white/90" />
+                            </span>
+                            <div className="flex flex-col items-start leading-tight">
+                                <h3 className="text-base font-semibold text-primary dark:text-primary-foreground">Ask AI</h3>
+                                <p className="text-xs text-primary/80 dark:text-primary-foreground/80">{getStatusText()}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center z-10">
+                            <div className="text-2xl font-bold text-primary dark:text-foreground mb-0.5">
+                                {currentVoiceName || selectedVoice.name}
+                            </div>
+                            <div className="text-xs text-primary/80 dark:text-foreground/80 mb-1">{selectedVoice.description}</div>
+                            <AudioVisualizer isActive={voiceSelected && (aiState === "listening" || aiState === "speaking")} audioLevel={audioLevel} />
+                            <p className="text-[10px] text-primary/70 dark:text-foreground/70 mt-1">{getStatusText()}</p>
+                        </div>
+                    )}
                 </button>
 
                 {/* Right Arrow */}

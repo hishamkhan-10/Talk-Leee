@@ -2,6 +2,9 @@ import type { StorybookConfig } from "@storybook/react-webpack5";
 import path from "node:path";
 
 const config: StorybookConfig = {
+    core: {
+        disableTelemetry: true,
+    },
     framework: {
         name: "@storybook/react-webpack5",
         options: {},
@@ -36,6 +39,10 @@ const config: StorybookConfig = {
             "next/navigation": path.resolve(__dirname, "./mocks/next-navigation"),
             "next/link": path.resolve(__dirname, "./mocks/next-link"),
             "next/image": path.resolve(__dirname, "./mocks/next-image"),
+        };
+        cfg.resolve.fallback = {
+            ...(cfg.resolve.fallback ?? {}),
+            zlib: false,
         };
         return cfg;
     },

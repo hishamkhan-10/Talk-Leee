@@ -280,7 +280,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
 
 export function SecondaryHero() {
   return (
-    <section className="secondaryHeroSection box-border py-3 sm:py-6 md:py-8 lg:py-10 px-4 md:px-6 lg:px-8 overflow-hidden" style={{ height: "70vh" }}>
+    <section className="secondaryHeroSection bg-cyan-100 dark:bg-background box-border py-3 sm:py-6 md:py-8 lg:py-10 px-4 md:px-6 lg:px-8 overflow-hidden" style={{ height: "80vh" }}>
       <div className="w-full max-w-7xl mx-auto h-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

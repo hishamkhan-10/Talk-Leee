@@ -203,7 +203,7 @@ export default function LoginPage() {
                                     New to Talk-Lee?{" "}
                                     <Link
                                         href="/auth/register"
-                                        className="text-foreground font-medium hover:underline"
+                                        className="text-gray-900 font-medium hover:underline"
                                     >
                                         Create an account
                                     </Link>
@@ -321,6 +321,10 @@ export default function LoginPage() {
                     pointer-events: none;
                 }
                 .authServicesGrid {
+                    background-image: none;
+                    opacity: 0;
+                }
+                :global(.dark) .authServicesGrid {
                     background-image:
                         linear-gradient(to right, rgba(21, 94, 117, 0.14) 1px, transparent 1px),
                         linear-gradient(to bottom, rgba(21, 94, 117, 0.12) 1px, transparent 1px);
