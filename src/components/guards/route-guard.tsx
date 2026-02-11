@@ -154,11 +154,14 @@ export function RouteGuard({
                                             type="button"
                                             variant="outline"
                                             onClick={() => void statusesQ.refetch()}
-                                            className="hover:scale-[1.02] active:scale-[0.99]"
+                                            className="border-teal-500/60 bg-teal-600 text-white hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
                                         >
                                             Retry
                                         </Button>
-                                        <Button asChild className="hover:scale-[1.02] active:scale-[0.99]">
+                                        <Button
+                                            asChild
+                                            className="border-teal-500/60 bg-teal-600 text-white hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
+                                        >
                                             <Link href={href}>Open Connectors</Link>
                                         </Button>
                                     </div>
@@ -220,10 +223,18 @@ export function RouteGuard({
                             <div className="rounded-xl border border-border bg-background p-4 text-sm text-foreground shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md">
                                 <div className="font-semibold text-destructive">Failed to load connector status.</div>
                                 <div className="mt-3 flex flex-wrap gap-2">
-                                    <Button type="button" variant="outline" onClick={() => void statusesQ.refetch()} className="hover:scale-[1.02] active:scale-[0.99]">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => void statusesQ.refetch()}
+                                        className="border-teal-500/60 bg-teal-600 text-white hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
+                                    >
                                         Retry
                                     </Button>
-                                    <Button asChild className="hover:scale-[1.02] active:scale-[0.99]">
+                                    <Button
+                                        asChild
+                                        className="border-teal-500/60 bg-teal-600 text-white hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
+                                    >
                                         <Link href={href}>Open Connectors</Link>
                                     </Button>
                                 </div>

@@ -497,6 +497,13 @@ details[open] > .home-mobile-panel {
   transition: clip-path 260ms ease-out, opacity 200ms ease-out;
 }
 
+@media (width: 320px) and (height: 568px) {
+  details > summary.home-menu-toggle {
+    position: relative;
+    z-index: 71;
+  }
+}
+
 .home-mobile-link {
   display: flex;
   align-items: center;

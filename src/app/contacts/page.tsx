@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { dashboardApi, Campaign } from "@/lib/dashboard-api";
 import { extendedApi, BulkImportResponse } from "@/lib/extended-api";
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
@@ -127,18 +128,20 @@ export default function ContactsPage() {
                                 <label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                                     Target Campaign
                                 </label>
-                                <select
+                                <Select
                                     value={selectedCampaign}
-                                    onChange={(e) => setSelectedCampaign(e.target.value)}
-                                    className="mt-2 w-full rounded-xl border border-border bg-background/70 px-3 py-2 text-sm font-semibold text-foreground shadow-sm outline-none transition-colors focus:border-border focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-60"
+                                    onChange={(next) => setSelectedCampaign(next)}
+                                    ariaLabel="Select target campaign"
+                                    className="mt-2 w-full"
+                                    selectClassName="rounded-xl border border-border bg-background/70 px-3 py-2 text-sm font-semibold text-foreground shadow-sm outline-none transition-colors focus:border-border focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-60 h-auto hover:bg-background/80"
                                     disabled={uploading}
                                 >
                                     {campaigns.map((campaign) => (
-                                        <option key={campaign.id} value={campaign.id} className="bg-background text-foreground">
+                                        <option key={campaign.id} value={campaign.id}>
                                             {campaign.name}
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
                             </div>
 
                             {/* File Upload */}

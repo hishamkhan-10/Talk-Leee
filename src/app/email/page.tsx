@@ -37,10 +37,16 @@ function EmailContent() {
                             variant="secondary"
                             onClick={() => templatesQ.refetch()}
                             disabled={templatesQ.isLoading}
+                            className="bg-teal-600 text-white hover:bg-teal-700 hover:text-white"
                         >
                             Refresh
                         </Button>
-                        <Button type="button" onClick={() => setSendOpen(true)} disabled={templates.length === 0}>
+                        <Button
+                            type="button"
+                            onClick={() => setSendOpen(true)}
+                            disabled={templates.length === 0}
+                            className="bg-teal-600 text-white hover:bg-teal-700 hover:text-white"
+                        >
                             Send email
                         </Button>
                     </div>

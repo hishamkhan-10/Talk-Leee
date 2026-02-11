@@ -850,11 +850,20 @@ export function CampaignPerformanceTable({
                     </div>
 
                     <div className="flex items-center justify-end gap-2 md:flex-col md:items-end md:justify-between md:self-stretch">
-                        <Button type="button" variant="outline" onClick={() => setExportOpen(true)} className="h-10">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setExportOpen(true)}
+                            className="h-10 border-teal-500/60 bg-teal-600 text-white shadow-sm hover:bg-teal-700 hover:text-white"
+                        >
                             Export
                         </Button>
                         <Link href="/campaigns/new" className="shrink-0">
-                            <Button type="button" variant="outline" className="h-10">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-10 border-teal-500/60 bg-teal-600 text-white shadow-sm hover:bg-teal-700 hover:text-white"
+                            >
                                 New Campaign
                             </Button>
                         </Link>

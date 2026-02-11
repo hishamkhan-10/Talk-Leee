@@ -37,8 +37,8 @@ function GlassStatCard({
             className="group rounded-2xl border border-border bg-muted/60 backdrop-blur-sm p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md"
         >
             <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-background/70 p-2 transition-colors group-hover:bg-background">
-                    <Icon className={`w-5 h-5 ${iconColor}`} />
+                <div className="rounded-lg bg-zinc-900 p-2 transition-colors group-hover:bg-zinc-900">
+                    <Icon className={`w-5 h-5 ${iconColor} text-white`} />
                 </div>
                 <div>
                     <p className="text-2xl font-bold text-foreground">{value}</p>

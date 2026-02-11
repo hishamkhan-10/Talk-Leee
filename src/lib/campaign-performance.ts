@@ -180,17 +180,17 @@ export type StreamEvent = {
 export function eventCategoryIcon(category: EventCategory) {
     switch (category) {
         case "Campaign":
-            return "📢";
+            return "📢\uFE0E";
         case "System":
-            return "🖥️";
+            return "🖥\uFE0E";
         case "Alerts":
-            return "⚠️";
+            return "⚠\uFE0E";
         case "User Actions":
-            return "👤";
+            return "👤\uFE0E";
         case "Milestones":
-            return "🏁";
+            return "🏁\uFE0E";
         default:
-            return "🖥️";
+            return "🖥\uFE0E";
     }
 }
 

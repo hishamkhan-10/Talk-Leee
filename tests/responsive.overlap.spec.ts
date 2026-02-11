@@ -150,10 +150,56 @@ for (const vp of viewports) {
 
             if (vp.width < 768) {
                 const menuToggle = page.getByLabel("Open navigation menu");
+                if (vp.name === "iphone-se-320x568") {
+                    const metrics = await page.evaluate(() => ({
+                        innerWidth: window.innerWidth,
+                        innerHeight: window.innerHeight,
+                        outerWidth: window.outerWidth,
+                        outerHeight: window.outerHeight,
+                        screen: { width: window.screen.width, height: window.screen.height },
+                        visualViewport: window.visualViewport
+                            ? { width: window.visualViewport.width, height: window.visualViewport.height, scale: window.visualViewport.scale }
+                            : null,
+                    }));
+                    const attrs = await page.evaluate(() => {
+                        const el = document.querySelector<HTMLElement>("[aria-label='Open navigation menu']");
+                        const nav = document.querySelector<HTMLElement>("nav[aria-label='Primary']");
+                        return {
+                            tag: el?.tagName ?? null,
+                            dataIphoneSe: el?.getAttribute("data-iphone-se") ?? null,
+                            menuToggleZ: el ? window.getComputedStyle(el).zIndex : null,
+                            navZ: nav ? window.getComputedStyle(nav).zIndex : null,
+                        };
+                    });
+                    // eslint-disable-next-line no-console
+                    console.log("iphone-se metrics", metrics);
+                    // eslint-disable-next-line no-console
+                    console.log("iphone-se menu toggle attrs", attrs);
+                }
                 await menuToggle.click();
 
                 const panel = page.getByRole("menu", { name: "Mobile" });
                 await expect(panel).toBeVisible();
+                if (vp.name === "iphone-se-320x568") {
+                    const hit = await page.evaluate(() => {
+                        const toggle = document.querySelector<HTMLElement>("[aria-label='Open navigation menu']");
+                        const panelEl = document.querySelector<HTMLElement>("[role='menu'][aria-label='Mobile']");
+                        if (!toggle || !panelEl) return null;
+                        const rect = toggle.getBoundingClientRect();
+                        const x = Math.round(rect.left + rect.width / 2);
+                        const y = Math.round(rect.top + rect.height / 2);
+                        const top = document.elementFromPoint(x, y) as HTMLElement | null;
+                        return {
+                            toggle: { x, y, z: window.getComputedStyle(toggle).zIndex },
+                            panel: { z: window.getComputedStyle(panelEl).zIndex },
+                            top: top
+                                ? { tag: top.tagName, ariaLabel: top.getAttribute("aria-label"), className: top.className, z: window.getComputedStyle(top).zIndex }
+                                : null,
+                        };
+                    });
+                    // eslint-disable-next-line no-console
+                    console.log("iphone-se hit test", hit);
+                }
 
                 const box = await panel.boundingBox();
                 expect(box, "Mobile menu panel should have a bounding box").not.toBeNull();
@@ -163,6 +209,11 @@ for (const vp of viewports) {
                 }
 
                 await menuToggle.click();
+                if (vp.name === "iphone-se-320x568") {
+                    const openState = await page.evaluate(() => document.querySelector("nav[aria-label='Primary'] details")?.open ?? null);
+                    // eslint-disable-next-line no-console
+                    console.log("iphone-se details.open after close click", openState);
+                }
                 await expect(panel).toBeHidden();
             }
         }

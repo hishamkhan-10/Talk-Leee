@@ -240,7 +240,12 @@ export function CommandBar({
                     <div className="mt-1 text-sm text-muted-foreground">Press Ctrl + K to open.</div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" onClick={openBar}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openBar}
+                        className="border-teal-500/60 bg-teal-600 text-white shadow-sm hover:bg-teal-700 hover:text-white"
+                    >
                         Ctrl + K
                     </Button>
                 </div>

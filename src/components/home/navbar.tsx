@@ -32,7 +32,8 @@ export function Navbar() {
   }, []);
 
   const closeMobileMenu = useCallback(() => {
-    mobileMenuRef.current?.removeAttribute("open");
+    const details = mobileMenuRef.current;
+    if (details?.hasAttribute("open")) details.removeAttribute("open");
     setMobileMenuOpen(false);
   }, []);
 
@@ -118,7 +119,18 @@ export function Navbar() {
               />
 
               <div className="home-mobile-panel" role="menu" aria-label="Mobile">
-                <div className="flex items-center justify-end pb-2">
+                <div className="flex items-center justify-between pb-2">
+                  <Link
+                    href="/"
+                    className={[
+                      "home-mobile-link text-sm font-semibold tracking-tight focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                    ].join(" ")}
+                    onClick={() => {
+                      closeMobileMenu();
+                    }}
+                  >
+                    Talk-Lee
+                  </Link>
                   <button
                     type="button"
                     className="home-menu-toggle"

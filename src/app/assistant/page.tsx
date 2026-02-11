@@ -25,7 +25,7 @@ export default function AssistantPage() {
                         <div className="mt-4">
                             <Link
                                 href="/assistant/actions"
-                                className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-foreground/5 active:scale-[0.99]"
+                                className="inline-flex items-center justify-center rounded-xl border border-teal-500/60 bg-teal-600 px-3 py-2 text-sm font-semibold text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
                             >
                                 Open Actions
                             </Link>
@@ -43,7 +43,7 @@ export default function AssistantPage() {
                         <div className="mt-4">
                             <Link
                                 href="/assistant/meetings"
-                                className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-foreground/5 active:scale-[0.99]"
+                                className="inline-flex items-center justify-center rounded-xl border border-teal-500/60 bg-teal-600 px-3 py-2 text-sm font-semibold text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
                             >
                                 Open Meetings
                             </Link>
@@ -61,7 +61,7 @@ export default function AssistantPage() {
                         <div className="mt-4">
                             <Link
                                 href="/assistant/reminders"
-                                className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-foreground/5 active:scale-[0.99]"
+                                className="inline-flex items-center justify-center rounded-xl border border-teal-500/60 bg-teal-600 px-3 py-2 text-sm font-semibold text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:scale-[1.02] hover:bg-teal-700 hover:text-white active:scale-[0.99]"
                             >
                                 Open Reminders
                             </Link>

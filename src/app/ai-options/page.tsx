@@ -581,8 +581,8 @@ export default function AIOptionsPage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 bg-orange-500/20 rounded-lg">
-                                    <Phone className="w-6 h-6 text-orange-400" />
+                                <div className="p-3 bg-white/10 rounded-lg">
+                                    <Phone className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-bold text-white group-hover:text-gray-900 dark:group-hover:text-white">Dummy Call</h3>
@@ -596,7 +596,7 @@ export default function AIOptionsPage() {
                                 <button
                                     onClick={startDummyCall}
                                     disabled={dummyCallConnecting}
-                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-lg text-white font-medium transition-all shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
+                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg text-white font-medium transition-all shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
                                 >
                                     {dummyCallConnecting ? (
                                         <RefreshCw className="w-5 h-5 animate-spin" />
@@ -739,8 +739,8 @@ export default function AIOptionsPage() {
                             className="content-card group"
                         >
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-purple-500/20 rounded-lg">
-                                    <Cpu className="w-5 h-5 text-purple-400" />
+                                <div className="p-2 bg-white/10 rounded-lg">
+                                    <Cpu className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">LLM Model</h3>
@@ -817,8 +817,8 @@ export default function AIOptionsPage() {
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-500/20 rounded-lg">
-                                        <Volume2 className="w-5 h-5 text-emerald-400" />
+                                    <div className="p-2 bg-white/10 rounded-lg">
+                                        <Volume2 className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">TTS Voice ({voices.filter(v => v.provider === ttsProvider).length} available)</h3>
@@ -830,13 +830,13 @@ export default function AIOptionsPage() {
                                 <div className="flex gap-2 p-1 bg-white/5 group-hover:bg-black/5 dark:group-hover:bg-white/5 rounded-lg border border-white/10 group-hover:border-black/10 dark:group-hover:border-white/10">
                                     <button
                                         onClick={() => setTtsProvider("cartesia")}
-                                        className="px-4 py-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.99]"
+                                        className="px-4 py-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.99]"
                                     >
                                         Cartesia ({voices.filter(v => v.provider === "cartesia").length})
                                     </button>
                                     <button
                                         onClick={() => setTtsProvider("google")}
-                                        className="px-4 py-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.99]"
+                                        className="px-4 py-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.99]"
                                     >
                                         Google ({voices.filter(v => v.provider === "google").length})
                                     </button>
@@ -962,8 +962,8 @@ export default function AIOptionsPage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                                    <Zap className="w-5 h-5 text-yellow-400" />
+                                <div className="p-2 bg-white/10 rounded-lg">
+                                    <Zap className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">Latency Metrics</h3>
@@ -973,7 +973,7 @@ export default function AIOptionsPage() {
                             <button
                                 onClick={handleRunBenchmark}
                                 disabled={benchmarking}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-lg text-white font-medium transition-all shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg text-white font-medium transition-all shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
                             >
                                 {benchmarking ? (
                                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1048,7 +1048,7 @@ export default function AIOptionsPage() {
                                 <button
                                     onClick={handleTestLLM}
                                     disabled={testing || !testMessage.trim()}
-                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-lg text-white font-medium transition-all shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.99]"
+                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg text-white font-medium transition-all shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.99]"
                                 >
                                     {testing ? (
                                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1076,7 +1076,7 @@ export default function AIOptionsPage() {
                     >
                         <button
                             onClick={handleSaveConfig}
-                            className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-lg text-white font-medium transition-all shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.99]"
+                            className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg text-white font-medium transition-all shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.99]"
                         >
                             <Save className="w-5 h-5" />
                             <span>Save Configuration</span>

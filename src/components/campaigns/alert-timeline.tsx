@@ -151,13 +151,28 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
     const footerButtons = details ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => updateAlert(details.id, (a) => ({ ...a, acknowledged: true, updatedAt: new Date().toISOString() }))}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateAlert(details.id, (a) => ({ ...a, acknowledged: true, updatedAt: new Date().toISOString() }))}
+                >
                     Acknowledge
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => updateAlert(details.id, (a) => ({ ...a, status: "Investigating", updatedAt: new Date().toISOString() }))}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateAlert(details.id, (a) => ({ ...a, status: "Investigating", updatedAt: new Date().toISOString() }))}
+                >
                     Investigate
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => updateAlert(details.id, (a) => ({ ...a, status: "Resolved", updatedAt: new Date().toISOString() }))}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateAlert(details.id, (a) => ({ ...a, status: "Resolved", updatedAt: new Date().toISOString() }))}
+                >
                     Resolve
                 </Button>
                 <Button
@@ -188,11 +203,21 @@ export function AlertTimeline({ campaigns }: { campaigns: Campaign[] }) {
                 >
                     Snooze
                 </Button>
-                <Button type="button" variant="secondary" size="sm" onClick={() => setRuleOpen(true)}>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setRuleOpen(true)}
+                >
                     Create Rule
                 </Button>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={() => setDetailsId(null)}>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDetailsId(null)}
+            >
                 Close
             </Button>
         </div>
@@ -321,7 +346,7 @@ function FilterPills<T extends string>({
     options,
     value,
     onChange,
-    classFor,
+    classFor: _classFor,
 }: {
     label: string;
     options: T[];
@@ -346,7 +371,9 @@ function FilterPills<T extends string>({
                         type="button"
                         className={cn(
                             "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-[background-color,border-color,box-shadow] duration-150 ease-out hover:bg-muted/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            value.has(o) ? classFor(o) : "border border-border bg-background text-foreground"
+                            value.has(o)
+                                ? cn(_classFor(o), "border border-teal-500/60 bg-teal-600 text-white hover:bg-teal-700")
+                                : "border border-teal-500/40 bg-background text-foreground hover:bg-teal-600/15 dark:bg-zinc-900/60 dark:text-white/90 dark:hover:bg-teal-600/20"
                         )}
                         aria-pressed={value.has(o)}
                         onClick={() => toggle(o)}
@@ -355,7 +382,13 @@ function FilterPills<T extends string>({
                     </button>
                 ))}
                 {value.size > 0 ? (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => onChange(new Set())}>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onChange(new Set())}
+                        className="text-teal-600 hover:bg-teal-600/15 hover:text-teal-600 dark:text-teal-300 dark:hover:bg-teal-600/20 dark:hover:text-teal-200"
+                    >
                         Clear
                     </Button>
                 ) : null}
