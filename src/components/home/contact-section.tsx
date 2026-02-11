@@ -41,7 +41,7 @@ export function ContactSection() {
   };
 
   return (
-    <section id="contact" className="bg-cyan-100 dark:bg-background py-24 px-4 md:px-6 lg:px-8">
+    <section id="contact" className="bg-cyan-100 dark:bg-background py-24 px-4 md:px-6 lg:px-8 overflow-x-hidden">
        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div 

@@ -53,8 +53,14 @@ export function appEnvironment(): "development" | "staging" | "production" {
 }
 
 export function apiBaseUrl(): string {
-    if (!env.NEXT_PUBLIC_API_BASE_URL) throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
-    return env.NEXT_PUBLIC_API_BASE_URL;
+    if (env.NEXT_PUBLIC_API_BASE_URL) return env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
+
+    if (process.env.NODE_ENV !== "production") {
+        if (typeof window !== "undefined") return `${window.location.origin}/api/v1`;
+        return "http://127.0.0.1:3100/api/v1";
+    }
+
+    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
 }
 
 export function commitSha(): string | undefined {

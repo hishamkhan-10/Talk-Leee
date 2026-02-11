@@ -441,7 +441,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             </motion.div>
 
             <div
-                className="pointer-events-auto absolute bottom-6 right-6 z-20 flex items-center gap-3"
+                className="pointer-events-auto fixed bottom-6 right-6 z-50 flex items-center gap-3"
             >
                 {/* Left Arrow */}
                 {showSwipeArrows && hasSwiped && (
@@ -457,7 +457,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 <button
                     onClick={handleMainButtonClick}
                     className={`relative rounded-full transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
-                        ? "stats-card inline-flex items-center justify-start gap-3 px-5 h-14 w-[200px] bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] hover:scale-105 backdrop-blur-sm dark:bg-cyan-950/30 dark:border-cyan-200/20"
+                        ? "stats-card inline-flex items-center justify-start gap-3 px-6 h-16 w-[240px] sm:w-[260px] bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] hover:scale-105 backdrop-blur-sm dark:bg-cyan-950/30 dark:border-cyan-200/20"
                         : "flex flex-col items-center justify-center w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
                         }`}
                     style={{
@@ -506,7 +506,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {error && <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-red-500 whitespace-nowrap">{error}</p>}
             </div>
 
-            <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-[720px]">
+            <div className="pointer-events-auto absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-[720px]">
                 <TrustedByMarquee />
             </div>
 

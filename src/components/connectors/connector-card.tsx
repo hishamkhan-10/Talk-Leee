@@ -19,7 +19,7 @@ function openOAuthWindow(url: string) {
     const h = 760;
     const left = Math.max(0, Math.round((window.screen.width - w) / 2));
     const top = Math.max(0, Math.round((window.screen.height - h) / 2));
-    const features = `popup=yes,width=${w},height=${h},left=${left},top=${top},noopener=yes,noreferrer=yes`;
+    const features = `popup=yes,width=${w},height=${h},left=${left},top=${top}`;
     const win = window.open(url, "_blank", features);
     if (!win) {
         window.location.assign(url);

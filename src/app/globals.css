@@ -228,7 +228,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 60;
+  z-index: 80;
 }
 
 .home-navbar-offset {
@@ -443,22 +443,58 @@
   box-shadow: 0 0 0 0.25rem var(--home-focus-ring);
 }
 
-.home-mobile-panel {
+details > .home-mobile-overlay {
   position: fixed;
-  top: calc(var(--home-navbar-height) + 0.75rem);
-  left: 1rem;
-  right: 1rem;
-  width: auto;
-  border-radius: 1rem;
-  padding: 0.5rem;
-  background: var(--home-panel-bg);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--home-surface-border);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 240ms ease-in-out, visibility 0s linear 240ms;
+  z-index: 69;
+}
+
+.dark details > .home-mobile-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+details[open] > .home-mobile-overlay {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 240ms ease-in-out;
+}
+
+details > .home-mobile-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(88vw, 360px);
+  padding: calc(0.75rem + env(safe-area-inset-top)) 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) 0.75rem;
+  background: color-mix(in oklab, var(--background) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-right: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
   box-shadow: 0 0.75rem 2rem rgba(17, 24, 39, 0.14);
-  z-index: 50;
-  max-height: calc(100vh - var(--home-navbar-height) - 2rem);
+  z-index: 70;
   overflow-y: auto;
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path 260ms ease-out, opacity 200ms ease-out, visibility 0s linear 260ms;
+  will-change: clip-path, opacity, visibility;
+}
+
+details[open] > .home-mobile-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 260ms ease-out, opacity 200ms ease-out;
 }
 
 .home-mobile-link {

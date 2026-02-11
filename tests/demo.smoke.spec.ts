@@ -11,8 +11,10 @@ const sidebarViewports = [
 test("sidebar fits without scrolling at common resolutions", async ({ page }) => {
     await page.context().addCookies([{ name: "talklee_auth_token", value: "e2e-token", url: "http://127.0.0.1:3100" }]);
 
-    await page.route("**/api/v1/connectors/status", async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?connectors\/status\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -61,8 +63,10 @@ test("sidebar fits without scrolling at common resolutions", async ({ page }) =>
 test("demo path: dashboard, meetings, reminders, email, connectors", async ({ page }) => {
     await page.context().addCookies([{ name: "talklee_auth_token", value: "e2e-token", url: "http://127.0.0.1:3100" }]);
 
-    await page.route("**/api/v1/connectors/status", async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?connectors\/status\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -70,8 +74,10 @@ test("demo path: dashboard, meetings, reminders, email, connectors", async ({ pa
         });
     });
 
-    await page.route("**/api/v1/calendar/events", async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?calendar\/events\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -79,18 +85,24 @@ test("demo path: dashboard, meetings, reminders, email, connectors", async ({ pa
         });
     });
 
-    await page.route("**/api/v1/meetings", async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?meetings\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
     });
 
-    await page.route("**/api/v1/reminders", async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?reminders\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
     });
 
-    await page.route("**/api/v1/email/templates", async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?email\/templates\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
     });
 

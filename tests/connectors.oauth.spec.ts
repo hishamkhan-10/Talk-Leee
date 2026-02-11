@@ -12,7 +12,7 @@ test("connectors oauth flow updates status and shows feedback", async ({ page })
         drive: "disconnected",
     };
 
-    await page.route("**/api/v1/connectors/status", async (route) => {
+    await page.route(/\/(?:api\/v1\/)?connectors\/status\/?(\?.*)?$/, async (route) => {
         if (route.request().method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
@@ -28,9 +28,9 @@ test("connectors oauth flow updates status and shows feedback", async ({ page })
         });
     });
 
-    await page.route(/\/api\/v1\/connectors\/(calendar|email|crm|drive)\/authorize/i, async (route) => {
+    await page.route(/\/(?:api\/v1\/)?connectors\/(calendar|email|crm|drive)\/authorize/i, async (route) => {
         if (route.request().method() !== "GET") return route.continue();
-        const m = route.request().url().match(/\/api\/v1\/connectors\/(calendar|email|crm|drive)\/authorize/i);
+        const m = route.request().url().match(/\/(?:api\/v1\/)?connectors\/(calendar|email|crm|drive)\/authorize/i);
         const type = (m?.[1] ?? "calendar") as "calendar" | "email" | "crm" | "drive";
         statuses[type] = "connected";
         return route.fulfill({
@@ -42,9 +42,9 @@ test("connectors oauth flow updates status and shows feedback", async ({ page })
         });
     });
 
-    await page.route(/\/api\/v1\/connectors\/(calendar|email|crm|drive)\/disconnect/i, async (route) => {
+    await page.route(/\/(?:api\/v1\/)?connectors\/(calendar|email|crm|drive)\/disconnect/i, async (route) => {
         if (route.request().method() !== "POST") return route.continue();
-        const m = route.request().url().match(/\/api\/v1\/connectors\/(calendar|email|crm|drive)\/disconnect/i);
+        const m = route.request().url().match(/\/(?:api\/v1\/)?connectors\/(calendar|email|crm|drive)\/disconnect/i);
         const type = (m?.[1] ?? "calendar") as "calendar" | "email" | "crm" | "drive";
         statuses[type] = "disconnected";
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });

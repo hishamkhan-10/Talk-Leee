@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useEffect, useRef } from "react";
-import { Moon, Sun } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Moon, Sun, X } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
 
@@ -11,6 +11,7 @@ export function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const isCompact = true;
   const isLightTheme = theme === "light";
@@ -29,6 +30,33 @@ export function Navbar() {
     if (token) return;
     setBrowserAuthToken("dev-token");
   }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    mobileMenuRef.current?.removeAttribute("open");
+    setMobileMenuOpen(false);
+  }, []);
+
+  useEffect(() => {
+    closeMobileMenu();
+  }, [closeMobileMenu, pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      closeMobileMenu();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [closeMobileMenu, mobileMenuOpen]);
 
   return (
     <nav
@@ -50,12 +78,19 @@ export function Navbar() {
       <div className="mx-auto w-full max-w-6xl">
         <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center rounded-full bg-cyan-700 dark:bg-cyan-950/90 border border-white/10 shadow-[0_14px_30px_rgba(0,0,0,0.22)] px-3 sm:px-5">
           <div className="flex items-center gap-3 justify-self-start">
-            <details ref={mobileMenuRef} className="relative md:hidden group">
+            <details
+              ref={mobileMenuRef}
+              className="relative md:hidden group"
+              onToggle={(event) => {
+                setMobileMenuOpen(event.currentTarget.open);
+              }}
+            >
               <summary
                 className="home-menu-toggle list-none cursor-pointer"
                 style={isLightTheme ? { color: "rgba(226, 232, 240, 0.95)" } : undefined}
                 aria-label="Open navigation menu"
                 aria-haspopup="menu"
+                aria-expanded={mobileMenuOpen}
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -74,39 +109,51 @@ export function Navbar() {
                 </svg>
               </summary>
 
+              <div
+                className="home-mobile-overlay"
+                aria-hidden="true"
+                onClick={() => {
+                  closeMobileMenu();
+                }}
+              />
+
               <div className="home-mobile-panel" role="menu" aria-label="Mobile">
+                <div className="flex items-center justify-end pb-2">
+                  <button
+                    type="button"
+                    className="home-menu-toggle"
+                    aria-label="Close navigation menu"
+                    onClick={() => {
+                      closeMobileMenu();
+                    }}
+                  >
+                    <X width={20} height={20} aria-hidden />
+                  </button>
+                </div>
                 <ul className="grid gap-1" role="list">
                   {menuItems.map((item) => (
                     <li key={item.label}>
                       <Link
                         href={item.href}
                         className={[
-                          "home-mobile-link text-sm focus-visible:outline-none",
-                          isLightTheme
-                            ? "text-slate-100 hover:text-white"
-                            : "text-foreground/90 hover:text-foreground",
+                          "home-mobile-link text-sm focus-visible:outline-none text-foreground/90 hover:text-foreground",
                         ].join(" ")}
-                        role="menuitem"
                         onClick={() => {
-                          mobileMenuRef.current?.removeAttribute("open");
+                          closeMobileMenu();
                         }}
                       >
                         {item.label}
                       </Link>
                     </li>
                   ))}
-                  <li className="mt-1 border-t border-white/10 pt-1">
+                  <li className="mt-1 border-t border-border/60 pt-1">
                     <Link
                       href="/dashboard"
                       className={[
-                        "home-mobile-link text-sm focus-visible:outline-none",
-                        isLightTheme
-                          ? "text-slate-100 hover:text-white"
-                          : "text-foreground/90 hover:text-foreground",
+                        "home-mobile-link text-sm focus-visible:outline-none text-foreground/90 hover:text-foreground",
                       ].join(" ")}
-                      role="menuitem"
                       onClick={() => {
-                        mobileMenuRef.current?.removeAttribute("open");
+                        closeMobileMenu();
                       }}
                     >
                       Dashboard
@@ -116,14 +163,10 @@ export function Navbar() {
                     <Link
                       href="/dashboard"
                       className={[
-                        "home-mobile-link text-sm focus-visible:outline-none",
-                        isLightTheme
-                          ? "text-slate-100 hover:text-white"
-                          : "text-foreground/90 hover:text-foreground",
+                        "home-mobile-link text-sm focus-visible:outline-none text-foreground/90 hover:text-foreground",
                       ].join(" ")}
-                      role="menuitem"
                       onClick={() => {
-                        mobileMenuRef.current?.removeAttribute("open");
+                        closeMobileMenu();
                       }}
                     >
                       Start Free Trial

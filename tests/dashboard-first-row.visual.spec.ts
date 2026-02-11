@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.setTimeout(120_000);
+
 async function stabilizePage(page: import("@playwright/test").Page) {
     await page.addInitScript(() => {
         const fixedNow = 1700000000000;

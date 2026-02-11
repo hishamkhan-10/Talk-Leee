@@ -2,16 +2,20 @@ import { expect, test } from "@playwright/test";
 
 test("reminders page lists groups and supports cancel flow", async ({ page }) => {
     await page.context().addCookies([{ name: "talklee_auth_token", value: "e2e-token", url: "http://127.0.0.1:3100" }]);
-    await page.route(/\/api\/v1\/connectors\/status(\?.*)?$/, async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/connectors\/status/i, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({ items: [{ type: "calendar", status: "connected" }, { type: "email", status: "connected" }] }),
         });
     });
-    await page.route(/\/api\/v1\/reminders(\?.*)?$/, async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?reminders\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -46,8 +50,10 @@ test("reminders page lists groups and supports cancel flow", async ({ page }) =>
         });
     });
 
-    await page.route(/\/api\/v1\/calendar\/events(\?.*)?$/, async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?calendar\/events\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -67,8 +73,10 @@ test("reminders page lists groups and supports cancel flow", async ({ page }) =>
 
     let cancelCalled = false;
     let canceledId: string | null = null;
-    await page.route(/\/api\/v1\/reminders\/[^/]+\/cancel\/?(\?.*)?$/, async (route) => {
-        if (route.request().method() !== "POST") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?reminders\/[^/]+\/cancel\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "POST") return route.continue();
         const url = new URL(route.request().url());
         const parts = url.pathname.split("/").filter(Boolean);
         const id = parts[parts.length - 2] ?? "unknown";
@@ -109,16 +117,19 @@ test("reminders page lists groups and supports cancel flow", async ({ page }) =>
 
 test("create reminder modal validates and submits", async ({ page }) => {
     await page.context().addCookies([{ name: "talklee_auth_token", value: "e2e-token", url: "http://127.0.0.1:3100" }]);
-    await page.route(/\/api\/v1\/connectors\/status(\?.*)?$/, async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/connectors\/status/i, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({ items: [{ type: "calendar", status: "connected" }, { type: "email", status: "connected" }] }),
         });
     });
-    await page.route(/\/api\/v1\/reminders(\?.*)?$/, async (route) => {
+    await page.route(/\/(?:api\/v1\/)?reminders\/?(\?.*)?$/, async (route) => {
         const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
         if (req.method() === "GET") {
             return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
         }
@@ -145,8 +156,10 @@ test("create reminder modal validates and submits", async ({ page }) => {
         return route.continue();
     });
 
-    await page.route(/\/api\/v1\/calendar\/events(\?.*)?$/, async (route) => {
-        if (route.request().method() !== "GET") return route.continue();
+    await page.route(/\/(?:api\/v1\/)?calendar\/events\/?(\?.*)?$/, async (route) => {
+        const req = route.request();
+        if (req.resourceType() === "document") return route.continue();
+        if (req.method() !== "GET") return route.continue();
         return route.fulfill({
             status: 200,
             contentType: "application/json",
