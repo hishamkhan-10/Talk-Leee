@@ -29,8 +29,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="alternate icon" href="/favicon.png" type="image/png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/favicon.png" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <AppProviders>

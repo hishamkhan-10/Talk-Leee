@@ -60,7 +60,8 @@ export function apiBaseUrl(): string {
         return "http://127.0.0.1:3100/api/v1";
     }
 
-    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+    if (typeof window !== "undefined") return `${window.location.origin}/api/v1`;
+    return "http://127.0.0.1:3100/api/v1";
 }
 
 export function commitSha(): string | undefined {

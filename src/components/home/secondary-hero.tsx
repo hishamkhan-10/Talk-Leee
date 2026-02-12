@@ -212,7 +212,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           e.stopPropagation();
         }}
         onError={() => {
-          setSrc((prev) => (prev.endsWith("ai-voice-section.mp4") ? prev : "/images/ai-voice-section.mp4"));
+          setSrc((prev) => (prev.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
         }}
       >
         Your browser does not support the video tag.
@@ -235,7 +235,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           e.stopPropagation();
         }}
         onError={() => {
-          setSrc((prev) => (prev.endsWith("ai-voice-section.mp4") ? prev : "/images/ai-voice-section.mp4"));
+          setSrc((prev) => (prev.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
         }}
       >
         Your browser does not support the video tag.

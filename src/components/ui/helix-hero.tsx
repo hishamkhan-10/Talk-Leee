@@ -19,8 +19,6 @@ interface VoiceAgent {
 
 const VOICE_AGENTS: VoiceAgent[] = [
     { id: "sophia", name: "Sophia", gender: "female", description: "Warm & Professional" },
-    { id: "emma", name: "Emma", gender: "female", description: "Energetic & Friendly" },
-    { id: "alex", name: "Alex", gender: "male", description: "Confident & Clear" },
 ];
 
 const AudioVisualizer: React.FC<{ isActive: boolean; audioLevel: number }> = ({ isActive, audioLevel }) => {
@@ -40,13 +38,13 @@ const AudioVisualizer: React.FC<{ isActive: boolean; audioLevel: number }> = ({ 
     if (!isActive) return null;
 
     return (
-        <div className="flex items-end justify-center gap-1 h-5 mt-1">
-            {[...Array(5)].map((_, i) => (
+        <div className="flex items-center justify-center gap-[3px] h-6">
+            {[...Array(14)].map((_, i) => (
                 <div
                     key={i}
-                    className="w-1 rounded-full transition-all duration-75"
+                    className="w-[2px] rounded-full transition-all duration-75"
                     style={{
-                        height: `${Math.max(3, 6 + audioLevel * 12 + Math.sin(time / 120 + i) * (2 + audioLevel * 2))}px`,
+                        height: `${Math.max(4, 6 + audioLevel * 14 + Math.sin(time / 90 + i * 0.65) * (3 + audioLevel * 6))}px`,
                         background: `linear-gradient(to top, #6366f1, #818cf8, #a5b4fc)`,
                         opacity: 0.8 + audioLevel * 0.2,
                     }}
@@ -67,10 +65,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const [aiState, setAiState] = useState<AIState>("idle");
     const [audioLevel, setAudioLevel] = useState(0);
     const [error, setError] = useState<string | null>(null);
-    const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
-    const [currentVoiceName, setCurrentVoiceName] = useState("");
     const [voiceSelected, setVoiceSelected] = useState(false);
-    const [hasSwiped, setHasSwiped] = useState(false);
 
     const sectionRef = useRef<HTMLElement | null>(null);
     const heroContentRef = useRef<HTMLDivElement | null>(null);
@@ -78,6 +73,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const wsRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioQueueRef = useRef<ArrayBuffer[]>([]);
+    const micPendingChunksRef = useRef<ArrayBuffer[]>([]);
+    const voiceSelectedRef = useRef(false);
     const isPlayingRef = useRef(false);
     const playNextAudioChunkRef = useRef<(() => void) | null>(null);
     const micStreamRef = useRef<MediaStream | null>(null);
@@ -86,7 +83,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const animationFrameRef = useRef<number | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
 
-    const selectedVoice = VOICE_AGENTS[selectedVoiceIndex];
+    const selectedVoice = VOICE_AGENTS[0];
     const isActive = aiState !== "idle";
     const titleParts = title.split(/\s+/).filter(Boolean);
     const headlineA = (titleParts[0] || "AI").toUpperCase();
@@ -115,6 +112,10 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             return Math.min(prev, max);
         });
     }, [descriptionParagraphs.length]);
+
+    useEffect(() => {
+        voiceSelectedRef.current = voiceSelected;
+    }, [voiceSelected]);
 
     useEffect(() => {
         const fullText = activeParagraph;
@@ -256,14 +257,23 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             processorRef.current = processor;
 
             processor.onaudioprocess = (event) => {
-                if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
                 const inputData = event.inputBuffer.getChannelData(0);
                 const pcmData = new Int16Array(inputData.length);
                 for (let i = 0; i < inputData.length; i++) {
                     const s = Math.max(-1, Math.min(1, inputData[i]));
                     pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                 }
-                wsRef.current.send(pcmData.buffer);
+                const ws = wsRef.current;
+                if (ws && ws.readyState === WebSocket.OPEN && voiceSelectedRef.current) {
+                    ws.send(pcmData.buffer);
+                    return;
+                }
+
+                const bufferCopy = pcmData.buffer.slice(0);
+                micPendingChunksRef.current.push(bufferCopy);
+                if (micPendingChunksRef.current.length > 60) {
+                    micPendingChunksRef.current.shift();
+                }
             };
 
             source.connect(processor);
@@ -292,11 +302,18 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             const data = JSON.parse(event.data);
             switch (data.type) {
                 case "ready":
-                    setAiState("browsing");
-                    setCurrentVoiceName(data.agent_name);
-                    break;
-                case "voice_switched":
-                    setCurrentVoiceName(data.agent_name);
+                    if (!voiceSelectedRef.current) {
+                        voiceSelectedRef.current = true;
+                        setVoiceSelected(true);
+                    }
+                    setAiState("listening");
+                    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                        wsRef.current.send(JSON.stringify({ type: "voice_selected", voice_id: selectedVoice.id }));
+                        for (const chunk of micPendingChunksRef.current) {
+                            wsRef.current.send(chunk);
+                        }
+                        micPendingChunksRef.current = [];
+                    }
                     break;
                 case "transcript":
                     if (data.is_final && data.text) setAiState("processing");
@@ -305,25 +322,21 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                     setAiState("speaking");
                     break;
                 case "turn_complete":
-                    if (voiceSelected) {
-                        setAiState("listening");
-                    } else {
-                        setAiState("browsing");
-                    }
+                    setAiState("listening");
                     break;
                 case "barge_in":
                 case "tts_interrupted":
                     audioQueueRef.current = [];
                     isPlayingRef.current = false;
                     if (audioContextRef.current) { audioContextRef.current.close(); audioContextRef.current = null; }
-                    if (voiceSelected) setAiState("listening");
+                    setAiState("listening");
                     break;
                 case "error":
                     setError(data.message);
                     break;
             }
         }
-    }, [voiceSelected]);
+    }, [selectedVoice.id]);
 
     const endSession = useCallback(() => {
         stopMicrophone();
@@ -337,16 +350,18 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
         isPlayingRef.current = false;
         setAiState("idle");
         setAudioLevel(0);
-        setCurrentVoiceName("");
-        setHasSwiped(false);
         setVoiceSelected(false);
+        voiceSelectedRef.current = false;
+        micPendingChunksRef.current = [];
     }, [stopMicrophone]);
 
     const startSession = useCallback(() => {
         setAiState("connecting");
         setError(null);
-        setHasSwiped(false);
         setVoiceSelected(false);
+        voiceSelectedRef.current = false;
+        micPendingChunksRef.current = [];
+        void startMicrophone();
         const sessionId = `ask-ai-${Date.now()}`;
         const apiUrl = apiBaseUrl();
         const u = new URL(apiUrl);
@@ -361,42 +376,15 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
         ws.onmessage = handleMessage;
         ws.onerror = () => { setError("Connection error"); endSession(); };
         ws.onclose = () => { if (aiState !== "idle") endSession(); };
-    }, [handleMessage, selectedVoice.id, aiState, endSession]);
-
-    const selectVoice = useCallback(() => {
-        setVoiceSelected(true);
-        setAiState("listening");
-        startMicrophone();
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: "voice_selected", voice_id: selectedVoice.id }));
-        }
-    }, [selectedVoice.id, startMicrophone]);
-
-    const switchVoice = useCallback((direction: 'prev' | 'next') => {
-        if (!hasSwiped) setHasSwiped(true);
-
-        const newIndex = direction === 'next'
-            ? (selectedVoiceIndex + 1) % VOICE_AGENTS.length
-            : (selectedVoiceIndex - 1 + VOICE_AGENTS.length) % VOICE_AGENTS.length;
-        setSelectedVoiceIndex(newIndex);
-
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            audioQueueRef.current = [];
-            isPlayingRef.current = false;
-            if (audioContextRef.current) { audioContextRef.current.close(); audioContextRef.current = null; }
-            wsRef.current.send(JSON.stringify({ type: "switch_voice", voice_id: VOICE_AGENTS[newIndex].id }));
-        }
-    }, [selectedVoiceIndex, hasSwiped]);
+    }, [handleMessage, selectedVoice.id, aiState, endSession, startMicrophone]);
 
     const handleMainButtonClick = useCallback(() => {
         if (aiState === "idle") {
             startSession();
-        } else if (aiState === "browsing" || aiState === "speaking") {
-            selectVoice();
         } else {
             endSession();
         }
-    }, [aiState, startSession, selectVoice, endSession]);
+    }, [aiState, startSession, endSession]);
 
     useEffect(() => {
         return () => {
@@ -416,8 +404,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             default: return "Click to talk";
         }
     };
-
-    const showSwipeArrows = isActive && !voiceSelected;
     const heroHeightClass = adjustForNavbar ? "h-[calc(100vh-var(--home-navbar-height))]" : "h-screen";
 
     return (
@@ -443,22 +429,12 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <div
                 className="pointer-events-auto fixed bottom-5 right-2 sm:bottom-6 sm:right-3 z-50 flex items-center gap-2"
             >
-                {/* Left Arrow */}
-                {showSwipeArrows && hasSwiped && (
-                    <button
-                        onClick={() => switchVoice('prev')}
-                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-primary hover:text-primary/90 dark:text-foreground dark:hover:text-foreground/90 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                )}
-
                 {/* Main Circle Button */}
                 <button
                     onClick={handleMainButtonClick}
                     className={`relative rounded-full transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
                         ? "stats-card inline-flex items-center justify-center h-10 w-10 px-0 bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform,width,padding] hover:scale-105 md:justify-start md:gap-2 md:px-3 md:w-[150px] dark:bg-cyan-950/60 dark:border-cyan-200/35 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(34,211,238,0.14)]"
-                        : "flex flex-col items-center justify-center w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
+                        : "flex items-center justify-center w-20 h-20 lg:w-40 lg:h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md transition-[width,height]"
                         }`}
                     style={{
                         boxShadow: isActive
@@ -482,26 +458,11 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center z-10">
-                            <div className="text-2xl font-bold text-primary dark:text-foreground mb-0.5">
-                                {currentVoiceName || selectedVoice.name}
-                            </div>
-                            <div className="text-xs text-primary/80 dark:text-foreground/80 mb-1">{selectedVoice.description}</div>
-                            <AudioVisualizer isActive={voiceSelected && (aiState === "listening" || aiState === "speaking")} audioLevel={audioLevel} />
-                            <p className="text-[10px] text-primary/70 dark:text-foreground/70 mt-1">{getStatusText()}</p>
+                        <div className="relative z-10 flex items-center justify-center">
+                            <AudioVisualizer isActive={true} audioLevel={audioLevel} />
                         </div>
                     )}
                 </button>
-
-                {/* Right Arrow */}
-                {showSwipeArrows && (
-                    <button
-                        onClick={() => switchVoice('next')}
-                        className="w-10 h-10 rounded-full bg-background/85 hover:bg-background border border-border/70 flex items-center justify-center text-primary hover:text-primary/90 dark:text-foreground dark:hover:text-foreground/90 transition-[background-color,border-color,box-shadow,transform,color] duration-200 ease-out shadow-md hover:shadow-lg hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                )}
 
                 {error && <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-red-500 whitespace-nowrap">{error}</p>}
             </div>
