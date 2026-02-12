@@ -63,6 +63,7 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustForNavbar = false }) => {
     const [aiState, setAiState] = useState<AIState>("idle");
+    const [popupOpen, setPopupOpen] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [voiceSelected, setVoiceSelected] = useState(false);
@@ -84,7 +85,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const analyserRef = useRef<AnalyserNode | null>(null);
 
     const selectedVoice = VOICE_AGENTS[0];
-    const isActive = aiState !== "idle";
+    const isActive = popupOpen;
     const titleParts = title.split(/\s+/).filter(Boolean);
     const headlineA = (titleParts[0] || "AI").toUpperCase();
     const headlineB = (titleParts.slice(1).join(" ") || "DIALER").toUpperCase();
@@ -292,6 +293,34 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
         setAudioLevel(0);
     }, []);
 
+    const cleanupWsResources = useCallback(() => {
+        const ws = wsRef.current;
+        if (ws) {
+            try {
+                ws.onopen = null;
+                ws.onmessage = null;
+                ws.onerror = null;
+                ws.onclose = null;
+            } catch { /* ignore */ }
+            try { ws.close(); } catch { /* ignore */ }
+            wsRef.current = null;
+        }
+
+        if (audioContextRef.current) { audioContextRef.current.close(); audioContextRef.current = null; }
+        audioQueueRef.current = [];
+        isPlayingRef.current = false;
+        setVoiceSelected(false);
+        voiceSelectedRef.current = false;
+    }, []);
+
+    const cleanupSessionResources = useCallback(() => {
+        stopMicrophone();
+
+        cleanupWsResources();
+        setAudioLevel(0);
+        micPendingChunksRef.current = [];
+    }, [cleanupWsResources, stopMicrophone]);
+
     const handleMessage = useCallback(async (event: MessageEvent) => {
         if (event.data instanceof Blob) {
             const arrayBuffer = await event.data.arrayBuffer();
@@ -339,24 +368,19 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     }, [selectedVoice.id]);
 
     const endSession = useCallback(() => {
-        stopMicrophone();
-        if (wsRef.current) {
-            try { wsRef.current.send(JSON.stringify({ type: "end_call" })); } catch { /* ignore */ }
-            wsRef.current.close();
-            wsRef.current = null;
-        }
-        if (audioContextRef.current) { audioContextRef.current.close(); audioContextRef.current = null; }
-        audioQueueRef.current = [];
-        isPlayingRef.current = false;
+        cleanupSessionResources();
         setAiState("idle");
-        setAudioLevel(0);
-        setVoiceSelected(false);
-        voiceSelectedRef.current = false;
-        micPendingChunksRef.current = [];
-    }, [stopMicrophone]);
+        setPopupOpen(false);
+    }, [cleanupSessionResources]);
+
+    const failSession = useCallback((message: string) => {
+        setError(message);
+        cleanupWsResources();
+        setAiState("listening");
+    }, [cleanupWsResources]);
 
     const startSession = useCallback(() => {
-        setAiState("connecting");
+        setAiState("listening");
         setError(null);
         setVoiceSelected(false);
         voiceSelectedRef.current = false;
@@ -374,25 +398,24 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             ws.send(JSON.stringify({ type: "config", voice_id: selectedVoice.id }));
         };
         ws.onmessage = handleMessage;
-        ws.onerror = () => { setError("Connection error"); endSession(); };
-        ws.onclose = () => { if (aiState !== "idle") endSession(); };
-    }, [handleMessage, selectedVoice.id, aiState, endSession, startMicrophone]);
+        ws.onerror = () => { failSession("Connection error"); };
+        ws.onclose = () => { failSession("Connection closed"); };
+    }, [handleMessage, selectedVoice.id, failSession, startMicrophone]);
 
     const handleMainButtonClick = useCallback(() => {
-        if (aiState === "idle") {
+        if (!popupOpen) {
+            setPopupOpen(true);
             startSession();
         } else {
             endSession();
         }
-    }, [aiState, startSession, endSession]);
+    }, [popupOpen, startSession, endSession]);
 
     useEffect(() => {
         return () => {
-            stopMicrophone();
-            if (wsRef.current) wsRef.current.close();
-            if (audioContextRef.current) audioContextRef.current.close();
+            cleanupSessionResources();
         };
-    }, [stopMicrophone]);
+    }, [cleanupSessionResources]);
 
     const getStatusText = () => {
         switch (aiState) {
@@ -430,39 +453,45 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 className="pointer-events-auto fixed bottom-5 right-2 sm:bottom-6 sm:right-3 z-50 flex items-center gap-2"
             >
                 {/* Main Circle Button */}
-                <button
-                    onClick={handleMainButtonClick}
-                    className={`relative rounded-full transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
-                        ? "stats-card inline-flex items-center justify-center h-10 w-10 px-0 bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform,width,padding] hover:scale-105 md:justify-start md:gap-2 md:px-3 md:w-[150px] dark:bg-cyan-950/60 dark:border-cyan-200/35 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(34,211,238,0.14)]"
-                        : "flex items-center justify-center w-20 h-20 lg:w-40 lg:h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md transition-[width,height]"
-                        }`}
-                    style={{
-                        boxShadow: isActive
-                            ? `0 0 40px rgba(99, 102, 241, ${0.2 + audioLevel * 0.2}), 0 0 80px rgba(129, 140, 248, ${0.1 + audioLevel * 0.15})`
-                            : undefined,
-                    }}
-                >
-                    {isActive && (
-                        <div className="absolute inset-0 rounded-full border-2 border-indigo-400/30" style={{ animation: "ping 2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
-                    )}
+                <div className="relative">
+                    <button
+                        onClick={handleMainButtonClick}
+                        className={`relative rounded-full transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group ${isActive ? "overflow-visible" : "overflow-hidden"} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
+                            ? "stats-card inline-flex items-center justify-center h-10 w-10 px-0 bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform,width,padding] hover:scale-105 md:justify-start md:gap-2 md:px-3 md:w-[150px] dark:bg-cyan-950/60 dark:border-cyan-200/35 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(34,211,238,0.14)]"
+                            : "flex items-center justify-center w-20 h-20 lg:w-40 lg:h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md transition-[width,height]"
+                            }`}
+                        style={{
+                            boxShadow: isActive
+                                ? `0 0 40px rgba(99, 102, 241, ${0.2 + audioLevel * 0.2}), 0 0 80px rgba(129, 140, 248, ${0.1 + audioLevel * 0.15})`
+                                : undefined,
+                        }}
+                    >
+                        {isActive && (
+                            <>
+                                <div className="absolute -inset-2 rounded-full border-2 border-indigo-400/25 heroAskAiPing" />
+                                <div className="absolute -inset-2 rounded-full border-2 border-indigo-400/20 heroAskAiPing" style={{ animationDelay: "300ms" }} />
+                                <div className="absolute -inset-2 rounded-full border-2 border-indigo-400/15 heroAskAiPing" style={{ animationDelay: "600ms" }} />
+                            </>
+                        )}
 
-                    {!isActive ? (
-                        <div className="relative z-10 flex items-center gap-2">
-                            <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">
-                                <MessageCircle className="h-4 w-4 text-white" />
-                                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-white/90" />
-                            </span>
-                            <div className="hidden md:flex flex-col items-start leading-tight">
-                                <h3 className="text-sm font-semibold leading-none text-primary dark:text-white">Ask AI</h3>
-                                <p className="text-[10px] leading-none text-primary/80 dark:text-white/80">{getStatusText()}</p>
+                        {!isActive ? (
+                            <div className="relative z-10 flex items-center gap-2">
+                                <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">
+                                    <MessageCircle className="h-4 w-4 text-white" />
+                                    <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-white/90" />
+                                </span>
+                                <div className="hidden md:flex flex-col items-start leading-tight">
+                                    <h3 className="text-sm font-semibold leading-none text-primary dark:text-white">Ask AI</h3>
+                                    <p className="text-[10px] leading-none text-primary/80 dark:text-white/80">{getStatusText()}</p>
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="relative z-10 flex items-center justify-center">
-                            <AudioVisualizer isActive={true} audioLevel={audioLevel} />
-                        </div>
-                    )}
-                </button>
+                        ) : (
+                            <div className="relative z-10 flex items-center justify-center">
+                                <AudioVisualizer isActive={true} audioLevel={audioLevel} />
+                            </div>
+                        )}
+                    </button>
+                </div>
 
                 {error && <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-red-500 whitespace-nowrap">{error}</p>}
             </div>
@@ -562,6 +591,9 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <style jsx>{`
                 @keyframes ping {
                     75%, 100% { transform: scale(1.15); opacity: 0; }
+                }
+                .heroAskAiPing {
+                    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
                 }
                 .heroAnimatedGradientBase {
                     background: var(--home-gradient-base);
