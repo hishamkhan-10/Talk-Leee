@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/providers/theme-provider";
 import { ChevronDown } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -13,6 +14,7 @@ export function Select({
     selectClassName,
     ariaLabel,
     disabled,
+    lightThemeGreen,
 }: {
     value: string;
     onChange: (next: string) => void;
@@ -21,7 +23,11 @@ export function Select({
     selectClassName?: string;
     ariaLabel: string;
     disabled?: boolean;
+    lightThemeGreen?: boolean;
 }) {
+    const { theme } = useTheme();
+    const enhanceLight = Boolean(lightThemeGreen && theme === "light");
+
     const options = useMemo(() => {
         const items = React.Children.toArray(children)
             .map((child) => (React.isValidElement(child) && child.type === "option" ? child : null))
@@ -149,7 +155,10 @@ export function Select({
                     ref={panelRef}
                     role="listbox"
                     aria-label={ariaLabel}
-                    className="fixed z-[1000] overflow-hidden rounded-md border border-border bg-background shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+                    className={cn(
+                        "fixed z-[1000] overflow-hidden rounded-md border border-border bg-background shadow-md dark:border-zinc-800 dark:bg-zinc-900",
+                        enhanceLight ? "ring-1 ring-emerald-500/20 drop-shadow-[0_10px_18px_rgba(16,185,129,0.22)]" : undefined
+                    )}
                     style={{ left: panelStyle.left, top: panelStyle.top, width: panelStyle.width }}
                 >
                     {options.map((opt, idx) => {
@@ -169,8 +178,16 @@ export function Select({
                                     opt.disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
                                     isSelected
                                         ? "bg-muted text-foreground dark:bg-zinc-800 dark:text-white"
-                                        : "text-foreground hover:bg-muted/60 dark:text-white/90 dark:hover:bg-zinc-800",
-                                    isActive && !isSelected ? "bg-muted/60 dark:bg-zinc-800" : ""
+                                        : cn(
+                                            "text-foreground dark:text-white/90 dark:hover:bg-zinc-800",
+                                            enhanceLight ? "hover:bg-emerald-100 hover:text-gray-900" : "hover:bg-muted/60"
+                                        ),
+                                    isActive && !isSelected
+                                        ? cn(
+                                            "dark:bg-zinc-800",
+                                            enhanceLight ? "bg-emerald-100 text-gray-900" : "bg-muted/60"
+                                        )
+                                        : ""
                                 )}
                             >
                                 <span className="min-w-0 truncate">{opt.label}</span>

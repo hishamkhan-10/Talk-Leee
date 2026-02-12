@@ -108,6 +108,14 @@ export default function AIOptionsPage() {
         loadData();
     }, []);
 
+    useEffect(() => {
+        const models = providers?.llm.models ?? [];
+        if (models.length === 0) return;
+        const selected = config.llm_model;
+        if (typeof selected === "string" && models.some((m) => m.id === selected)) return;
+        setConfig((prev) => ({ ...prev, llm_model: models[0]!.id }));
+    }, [config.llm_model, providers?.llm.models]);
+
     async function loadData() {
         try {
             setLoading(true);
@@ -581,13 +589,13 @@ export default function AIOptionsPage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 bg-white/10 rounded-lg">
-                                    <Phone className="w-6 h-6 text-white" />
+                                <div className="p-3 bg-emerald-500/25 dark:bg-white/10 rounded-lg">
+                                    <Phone className="w-6 h-6 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-white group-hover:text-gray-900 dark:group-hover:text-white">Dummy Call</h3>
-                                    <p className="text-sm text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">
-                                        Test the <span className="text-orange-400 font-medium">exact same pipeline</span> used for real calls
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">Dummy Call</h3>
+                                    <p className="text-sm text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">
+                                        Test the <span className="font-medium">exact same pipeline</span> used for real calls
                                     </p>
                                 </div>
                             </div>
@@ -622,7 +630,7 @@ export default function AIOptionsPage() {
                                 <div className="flex items-center justify-center gap-6 p-3 bg-gradient-to-r from-purple-500/10 via-emerald-500/10 to-blue-500/10 rounded-lg border border-white/10 group-hover:border-black/10 dark:group-hover:border-white/10">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                                        <span className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">LLM:</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">LLM:</span>
                                         <span className="text-sm font-mono font-bold text-purple-400">
                                             {dummyCall.latency.llm_ms ? `${dummyCall.latency.llm_ms.toFixed(0)}ms` : '--'}
                                         </span>
@@ -630,7 +638,7 @@ export default function AIOptionsPage() {
                                     <div className="h-4 w-px bg-white/20 group-hover:bg-black/10 dark:group-hover:bg-white/20" />
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                                        <span className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">TTS:</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">TTS:</span>
                                         <span className="text-sm font-mono font-bold text-emerald-400">
                                             {dummyCall.latency.tts_ms ? `${dummyCall.latency.tts_ms.toFixed(0)}ms` : '--'}
                                         </span>
@@ -638,7 +646,7 @@ export default function AIOptionsPage() {
                                     <div className="h-4 w-px bg-white/20 group-hover:bg-black/10 dark:group-hover:bg-white/20" />
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                                        <span className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">Total:</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">Total:</span>
                                         <span className="text-sm font-mono font-bold text-yellow-400">
                                             {(dummyCall.latency.llm_ms && dummyCall.latency.tts_ms)
                                                 ? `${(dummyCall.latency.llm_ms + dummyCall.latency.tts_ms).toFixed(0)}ms`
@@ -652,7 +660,7 @@ export default function AIOptionsPage() {
                                     <div className="flex items-center gap-4">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                                            <span className="text-sm text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-300">
+                                            <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-300">
                                                 <span className="text-orange-400">{dummyCall.agentName}</span> from{" "}
                                                 <span className="text-orange-400">{dummyCall.companyName}</span>
                                             </span>
@@ -685,10 +693,10 @@ export default function AIOptionsPage() {
                                 {/* Chat Messages */}
                                 <div className="h-64 overflow-y-auto p-4 bg-black/20 group-hover:bg-black/5 dark:group-hover:bg-white/5 rounded-lg border border-white/5 group-hover:border-black/10 dark:group-hover:border-white/5 space-y-3">
                                     {dummyCall.messages.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-500 gap-2">
-                                            <Mic className="w-8 h-8 text-gray-600 group-hover:text-gray-500" />
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-700 dark:text-gray-500 group-hover:text-gray-800 dark:group-hover:text-gray-500 gap-2">
+                                            <Mic className="w-8 h-8 text-gray-700 dark:text-gray-500 group-hover:text-gray-800 dark:group-hover:text-gray-500" />
                                             <p>Listening... Speak into your microphone</p>
-                                            <p className="text-xs text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-600">Your speech will be transcribed automatically</p>
+                                            <p className="text-xs text-gray-700 dark:text-gray-600 group-hover:text-gray-800 dark:group-hover:text-gray-600">Your speech will be transcribed automatically</p>
                                         </div>
                                     ) : (
                                         dummyCall.messages.map((msg, idx) => (
@@ -703,8 +711,8 @@ export default function AIOptionsPage() {
                                                 )}
                                                 <div
                                                     className={`max-w-[75%] p-3 rounded-lg ${msg.role === "user"
-                                                        ? "bg-blue-500/20 border border-blue-500/30 text-blue-100 group-hover:bg-blue-500/10 group-hover:border-blue-500/20 group-hover:text-blue-900 dark:group-hover:text-blue-100"
-                                                        : "bg-white/5 border border-white/10 text-gray-200 group-hover:bg-black/5 group-hover:border-black/10 group-hover:text-gray-800 dark:group-hover:bg-white/5 dark:group-hover:border-white/10 dark:group-hover:text-gray-200 dark:group-hover:hover:bg-white/10"
+                                                        ? "bg-blue-500/20 border border-blue-500/30 text-blue-900 dark:text-blue-100 group-hover:bg-blue-500/10 group-hover:border-blue-500/20 group-hover:text-blue-900 dark:group-hover:text-blue-100"
+                                                        : "bg-white/5 border border-white/10 text-gray-900 dark:text-gray-200 group-hover:bg-black/5 group-hover:border-black/10 group-hover:text-gray-800 dark:group-hover:bg-white/5 dark:group-hover:border-white/10 dark:group-hover:text-gray-200 dark:group-hover:hover:bg-white/10"
                                                         }`}
                                                 >
                                                     <p className="text-sm">{msg.content}</p>
@@ -719,7 +727,7 @@ export default function AIOptionsPage() {
                                     )}
                                 </div>
 
-                                <p className="text-xs text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-500 text-center">
+                                <p className="text-xs text-gray-700 dark:text-gray-500 group-hover:text-gray-800 dark:group-hover:text-gray-500 text-center">
                                     🎤 <span className="text-green-400">Voice-only mode</span> - Uses the{" "}
                                     <span className="text-orange-400">exact same VoicePipelineService</span>,{" "}
                                     <span className="text-purple-400">PromptManager</span>, and{" "}
@@ -739,33 +747,53 @@ export default function AIOptionsPage() {
                             className="content-card group"
                         >
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-white/10 rounded-lg">
-                                    <Cpu className="w-5 h-5 text-white" />
+                                <div className="p-2 bg-emerald-500/25 dark:bg-white/10 rounded-lg">
+                                    <Cpu className="w-5 h-5 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">LLM Model</h3>
-                                    <p className="text-sm text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">Groq AI</p>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">LLM Model</h3>
+                                    <p className="text-sm text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">Groq AI</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mb-2">Model</label>
+                                    {(() => {
+                                        const llmModels = providers?.llm.models ?? [];
+                                        const hasModels = llmModels.length > 0;
+                                        return (
+                                            <>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mb-2">Model</label>
                                     <select
-                                        value={config.llm_model}
+                                        value={hasModels ? config.llm_model : ""}
                                         onChange={(e) => setConfig({ ...config, llm_model: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white group-hover:text-gray-900 group-hover:bg-black/5 group-hover:border-black/10 dark:group-hover:text-white dark:group-hover:bg-white/5 dark:group-hover:border-white/10 focus:outline-none focus:border-purple-500/50"
+                                        disabled={!hasModels}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-gray-900 dark:text-white group-hover:text-gray-900 group-hover:bg-black/5 group-hover:border-black/10 dark:group-hover:text-white dark:group-hover:bg-white/5 dark:group-hover:border-white/10 focus:outline-none focus:border-purple-500/50"
                                     >
-                                        {providers?.llm.models.map((model) => (
-                                            <option key={model.id} value={model.id} className="bg-gray-900">
-                                                {model.name}
+                                        {hasModels ? (
+                                            llmModels.map((model) => (
+                                                <option key={model.id} value={model.id}>
+                                                    {model.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="" disabled>
+                                                No models available
                                             </option>
-                                        ))}
+                                        )}
                                     </select>
+                                    {!hasModels ? (
+                                        <p className="mt-2 text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">
+                                            No LLM models were returned from the API.
+                                        </p>
+                                    ) : null}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mb-2">
                                         Temperature: {config.llm_temperature}
                                     </label>
                                     <input
@@ -780,7 +808,7 @@ export default function AIOptionsPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mb-2">
                                         Max Tokens: {config.llm_max_tokens}
                                     </label>
                                     <input
@@ -817,12 +845,12 @@ export default function AIOptionsPage() {
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/10 rounded-lg">
-                                        <Volume2 className="w-5 h-5 text-white" />
+                                    <div className="p-2 bg-emerald-500/25 dark:bg-white/10 rounded-lg">
+                                        <Volume2 className="w-5 h-5 text-gray-900 dark:text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">TTS Voice ({voices.filter(v => v.provider === ttsProvider).length} available)</h3>
-                                        <p className="text-sm text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">Select a voice for your AI agent</p>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">TTS Voice ({voices.filter(v => v.provider === ttsProvider).length} available)</h3>
+                                        <p className="text-sm text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">Select a voice for your AI agent</p>
                                     </div>
                                 </div>
 
@@ -888,9 +916,9 @@ export default function AIOptionsPage() {
                                                     >
                                                         <Volume2 className="w-3 h-3" style={{ color: voice.accent_color || "#10B981" }} />
                                                     </div>
-                                                    <p className="font-medium text-sm text-white group-hover:text-gray-900 dark:group-hover:text-white">{voice.name}</p>
+                                                    <p className="font-medium text-sm text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">{voice.name}</p>
                                                 </div>
-                                                <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mt-1 line-clamp-2">
+                                                <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mt-1 line-clamp-2">
                                                     {voice.description}
                                                 </p>
 
@@ -931,8 +959,8 @@ export default function AIOptionsPage() {
                                                 <Volume2 className="w-5 h-5" style={{ color: selectedVoice.accent_color || "#10B981" }} />
                                             </div>
                                             <div className="flex-1">
-                                            <p className="text-sm font-medium text-white group-hover:text-gray-900 dark:group-hover:text-white">{selectedVoice.name}</p>
-                                            <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">{selectedVoice.description}</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">{selectedVoice.name}</p>
+                                            <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">{selectedVoice.description}</p>
                                             </div>
                                             <button
                                                 onClick={() => handlePreviewVoiceById(selectedVoice.id)}
@@ -962,12 +990,12 @@ export default function AIOptionsPage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/10 rounded-lg">
-                                    <Zap className="w-5 h-5 text-white" />
+                                <div className="p-2 bg-emerald-500/25 dark:bg-white/10 rounded-lg">
+                                    <Zap className="w-5 h-5 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">Latency Metrics</h3>
-                                    <p className="text-sm text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">Real-time performance tracking</p>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">Latency Metrics</h3>
+                                    <p className="text-sm text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">Real-time performance tracking</p>
                                 </div>
                             </div>
                             <button
@@ -989,31 +1017,31 @@ export default function AIOptionsPage() {
                                 <p className="text-2xl font-bold text-purple-400">
                                     {latencyMetrics.llm_first_token_ms?.toFixed(0) || "—"}
                                 </p>
-                                <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mt-1">LLM First Token (ms)</p>
+                                <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mt-1">LLM First Token (ms)</p>
                             </div>
                             <div className="p-4 bg-white/5 group-hover:bg-black/5 dark:group-hover:bg-white/5 rounded-lg text-center transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-white/10 group-hover:hover:bg-black/10 dark:group-hover:hover:bg-white/10 hover:scale-[1.02] hover:shadow-md">
                                 <p className="text-2xl font-bold text-purple-400">
                                     {latencyMetrics.llm_total_ms?.toFixed(0) || "—"}
                                 </p>
-                                <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mt-1">LLM Total (ms)</p>
+                                <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mt-1">LLM Total (ms)</p>
                             </div>
                             <div className="p-4 bg-white/5 group-hover:bg-black/5 dark:group-hover:bg-white/5 rounded-lg text-center transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-white/10 group-hover:hover:bg-black/10 dark:group-hover:hover:bg-white/10 hover:scale-[1.02] hover:shadow-md">
                                 <p className="text-2xl font-bold text-emerald-400">
                                     {latencyMetrics.tts_first_audio_ms?.toFixed(0) || "—"}
                                 </p>
-                                <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mt-1">TTS First Audio (ms)</p>
+                                <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mt-1">TTS First Audio (ms)</p>
                             </div>
                             <div className="p-4 bg-white/5 group-hover:bg-black/5 dark:group-hover:bg-white/5 rounded-lg text-center transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-white/10 group-hover:hover:bg-black/10 dark:group-hover:hover:bg-white/10 hover:scale-[1.02] hover:shadow-md">
                                 <p className="text-2xl font-bold text-emerald-400">
                                     {latencyMetrics.tts_total_ms?.toFixed(0) || "—"}
                                 </p>
-                                <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mt-1">TTS Total (ms)</p>
+                                <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mt-1">TTS Total (ms)</p>
                             </div>
                             <div className="p-4 bg-white/5 group-hover:bg-black/5 dark:group-hover:bg-white/5 rounded-lg text-center transition-[transform,background-color,box-shadow] duration-150 ease-out hover:bg-white/10 group-hover:hover:bg-black/10 dark:group-hover:hover:bg-white/10 hover:scale-[1.02] hover:shadow-md">
                                 <p className="text-2xl font-bold text-yellow-400">
                                     {latencyMetrics.total_pipeline_ms?.toFixed(0) || "—"}
                                 </p>
-                                <p className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400 mt-1">Total Pipeline (ms)</p>
+                                <p className="text-xs text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400 mt-1">Total Pipeline (ms)</p>
                             </div>
                         </div>
                     </motion.div>
@@ -1026,12 +1054,12 @@ export default function AIOptionsPage() {
                         className="content-card group"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 bg-white/10 rounded-lg">
-                                <MessageSquare className="w-5 h-5 text-white group-hover:text-gray-900 dark:group-hover:text-white" />
+                            <div className="p-2 bg-emerald-500/25 dark:bg-white/10 rounded-lg">
+                                <MessageSquare className="w-5 h-5 text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold text-white group-hover:text-gray-900 dark:group-hover:text-white">Test LLM</h3>
-                                <p className="text-sm text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-400">Send a message to test the selected model</p>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white">Test LLM</h3>
+                                <p className="text-sm text-gray-700 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-400">Send a message to test the selected model</p>
                             </div>
                         </div>
 
@@ -1043,7 +1071,7 @@ export default function AIOptionsPage() {
                                     onChange={(e) => setTestMessage(e.target.value)}
                                     onKeyDown={(e) => e.key === "Enter" && handleTestLLM()}
                                     placeholder="Type a message to test the LLM..."
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white group-hover:text-gray-900 group-hover:bg-black/5 group-hover:border-black/10 dark:group-hover:text-white dark:group-hover:bg-white/5 dark:group-hover:border-white/10 placeholder-gray-500 transition-[background-color,border-color,color] duration-150 ease-out hover:bg-white/10 group-hover:hover:bg-black/10 dark:group-hover:hover:bg-white/10 hover:border-white/20 focus:outline-none focus:border-purple-500/50"
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-gray-900 dark:text-white group-hover:text-gray-900 group-hover:bg-black/5 group-hover:border-black/10 dark:group-hover:text-white dark:group-hover:bg-white/5 dark:group-hover:border-white/10 placeholder-gray-500 transition-[background-color,border-color,color] duration-150 ease-out hover:bg-white/10 group-hover:hover:bg-black/10 dark:group-hover:hover:bg-white/10 hover:border-white/20 focus:outline-none focus:border-purple-500/50"
                                 />
                                 <button
                                     onClick={handleTestLLM}
@@ -1061,7 +1089,7 @@ export default function AIOptionsPage() {
 
                             {testResponse && (
                                 <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                                    <p className="text-sm text-gray-300 whitespace-pre-wrap">{testResponse}</p>
+                                    <p className="text-sm text-gray-900 dark:text-gray-300 whitespace-pre-wrap">{testResponse}</p>
                                 </div>
                             )}
                         </div>

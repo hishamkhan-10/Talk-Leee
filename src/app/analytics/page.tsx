@@ -6,6 +6,8 @@ import { extendedApi, CallSeriesItem } from "@/lib/extended-api";
 import { BarChart2, TrendingUp, TrendingDown, Calendar, Activity, Percent } from "lucide-react";
 import { motion } from "framer-motion";
 import { Select } from "@/components/ui/select";
+import { useTheme } from "@/components/providers/theme-provider";
+import { cn } from "@/lib/utils";
 
 function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -27,6 +29,9 @@ function GlassStatCard({
     iconColor?: string;
     delay?: number;
 }) {
+    const { theme } = useTheme();
+    const isLight = theme === "light";
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -37,8 +42,13 @@ function GlassStatCard({
             className="group rounded-2xl border border-border bg-muted/60 backdrop-blur-sm p-4 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md"
         >
             <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-zinc-900 p-2 transition-colors group-hover:bg-zinc-900">
-                    <Icon className={`w-5 h-5 ${iconColor} text-white`} />
+                <div
+                    className={cn(
+                        "rounded-lg p-2 transition-colors",
+                        isLight ? "bg-emerald-500/25 group-hover:bg-emerald-500/30" : "bg-zinc-900 group-hover:bg-zinc-900"
+                    )}
+                >
+                    <Icon className={cn("w-5 h-5", isLight ? iconColor : "text-white")} />
                 </div>
                 <div>
                     <p className="text-2xl font-bold text-foreground">{value}</p>
@@ -120,6 +130,7 @@ export default function AnalyticsPage() {
                         value={String(dateRange)}
                         onChange={(v) => setDateRange(Number(v))}
                         ariaLabel="Select date range"
+                        lightThemeGreen
                         className="w-40"
                         selectClassName="border-0 bg-transparent shadow-none h-9 pr-8 focus-visible:ring-0"
                     >
@@ -177,14 +188,14 @@ export default function AnalyticsPage() {
                             title="Answered"
                             value={totals.answered}
                             icon={TrendingUp}
-                            iconColor="text-emerald-600"
+                            iconColor="text-black"
                             delay={0.1}
                         />
                         <GlassStatCard
                             title="Failed"
                             value={totals.failed}
                             icon={TrendingDown}
-                            iconColor="text-red-600"
+                            iconColor="text-black"
                             delay={0.2}
                         />
                         <GlassStatCard

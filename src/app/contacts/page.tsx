@@ -132,6 +132,7 @@ export default function ContactsPage() {
                                     value={selectedCampaign}
                                     onChange={(next) => setSelectedCampaign(next)}
                                     ariaLabel="Select target campaign"
+                                    lightThemeGreen
                                     className="mt-2 w-full"
                                     selectClassName="rounded-xl border border-border bg-background/70 px-3 py-2 text-sm font-semibold text-foreground shadow-sm outline-none transition-colors focus:border-border focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-60 h-auto hover:bg-background/80"
                                     disabled={uploading}

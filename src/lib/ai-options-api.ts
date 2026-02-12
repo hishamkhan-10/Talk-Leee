@@ -295,18 +295,25 @@ function normalizeProviderList(raw: z.infer<typeof RawProviderListSchema>): Prov
     };
 }
 
+function pickNonEmptyString(...values: Array<string | undefined>) {
+    for (const value of values) {
+        if (typeof value === "string" && value.trim().length > 0) return value;
+    }
+    return undefined;
+}
+
 function normalizeConfig(raw: z.infer<typeof RawConfigSchema>): AIProviderConfig {
     return {
-        llm_provider: raw.llm_provider ?? raw.llmProvider ?? DEFAULT_CONFIG.llm_provider,
-        llm_model: raw.llm_model ?? raw.llmModel ?? DEFAULT_CONFIG.llm_model,
+        llm_provider: pickNonEmptyString(raw.llm_provider, raw.llmProvider) ?? DEFAULT_CONFIG.llm_provider,
+        llm_model: pickNonEmptyString(raw.llm_model, raw.llmModel) ?? DEFAULT_CONFIG.llm_model,
         llm_temperature: raw.llm_temperature ?? raw.llmTemperature ?? DEFAULT_CONFIG.llm_temperature,
         llm_max_tokens: raw.llm_max_tokens ?? raw.llmMaxTokens ?? DEFAULT_CONFIG.llm_max_tokens,
-        stt_provider: raw.stt_provider ?? raw.sttProvider ?? DEFAULT_CONFIG.stt_provider,
-        stt_model: raw.stt_model ?? raw.sttModel ?? DEFAULT_CONFIG.stt_model,
-        stt_language: raw.stt_language ?? raw.sttLanguage ?? DEFAULT_CONFIG.stt_language,
-        tts_provider: raw.tts_provider ?? raw.ttsProvider ?? DEFAULT_CONFIG.tts_provider,
-        tts_model: raw.tts_model ?? raw.ttsModel ?? DEFAULT_CONFIG.tts_model,
-        tts_voice_id: raw.tts_voice_id ?? raw.ttsVoiceId ?? DEFAULT_CONFIG.tts_voice_id,
+        stt_provider: pickNonEmptyString(raw.stt_provider, raw.sttProvider) ?? DEFAULT_CONFIG.stt_provider,
+        stt_model: pickNonEmptyString(raw.stt_model, raw.sttModel) ?? DEFAULT_CONFIG.stt_model,
+        stt_language: pickNonEmptyString(raw.stt_language, raw.sttLanguage) ?? DEFAULT_CONFIG.stt_language,
+        tts_provider: pickNonEmptyString(raw.tts_provider, raw.ttsProvider) ?? DEFAULT_CONFIG.tts_provider,
+        tts_model: pickNonEmptyString(raw.tts_model, raw.ttsModel) ?? DEFAULT_CONFIG.tts_model,
+        tts_voice_id: pickNonEmptyString(raw.tts_voice_id, raw.ttsVoiceId) ?? DEFAULT_CONFIG.tts_voice_id,
         tts_sample_rate: raw.tts_sample_rate ?? raw.ttsSampleRate ?? DEFAULT_CONFIG.tts_sample_rate,
     };
 }

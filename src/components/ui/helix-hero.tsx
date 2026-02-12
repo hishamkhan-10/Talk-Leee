@@ -457,7 +457,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 <button
                     onClick={handleMainButtonClick}
                     className={`relative rounded-full transition-[background-color,border-color,box-shadow,transform] duration-500 ease-out cursor-pointer group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${!isActive
-                        ? "stats-card inline-flex items-center justify-start gap-2 px-3 h-10 w-[140px] sm:w-[150px] bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] hover:scale-105 backdrop-blur-sm dark:bg-cyan-950/60 dark:border-cyan-200/35 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(34,211,238,0.14)]"
+                        ? "stats-card inline-flex items-center justify-center h-10 w-10 px-0 bg-cyan-50/70 border border-cyan-200/80 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform,width,padding] hover:scale-105 md:justify-start md:gap-2 md:px-3 md:w-[150px] dark:bg-cyan-950/60 dark:border-cyan-200/35 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(34,211,238,0.14)]"
                         : "flex flex-col items-center justify-center w-40 h-40 bg-background/70 border-2 border-indigo-400/40 backdrop-blur-md"
                         }`}
                     style={{
@@ -476,7 +476,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                 <MessageCircle className="h-4 w-4 text-white" />
                                 <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-white/90" />
                             </span>
-                            <div className="flex flex-col items-start leading-tight">
+                            <div className="hidden md:flex flex-col items-start leading-tight">
                                 <h3 className="text-sm font-semibold leading-none text-primary dark:text-white">Ask AI</h3>
                                 <p className="text-[10px] leading-none text-primary/80 dark:text-white/80">{getStatusText()}</p>
                             </div>

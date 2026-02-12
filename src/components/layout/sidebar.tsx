@@ -73,10 +73,7 @@ export function Sidebar({
     const desktopNavItemClass = collapsed ? "justify-center px-2" : "justify-start px-2";
     const desktopTextClass = collapsed ? "hidden" : "block";
 
-    const measurementLabels = useMemo(
-        () => [...navigation.map((x) => x.name), ...bottomNavigation.map((x) => x.name), "Logout", "Talk-Lee", "Voice Ops"],
-        []
-    );
+    const measurementLabels = useMemo(() => [...navigation.map((x) => x.name), ...bottomNavigation.map((x) => x.name), "Logout", "Talk-Lee"], []);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -159,9 +156,8 @@ export function Sidebar({
                             onClick={onClose}
                         >
                             <Image src="/favicon.svg" alt="Talk-Lee" width={28} height={28} className="w-7 h-7" />
-                            <div className="leading-tight min-w-0">
-                                <div className="text-base font-black text-sidebar-foreground tracking-tight">Talk-Lee</div>
-                                <div className="text-[11px] font-semibold text-sidebar-foreground/60">Voice Ops</div>
+                            <div className="min-w-0">
+                                <div className="text-base font-black leading-none text-sidebar-foreground tracking-tight">Talk-Lee</div>
                             </div>
                         </Link>
                     </div>
@@ -196,7 +192,7 @@ export function Sidebar({
                 </div>
             </div>
 
-            <nav className={cn("flex-1 px-2 space-y-1", isShortViewport ? "py-2" : "py-3")}>
+            <nav className={cn("flex-1 px-2 space-y-1.5", isShortViewport ? "py-2" : "py-3")}>
                 {navigation.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                     return (
@@ -224,7 +220,12 @@ export function Sidebar({
                 })}
             </nav>
 
-            <div className={cn("px-2 border-t border-sidebar-border/60 space-y-1", isShortViewport ? "pt-2 pb-2" : "pt-3 pb-3")}>
+            <div
+                className={cn(
+                    "px-2 border-t border-sidebar-border/60 space-y-1.5",
+                    isShortViewport ? "mt-1 pt-2 pb-2" : "mt-2 pt-3 pb-3"
+                )}
+            >
                 {bottomNavigation.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                     return (
