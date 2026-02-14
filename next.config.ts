@@ -8,6 +8,43 @@ const configDir = path.dirname(configFilePath);
 
 const nextConfig: NextConfig = {
     outputFileTracingRoot: configDir,
+    compress: true,
+    poweredByHeader: false,
+    images: {
+        formats: ["image/avif", "image/webp"],
+        minimumCacheTTL: 86400,
+    },
+    experimental: {
+        optimizePackageImports: ["lucide-react"],
+    },
+    async headers() {
+        return [
+            {
+                source: "/images/:path*",
+                headers: [
+                    { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+                ],
+            },
+            {
+                source: "/:path*.mp4",
+                headers: [
+                    { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+                ],
+            },
+            {
+                source: "/:path*.svg",
+                headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }],
+            },
+            {
+                source: "/openapi.json",
+                headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
+            },
+            {
+                source: "/site.webmanifest",
+                headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
+            },
+        ];
+    },
     webpack: (config, { dev }) => {
         if (dev) {
             const systemRootIgnored = /^[A-Z]:\\(?:DumpStack\.log\.tmp|hiberfil\.sys|pagefile\.sys|swapfile\.sys|System Volume Information)(?:\\.*)?$/i;

@@ -171,9 +171,7 @@ for (const vp of viewports) {
                             navZ: nav ? window.getComputedStyle(nav).zIndex : null,
                         };
                     });
-                    // eslint-disable-next-line no-console
                     console.log("iphone-se metrics", metrics);
-                    // eslint-disable-next-line no-console
                     console.log("iphone-se menu toggle attrs", attrs);
                 }
                 await menuToggle.click();
@@ -197,7 +195,6 @@ for (const vp of viewports) {
                                 : null,
                         };
                     });
-                    // eslint-disable-next-line no-console
                     console.log("iphone-se hit test", hit);
                 }
 
@@ -211,7 +208,6 @@ for (const vp of viewports) {
                 await menuToggle.click();
                 if (vp.name === "iphone-se-320x568") {
                     const openState = await page.evaluate(() => document.querySelector("nav[aria-label='Primary'] details")?.open ?? null);
-                    // eslint-disable-next-line no-console
                     console.log("iphone-se details.open after close click", openState);
                 }
                 await expect(panel).toBeHidden();

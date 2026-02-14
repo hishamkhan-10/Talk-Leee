@@ -159,9 +159,9 @@ export const HealthStatCard = React.forwardRef<HTMLDivElement, HealthStatCardPro
                 {/* Legend */}
                 {showLegend && graphData && (
                     <div className="mt-6">
-                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                        <h3 className="mb-2 text-sm font-medium text-muted-foreground">
                             {legendTitle}
-                        </h4>
+                        </h3>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                             {graphData.map((item, i) => (
                                 <div key={i} className="flex items-center gap-2">

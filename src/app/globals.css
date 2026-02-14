@@ -75,7 +75,7 @@
   --secondary: #F5F5F5;
   --secondary-foreground: #171717;
   --muted: #F5F5F5;
-  --muted-foreground: #737373;
+  --muted-foreground: #525252;
   --accent: #F5F5F5;
   --accent-foreground: #171717;
   --destructive: #EF4444;
@@ -497,11 +497,9 @@ details[open] > .home-mobile-panel {
   transition: clip-path 260ms ease-out, opacity 200ms ease-out;
 }
 
-@media (width: 320px) and (height: 568px) {
-  details > summary.home-menu-toggle {
-    position: relative;
-    z-index: 71;
-  }
+details > summary.home-menu-toggle {
+  position: relative;
+  z-index: 71;
 }
 
 .home-mobile-link {

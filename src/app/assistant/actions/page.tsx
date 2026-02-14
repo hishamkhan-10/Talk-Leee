@@ -280,7 +280,7 @@ function LeadTypeahead({
     return (
         <div className="relative">
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
                 <Input
                     value={query}
                     onChange={(e) => {
@@ -347,7 +347,7 @@ function LeadTypeahead({
                             >
                                 <div className="min-w-0">
                                     <div className="truncate font-medium">{opt.label}</div>
-                                    {opt.subtitle ? <div className="mt-0.5 truncate text-xs text-gray-500">{opt.subtitle}</div> : null}
+                                    {opt.subtitle ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{opt.subtitle}</div> : null}
                                 </div>
                             </button>
                         );

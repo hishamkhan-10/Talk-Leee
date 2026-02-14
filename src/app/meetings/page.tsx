@@ -68,21 +68,16 @@ function sanitizeHtmlToText(html: string) {
 }
 
 async function copyText(text: string) {
-    if (typeof navigator !== "undefined" && navigator.clipboard && typeof window !== "undefined" && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return;
+    if (typeof navigator === "undefined" || typeof window === "undefined") {
+        throw new Error("Clipboard is not available.");
     }
-    if (typeof document === "undefined") return;
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "true");
-    ta.style.position = "fixed";
-    ta.style.left = "-1000px";
-    ta.style.top = "-1000px";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        throw new Error("Clipboard API is unavailable in this browser.");
+    }
+    if (!window.isSecureContext) {
+        throw new Error("Clipboard requires a secure context (HTTPS or localhost).");
+    }
+    await navigator.clipboard.writeText(text);
 }
 
 function meetingDurationMinutes(startIso: string) {
@@ -171,6 +166,63 @@ function MeetingsContent() {
     const [whenValue, setWhenValue] = useState("");
     const notesRef = useRef<HTMLDivElement | null>(null);
     const [formError, setFormError] = useState<string | null>(null);
+
+    const formatNotesInline = (tagName: "strong" | "em") => {
+        const root = notesRef.current;
+        if (!root) return;
+        root.focus();
+
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        const common = range.commonAncestorContainer;
+        const commonEl = common.nodeType === Node.ELEMENT_NODE ? (common as Element) : common.parentElement;
+        if (!commonEl || !root.contains(commonEl)) return;
+
+        const nearest = (node: Node) => {
+            let cur: Node | null = node;
+            while (cur && cur !== root) {
+                if (cur.nodeType === Node.ELEMENT_NODE) {
+                    const el = cur as HTMLElement;
+                    if (el.tagName.toLowerCase() === tagName) return el;
+                }
+                cur = cur.parentNode;
+            }
+            return null;
+        };
+
+        const unwrap = (el: HTMLElement) => {
+            const parent = el.parentNode;
+            if (!parent) return;
+            while (el.firstChild) parent.insertBefore(el.firstChild, el);
+            parent.removeChild(el);
+        };
+
+        const startEl = nearest(range.startContainer);
+        const endEl = nearest(range.endContainer);
+        if (startEl && startEl === endEl) {
+            unwrap(startEl);
+            return;
+        }
+
+        if (range.collapsed) {
+            const el = document.createElement(tagName);
+            const textNode = document.createTextNode("\u200B");
+            el.appendChild(textNode);
+            range.insertNode(el);
+            const next = document.createRange();
+            next.setStart(textNode, 1);
+            next.setEnd(textNode, 1);
+            sel.removeAllRanges();
+            sel.addRange(next);
+            return;
+        }
+
+        const wrapper = document.createElement(tagName);
+        const frag = range.extractContents();
+        wrapper.appendChild(frag);
+        range.insertNode(wrapper);
+    };
 
     const timeZoneLabel = useMemo(() => {
         try {
@@ -714,9 +766,8 @@ function MeetingsContent() {
                                 size="sm"
                                 onClick={() => {
                                     try {
-                                        document.execCommand("bold");
+                                        formatNotesInline("strong");
                                     } catch {}
-                                    notesRef.current?.focus();
                                 }}
                             >
                                 Bold
@@ -727,9 +778,8 @@ function MeetingsContent() {
                                 size="sm"
                                 onClick={() => {
                                     try {
-                                        document.execCommand("italic");
+                                        formatNotesInline("em");
                                     } catch {}
-                                    notesRef.current?.focus();
                                 }}
                             >
                                 Italic

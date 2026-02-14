@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, use, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { parseConnectorsCallback } from "@/lib/connectors-utils";
@@ -103,13 +103,9 @@ function ConnectorsTypedCallbackInner({ providerType }: { providerType: string }
     );
 }
 
-export default function ConnectorsTypedCallbackPage({
-    params,
-}: {
-    params?: Promise<{ type?: string | string[] | undefined }>;
-}) {
-    const resolved = use((params ?? Promise.resolve({})) as Promise<{ type?: string | string[] | undefined }>);
-    const providerType = typeof resolved.type === "string" ? resolved.type : Array.isArray(resolved.type) ? resolved.type[0] ?? "" : "";
+export default function ConnectorsTypedCallbackPage() {
+    const params = useParams<{ type?: string | string[] }>();
+    const providerType = typeof params?.type === "string" ? params.type : Array.isArray(params?.type) ? params.type[0] ?? "" : "";
     return (
         <Suspense
             fallback={

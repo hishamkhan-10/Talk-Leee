@@ -54,6 +54,8 @@ const TYPE_META: Record<
 
 function playTone(type: NotificationType) {
     if (typeof window === "undefined") return;
+    const ua = (navigator as unknown as { userActivation?: { hasBeenActive: boolean; isActive: boolean } }).userActivation;
+    if (ua && !ua.hasBeenActive) return;
     const AudioContextCtor =
         window.AudioContext ??
         (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

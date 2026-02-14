@@ -134,7 +134,7 @@ export function RouteGuard({
             return (
                 <div className="mx-auto w-full max-w-5xl px-4 py-10">
                     <div className="content-card">
-                        <h3 className="mb-1 text-sm font-semibold text-foreground">Connector setup required</h3>
+                        <h2 className="mb-1 text-sm font-semibold text-foreground">Connector setup required</h2>
                         <p className="text-sm text-muted-foreground">Connect required providers to unlock this feature.</p>
 
                         <div className="mt-4 space-y-4">

@@ -187,8 +187,10 @@ test("create reminder modal validates and submits", async ({ page }) => {
     await expect(page.getByText("Recipient email is invalid.")).toBeVisible();
 
     await page.getByLabel("Recipient email").fill("alex@example.com");
-    await page.getByLabel("Meeting").selectOption("mtg-1");
-    await page.getByLabel("Schedule option").selectOption("t10m");
+    await page.getByLabel("Select meeting").click();
+    await page.getByRole("option", { name: "Weekly sync" }).click();
+    await page.getByLabel("Schedule option").click();
+    await page.getByRole("option", { name: "T-10m" }).click();
     await page.getByRole("button", { name: /^Schedule$/ }).click();
 
     const confirmDialog = page.getByRole("dialog", { name: "Confirm reminder" });

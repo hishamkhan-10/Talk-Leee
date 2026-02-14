@@ -53,7 +53,7 @@ export default function CallDetailPage() {
     const error = callQuery.isError ? (callQuery.error instanceof Error ? callQuery.error.message : "Failed to load call details") : "";
 
     return (
-        <DashboardLayout>
+        <DashboardLayout title="Call Details" description="Transcript, recording, and metadata for this call.">
             <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -83,7 +83,7 @@ export default function CallDetailPage() {
                             className="content-card"
                         >
                             <div className="flex items-center justify-between gap-3 mb-4">
-                                <h3 className="text-sm font-semibold text-foreground">Call Details</h3>
+                                <h2 className="text-sm font-semibold text-foreground">Call Details</h2>
                                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyle(call.status)}`}>
                                     {call.status}
                                 </span>
@@ -134,7 +134,7 @@ export default function CallDetailPage() {
                                 whileHover={{ scale: 1.01 }}
                                 className="content-card"
                             >
-                                <h3 className="text-sm font-semibold text-foreground mb-4">Summary</h3>
+                                <h2 className="text-sm font-semibold text-foreground mb-4">Summary</h2>
                                 <div className="rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
                                     <p className="text-sm leading-relaxed text-muted-foreground">{call.summary}</p>
                                 </div>
@@ -149,7 +149,7 @@ export default function CallDetailPage() {
                                 whileHover={{ scale: 1.01 }}
                                 className="content-card"
                             >
-                                <h3 className="text-sm font-semibold text-foreground mb-4">Recording</h3>
+                                <h2 className="text-sm font-semibold text-foreground mb-4">Recording</h2>
                                 <div className="rounded-2xl border border-border bg-muted/60 p-4 shadow-sm transition-[transform,background-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
                                     <Button variant="outline" className="w-full hover:scale-[1.02] hover:shadow-md active:scale-[0.99]">
                                         <Play className="w-4 h-4" />
@@ -168,10 +168,10 @@ export default function CallDetailPage() {
                         className="lg:col-span-2"
                     >
                         <div className="content-card">
-                            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
-                                <FileText className="h-5 w-5 text-muted-foreground" />
+                            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <FileText className="h-5 w-5 text-muted-foreground" aria-hidden />
                                 Transcript
-                            </h3>
+                            </h2>
                             {transcript.length === 0 ? (
                                 <div className="py-8 text-center text-sm text-muted-foreground">
                                     No transcript available

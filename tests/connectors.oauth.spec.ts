@@ -61,7 +61,7 @@ test("connectors oauth flow updates status and shows feedback", async ({ page })
         await page.getByTestId(`connector-${type}-connect`).click();
         const popup = await popupPromise;
         await popup.waitForLoadState("domcontentloaded");
-        await expect(page.getByLabel("Success notification")).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByRole("status", { name: "Success notification" }).first()).toBeVisible({ timeout: 20_000 });
         await expect(page.getByTestId(`connector-${type}-disconnect`)).toBeVisible({ timeout: 20_000 });
     }
 
@@ -69,7 +69,7 @@ test("connectors oauth flow updates status and shows feedback", async ({ page })
         await page.getByTestId(`connector-${type}-disconnect`).click();
         const dialog = page.getByRole("dialog");
         await dialog.getByRole("button", { name: "Disconnect" }).click();
-        await expect(page.getByLabel("Success notification")).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByRole("status", { name: "Success notification" }).first()).toBeVisible({ timeout: 20_000 });
         await expect(page.getByTestId(`connector-${type}-connect`)).toBeVisible({ timeout: 20_000 });
     }
 });

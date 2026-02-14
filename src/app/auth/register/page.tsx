@@ -147,17 +147,17 @@ export default function RegisterPage() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-block">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                        <p className="text-3xl font-bold tracking-tight text-foreground">
                             Talk-Lee
-                        </h1>
+                        </p>
                         <p className="text-sm text-[#D2B48C] dark:text-cyan-400 mt-1">AI Voice Dialer</p>
                     </Link>
                 </div>
 
                 <Card>
                     <CardHeader className="text-center">
-                        <CardTitle>
-                            {step === "form" ? "Create your account" : "Verify your email"}
+                        <CardTitle asChild>
+                            <h1>{step === "form" ? "Create your account" : "Verify your email"}</h1>
                         </CardTitle>
                         <CardDescription>
                             {step === "form"
@@ -178,7 +178,7 @@ export default function RegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Your Name</Label>
                                     <div className="relative">
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="name"
                                             name="name"
@@ -198,7 +198,7 @@ export default function RegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="businessName">Business Name</Label>
                                     <div className="relative">
-                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="businessName"
                                             name="businessName"
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Work Email</Label>
                                     <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="email"
                                             name="email"
@@ -255,7 +255,7 @@ export default function RegisterPage() {
                                     )}
                                 </Button>
 
-                                <p className="text-sm text-gray-500 text-center">
+                                <p className="text-sm text-muted-foreground text-center">
                                     Already have an account?{" "}
                                     <Link
                                         href="/auth/login"
@@ -277,7 +277,7 @@ export default function RegisterPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="otp">Verification Code</Label>
                                     <div className="relative">
-                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="otp"
                                             type="text"

@@ -79,7 +79,7 @@ export function FeaturesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-base sm:text-lg font-light text-gray-600 dark:text-muted-foreground"
+            className="text-base sm:text-lg font-light text-muted-foreground"
           >
             Clean, scalable AI voice capabilities designed for modern teams.
           </motion.p>
@@ -117,7 +117,7 @@ export function FeaturesSection() {
               <h3 className="text-lg sm:text-xl font-bold text-gray-950 dark:text-foreground transition-colors duration-200 ease-out">
                 {service.title}
               </h3>
-              <p className="mt-2 text-sm sm:text-base font-light leading-relaxed text-gray-600 dark:text-muted-foreground">
+              <p className="mt-2 text-sm sm:text-base font-light leading-relaxed text-muted-foreground">
                 {service.description}
               </p>
             </motion.div>

@@ -1,8 +1,0 @@
-{
-  "timestamp": "2026-01-13",
-  "personnel": "Trae IDE assistant",
-  "reason": "Backup before reverting last KPI-row alignment change on request",
-  "filePath": "src/app/dashboard/page.tsx",
-  "backupScope": "KpiCard header grid block (pre-revert)",
-  "code": "                <div className=\"grid grid-cols-[minmax(0,1fr)_minmax(0,7.75rem)] sm:grid-cols-[minmax(0,1fr)_minmax(0,9rem)] grid-rows-[auto_auto] items-start gap-x-4 gap-y-1\">\\n                    <div className=\"min-w-0 flex items-center gap-2\">\\n                        <span className={`w-2.5 h-2.5 rounded-full ${statusClass}`} aria-hidden />\\n                        <p className=\"min-w-0 text-sm font-bold tracking-wide uppercase text-muted-foreground leading-none truncate\">{title}</p>\\n                    </div>\\n                    <div className=\"min-w-0 text-right\">\\n                        <div className=\"text-xs font-bold text-muted-foreground leading-none truncate\">Last updated</div>\\n                    </div>\\n                    <p className=\"min-w-0 text-3xl sm:text-4xl font-black tabular-nums text-card-foreground leading-none whitespace-nowrap\">\\n                        <Counter value={value} />\\n                        {valueSuffix ? <span className=\"ml-1 text-xl sm:text-2xl font-black text-card-foreground\">{valueSuffix}</span> : null}\\n                    </p>\\n                    <div className=\"min-w-0 text-right\">\\n                        <div className=\"text-xs font-black tabular-nums text-card-foreground leading-none truncate\">{formatHhMmSs(lastUpdatedMs)}</div>\\n                    </div>\\n                </div>"
-}

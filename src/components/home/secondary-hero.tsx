@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
@@ -11,6 +12,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   const playerRef = useRef<HTMLDivElement | null>(null);
   const videoARef = useRef<HTMLVideoElement | null>(null);
   const videoBRef = useRef<HTMLVideoElement | null>(null);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
 
   const resolvedSrc = useMemo(() => src, [src]);
   const [activeVideo, setActiveVideo] = useState<0 | 1>(0);
@@ -18,6 +20,23 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   const isCrossfadingRef = useRef(false);
 
   useEffect(() => {
+    const el = playerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        setShouldLoadVideo(true);
+        io.disconnect();
+      },
+      { rootMargin: "240px 0px", threshold: 0.15 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoadVideo) return;
     const playbackRate = 0.8;
 
     const applyPlaybackRate = () => {
@@ -63,13 +82,14 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
       b?.removeEventListener("canplay", applyPlaybackRate);
       b?.removeEventListener("play", applyPlaybackRate);
     };
-  }, [resolvedSrc]);
+  }, [resolvedSrc, shouldLoadVideo]);
 
   useEffect(() => {
     activeVideoRef.current = activeVideo;
   }, [activeVideo]);
 
   useEffect(() => {
+    if (!shouldLoadVideo) return;
     const a = videoARef.current;
     const b = videoBRef.current;
     if (!a || !b) return;
@@ -97,9 +117,10 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         b.pause();
       } catch {}
     };
-  }, [resolvedSrc]);
+  }, [resolvedSrc, shouldLoadVideo]);
 
   useEffect(() => {
+    if (!shouldLoadVideo) return;
     const crossfadeMs = 180;
     const loopThresholdSeconds = 0.22;
     const loopToTimeSeconds = 0.01;
@@ -170,7 +191,38 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
 
     const intervalId = window.setInterval(check, 60);
     return () => window.clearInterval(intervalId);
-  }, [resolvedSrc]);
+  }, [resolvedSrc, shouldLoadVideo]);
+
+  if (!shouldLoadVideo) {
+    return (
+      <div ref={playerRef} className={`secondaryHeroPlayer ${className ?? ""}`}>
+        <Image
+          src="/images/ai-voice-section..jpg"
+          alt=""
+          fill
+          sizes="(max-width: 768px) 100vw, 600px"
+          className="secondaryHeroPoster"
+        />
+        <style jsx>{`
+          .secondaryHeroPlayer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden;
+            border-radius: 14px;
+          }
+
+          :global(.secondaryHeroPoster) {
+            object-fit: cover;
+            border-radius: 14px;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -202,7 +254,8 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
+        poster="/images/ai-voice-section..jpg"
         controls={false}
         controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture
@@ -225,7 +278,8 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
+        poster="/images/ai-voice-section..jpg"
         controls={false}
         controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture

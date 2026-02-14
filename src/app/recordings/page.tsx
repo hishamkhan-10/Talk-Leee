@@ -141,10 +141,10 @@ export default function RecordingsPage() {
                     className="content-card py-16 text-center"
                 >
                     <div className="w-16 h-16 mx-auto mb-4 bg-white/10 rounded-full flex items-center justify-center">
-                        <Volume2 className="w-8 h-8 text-gray-400" />
+                        <Volume2 className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-medium text-white mb-2">No recordings yet</h3>
-                    <p className="text-gray-400">
+                    <h2 className="text-lg font-medium text-white mb-2">No recordings yet</h2>
+                    <p className="text-muted-foreground">
                         Recordings will appear here after calls are completed.
                     </p>
                 </motion.div>
@@ -188,7 +188,7 @@ export default function RecordingsPage() {
                             transition={{ delay: 0.3 }}
                             className="flex items-center justify-between mt-6"
                         >
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-muted-foreground">
                                 Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, total)} of{" "}
                                 {total} recordings
                             </p>

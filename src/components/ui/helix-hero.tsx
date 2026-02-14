@@ -514,36 +514,36 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         }}
                         className="flex flex-col items-center gap-2 mb-6"
                     >
-                        <div className="md:hidden">
-                            <motion.div
+                        <h1 className="md:hidden">
+                            <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
-                                className="text-5xl font-bold tracking-tighter text-primary dark:text-foreground leading-none"
+                                className="block text-5xl font-bold tracking-tighter text-primary dark:text-foreground leading-none"
                             >
                                 {headlineA}
-                            </motion.div>
-                            <motion.div
+                            </motion.span>
+                            <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
-                                className="mt-2 text-4xl font-bold tracking-tighter text-primary dark:text-foreground leading-none break-words"
+                                className="mt-2 block text-4xl font-bold tracking-tighter text-primary dark:text-foreground leading-none break-words"
                             >
                                 {headlineB}
-                            </motion.div>
-                        </div>
-                        <div className="hidden md:block">
-                            <motion.div
+                            </motion.span>
+                        </h1>
+                        <h1 className="hidden md:block">
+                            <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
                             >
                                 <MagneticText text={headlineA} hoverText={headlineA} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
-                            </motion.div>
-                            <motion.div
+                            </motion.span>
+                            <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
@@ -551,8 +551,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                 className="mt-3"
                             >
                                 <MagneticText text={headlineB} hoverText={headlineB} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
-                            </motion.div>
-                        </div>
+                            </motion.span>
+                        </h1>
                     </motion.div>
 
                     <div className="mb-8 max-w-2xl mx-auto">

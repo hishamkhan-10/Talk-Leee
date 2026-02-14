@@ -135,16 +135,18 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-block">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                        <p className="text-3xl font-bold tracking-tight text-foreground">
                             Talk-Lee
-                        </h1>
+                        </p>
                         <p className="text-sm text-[#D2B48C] dark:text-cyan-400 mt-1">AI Voice Dialer</p>
                     </Link>
                 </div>
 
                 <Card>
                     <CardHeader className="text-center">
-                        <CardTitle>Welcome back</CardTitle>
+                        <CardTitle asChild>
+                            <h1>Welcome back</h1>
+                        </CardTitle>
                         <CardDescription>
                             {step === "email"
                                 ? "Enter your email to receive a verification code"
@@ -160,7 +162,7 @@ export default function LoginPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
                                     <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="email"
                                             type="email"
@@ -199,11 +201,11 @@ export default function LoginPage() {
                                     )}
                                 </Button>
 
-                                <p className="text-sm text-gray-500 text-center">
+                                <p className="text-sm text-muted-foreground text-center">
                                     New to Talk-Lee?{" "}
                                     <Link
                                         href="/auth/register"
-                                        className="text-gray-900 font-medium hover:underline"
+                                        className="text-foreground font-medium hover:underline"
                                     >
                                         Create an account
                                     </Link>
@@ -221,7 +223,7 @@ export default function LoginPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="otp">Verification Code</Label>
                                     <div className="relative">
-                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="otp"
                                             type="text"

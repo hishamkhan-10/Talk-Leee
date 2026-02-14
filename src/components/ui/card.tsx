@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/lib/utils"
 
@@ -29,28 +30,40 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
-const CardTitle = React.forwardRef<
-    HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-    <div
-        ref={ref}
-        className={cn("font-semibold text-xl leading-none tracking-tight", className)}
-        {...props}
-    />
-))
+export interface CardTitleProps extends React.ComponentPropsWithoutRef<"h2"> {
+    asChild?: boolean
+}
+
+const CardTitle = React.forwardRef<React.ElementRef<"h2">, CardTitleProps>(
+    ({ className, asChild = false, ...props }, ref) => {
+        const Comp = asChild ? Slot : "h2"
+        return (
+            <Comp
+                ref={ref}
+                className={cn("font-semibold text-xl leading-none tracking-tight", className)}
+                {...props}
+            />
+        )
+    }
+)
 CardTitle.displayName = "CardTitle"
 
-const CardDescription = React.forwardRef<
-    HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-    <div
-        ref={ref}
-        className={cn("text-sm text-gray-500", className)}
-        {...props}
-    />
-))
+export interface CardDescriptionProps extends React.ComponentPropsWithoutRef<"p"> {
+    asChild?: boolean
+}
+
+const CardDescription = React.forwardRef<React.ElementRef<"p">, CardDescriptionProps>(
+    ({ className, asChild = false, ...props }, ref) => {
+        const Comp = asChild ? Slot : "p"
+        return (
+            <Comp
+                ref={ref}
+                className={cn("text-sm text-muted-foreground", className)}
+                {...props}
+            />
+        )
+    }
+)
 CardDescription.displayName = "CardDescription"
 
 const CardContent = React.forwardRef<

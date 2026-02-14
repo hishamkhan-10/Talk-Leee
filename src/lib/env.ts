@@ -61,6 +61,7 @@ export function apiBaseUrl(): string {
     }
 
     if (typeof window !== "undefined") return `${window.location.origin}/api/v1`;
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/v1`;
     return "http://127.0.0.1:3100/api/v1";
 }
 

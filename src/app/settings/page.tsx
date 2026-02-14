@@ -66,7 +66,7 @@ export default function SettingsPage() {
                 <Card className="dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <CardHeader>
                         <CardTitle className="dark:text-white">Display Preferences</CardTitle>
-                        <CardDescription className="dark:text-gray-400">Toast timing and sound.</CardDescription>
+                        <CardDescription>Toast timing and sound.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -101,7 +101,7 @@ export default function SettingsPage() {
                 <Card className="dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <CardHeader>
                         <CardTitle className="dark:text-white">Notification Preferences</CardTitle>
-                        <CardDescription className="dark:text-gray-400">Enable categories, tune priority, and configure routing.</CardDescription>
+                        <CardDescription>Enable categories, tune priority, and configure routing.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {notificationTypes.map((type) => (
@@ -109,7 +109,7 @@ export default function SettingsPage() {
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                     <div className="min-w-0">
                                         <div className="text-sm font-semibold capitalize text-gray-900 dark:text-zinc-100">{type}</div>
-                                        <div className="mt-1 text-sm text-gray-600 dark:text-zinc-400">Toggle delivery and adjust priority.</div>
+                                    <div className="mt-1 text-sm text-muted-foreground">Toggle delivery and adjust priority.</div>
                                     </div>
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                         <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)] sm:w-[220px]">
@@ -156,7 +156,7 @@ export default function SettingsPage() {
                 <Card className="dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <CardHeader>
                         <CardTitle className="dark:text-white">Data & Privacy</CardTitle>
-                        <CardDescription className="dark:text-gray-400">Retention, export, clear, and consent.</CardDescription>
+                        <CardDescription>Retention, export, clear, and consent.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -164,7 +164,7 @@ export default function SettingsPage() {
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Store notification history</div>
-                                        <div className="mt-1 text-sm text-gray-600 dark:text-zinc-400">Saved locally in your browser.</div>
+                                        <div className="mt-1 text-sm text-muted-foreground">Saved locally in your browser.</div>
                                     </div>
                                     <Switch
                                         checked={settings.privacy.storeHistory}
@@ -185,7 +185,7 @@ export default function SettingsPage() {
                                         }
                                         disabled={!settings.privacy.storeHistory}
                                     />
-                                    <div className="text-xs font-semibold text-gray-600 dark:text-zinc-400">{retentionDaysLabel}</div>
+                                    <div className="text-xs font-semibold text-muted-foreground">{retentionDaysLabel}</div>
                                 </div>
                             </div>
 
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Third-party consent</div>
-                                        <div className="mt-1 text-sm text-gray-600 dark:text-zinc-400">Allows sending notifications to integrations.</div>
+                                        <div className="mt-1 text-sm text-muted-foreground">Allows sending notifications to integrations.</div>
                                     </div>
                                     <Switch
                                         checked={settings.privacy.consentThirdParty}
@@ -232,14 +232,14 @@ export default function SettingsPage() {
                 <Card className="dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <CardHeader>
                         <CardTitle className="dark:text-white">Integrations</CardTitle>
-                        <CardDescription className="dark:text-gray-400">Webhook setup and routing rules.</CardDescription>
+                        <CardDescription>Webhook setup and routing rules.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Webhook</div>
-                                    <div className="mt-1 text-sm text-gray-600 dark:text-zinc-400">Sends JSON payloads to your endpoint.</div>
+                                    <div className="mt-1 text-sm text-muted-foreground">Sends JSON payloads to your endpoint.</div>
                                 </div>
                                 <Switch
                                     checked={settings.integrations.webhook.enabled}
@@ -269,7 +269,7 @@ export default function SettingsPage() {
 
                         <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                             <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Routing rules</div>
-                            <div className="text-sm text-gray-600 dark:text-zinc-400">
+                            <div className="text-sm text-muted-foreground">
                                 Webhook routing requires third-party consent and an enabled webhook URL.
                             </div>
                         </div>
@@ -279,7 +279,7 @@ export default function SettingsPage() {
                 <Card className="dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <CardHeader>
                         <CardTitle className="dark:text-white">Account</CardTitle>
-                        <CardDescription className="dark:text-gray-400">Profile, authentication, and account linking.</CardDescription>
+                        <CardDescription>Profile, authentication, and account linking.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -321,7 +321,7 @@ export default function SettingsPage() {
                             <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                                 <div>
                                     <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Authentication</div>
-                                    <div className="mt-1 text-sm text-gray-600 dark:text-zinc-400">Security options.</div>
+                                    <div className="mt-1 text-sm text-muted-foreground">Security options.</div>
                                 </div>
                                 <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                                     <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Two-factor authentication</div>

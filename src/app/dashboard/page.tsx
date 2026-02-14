@@ -6,7 +6,7 @@ import { dashboardApi, DashboardSummary, Campaign } from "@/lib/dashboard-api";
 import { extendedApi, CallSeriesItem } from "@/lib/extended-api";
 import { Clock, Megaphone, ArrowUpRight, Activity, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { motion, animate, useInView } from "framer-motion";
+import { motion, animate, useInView, useReducedMotion } from "framer-motion";
 import {
     ActivityFeed,
     AlertTimeline,
@@ -94,6 +94,7 @@ function KpiCard({
     lastUpdatedMs: number;
     status: "green" | "yellow" | "red";
 }) {
+    const reduceMotion = useReducedMotion();
     const up = deltaAbs >= 0;
     const statusClass =
         status === "green"
@@ -101,14 +102,19 @@ function KpiCard({
             : status === "yellow"
                 ? "bg-yellow-500"
                 : "bg-red-500";
+    const motionProps = reduceMotion
+        ? {}
+        : {
+              initial: { opacity: 0, y: 14 },
+              animate: { opacity: 1, y: 0 },
+              transition: { duration: 0.35 },
+              whileHover: { scale: 1.02 },
+              whileTap: { scale: 0.99 },
+          };
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.99 }}
+            {...motionProps}
             className="h-full"
         >
             <div className="h-full rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md">

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
+import { buildResponsiveHtmlDocument } from "@/lib/email-utils";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function json(data: unknown, init?: { status?: number }) {
     return NextResponse.json(data, {
@@ -21,16 +26,231 @@ async function readJsonBody(request: Request) {
     }
 }
 
-async function handle(request: Request, segments: string[]) {
-    if (process.env.NODE_ENV === "production") {
-        return json({ error: "Not found" }, { status: 404 });
+type EmailTemplate = { id: string; name: string; html: string; locked?: boolean; thumbnailUrl?: string; updatedAt?: string };
+
+function emailTemplates(): EmailTemplate[] {
+    return [
+        {
+            id: "tpl-basic",
+            name: "Basic",
+            html: buildResponsiveHtmlDocument(
+                `<div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111827;">
+                    <h1 style="margin: 0 0 12px; font-size: 20px; line-height: 28px;">Hello</h1>
+                    <p style="margin: 0 0 12px; font-size: 14px; line-height: 22px;">This is a test email from Talk-Lee.</p>
+                    <p style="margin: 0; font-size: 12px; line-height: 18px; color: #6b7280;">If you did not expect this message, you can ignore it.</p>
+                </div>`
+            ),
+            locked: false,
+            updatedAt: nowIso(),
+        },
+        {
+            id: "tpl-reminder",
+            name: "Reminder",
+            html: buildResponsiveHtmlDocument(
+                `<div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111827;">
+                    <h1 style="margin: 0 0 12px; font-size: 20px; line-height: 28px;">Reminder</h1>
+                    <p style="margin: 0 0 12px; font-size: 14px; line-height: 22px;">You have an upcoming item.</p>
+                    <div style="margin: 16px 0; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb;">
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">Details</div>
+                        <div style="font-size: 14px; color: #111827;">Scheduled reminder</div>
+                    </div>
+                </div>`
+            ),
+            locked: false,
+            updatedAt: nowIso(),
+        },
+    ];
+}
+
+function requireEnv(name: string) {
+    const v = process.env[name];
+    if (!v || !String(v).trim()) throw new Error(`Missing environment variable: ${name}`);
+    return String(v).trim();
+}
+
+function optionalEnv(name: string) {
+    const v = process.env[name];
+    if (!v || !String(v).trim()) return undefined;
+    return String(v).trim();
+}
+
+function parseBoolEnv(name: string, fallback: boolean) {
+    const raw = optionalEnv(name);
+    if (raw === undefined) return fallback;
+    if (raw === "1" || /^true$/i.test(raw)) return true;
+    if (raw === "0" || /^false$/i.test(raw)) return false;
+    throw new Error(`Invalid boolean for ${name}: ${raw}`);
+}
+
+let cachedTransport: nodemailer.Transporter | undefined;
+let cachedVerify: Promise<void> | undefined;
+
+function createEmailTransport() {
+    if (cachedTransport) return cachedTransport;
+    const transportMode = optionalEnv("SMTP_TRANSPORT")?.toLowerCase();
+    const smtpUrl = optionalEnv("SMTP_URL");
+    const smtpHost = optionalEnv("SMTP_HOST");
+    if (transportMode === "stream" || (!transportMode && process.env.NODE_ENV !== "production" && !smtpUrl && !smtpHost)) {
+        cachedTransport = nodemailer.createTransport({
+            streamTransport: true,
+            newline: "unix",
+            buffer: true,
+        });
+        cachedVerify = Promise.resolve();
+        return cachedTransport;
+    }
+    if (smtpUrl) {
+        cachedTransport = nodemailer.createTransport(smtpUrl);
+        return cachedTransport;
     }
 
+    const host = requireEnv("SMTP_HOST");
+    const portRaw = optionalEnv("SMTP_PORT");
+    const port = portRaw ? Number(portRaw) : 587;
+    if (!Number.isFinite(port) || port <= 0) throw new Error(`Invalid SMTP_PORT: ${portRaw ?? ""}`);
+
+    const secure = parseBoolEnv("SMTP_SECURE", port === 465);
+
+    const user = optionalEnv("SMTP_USER");
+    const pass = optionalEnv("SMTP_PASS");
+    if (user && !pass) throw new Error("Missing SMTP_PASS");
+    if (!user && pass) throw new Error("Missing SMTP_USER");
+
+    const rejectUnauthorized = parseBoolEnv("SMTP_TLS_REJECT_UNAUTHORIZED", true);
+
+    cachedTransport = nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: user ? { user, pass: pass! } : undefined,
+        tls: { rejectUnauthorized },
+    });
+    return cachedTransport;
+}
+
+function getConfiguredFrom() {
+    const from = optionalEnv("EMAIL_FROM");
+    if (!from) {
+        const transportMode = optionalEnv("SMTP_TRANSPORT")?.toLowerCase();
+        if (process.env.NODE_ENV !== "production" || transportMode === "stream") return "Talk-Lee <noreply@example.com>";
+        throw new Error("Missing environment variable: EMAIL_FROM");
+    }
+    if (!/@/.test(from)) throw new Error("EMAIL_FROM must include an email address (e.g. \"Talk-Lee <noreply@yourdomain.com>\")");
+    return from;
+}
+
+function inferSubject(input: { subject?: string; templateName?: string }) {
+    const s = input.subject?.trim();
+    if (s) return s;
+    if (input.templateName) return input.templateName;
+    return "Talk-Lee";
+}
+
+function htmlToText(html: string) {
+    return html
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p\s*>/gi, "\n\n")
+        .replace(/<\/div\s*>/gi, "\n")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+async function sendEmail(input: { to: string[]; subject?: string; html: string }) {
+    const from = getConfiguredFrom();
+    const replyTo = optionalEnv("EMAIL_REPLY_TO");
+    const listUnsubscribe = optionalEnv("EMAIL_LIST_UNSUBSCRIBE");
+
+    const transport = createEmailTransport();
+    if (!cachedVerify) {
+        cachedVerify = transport.verify().then(() => undefined);
+        cachedVerify.catch(() => {
+            cachedVerify = undefined;
+            cachedTransport = undefined;
+        });
+    }
+    await cachedVerify;
+
+    const html = buildResponsiveHtmlDocument(input.html);
+    const info = await transport.sendMail({
+        from,
+        to: input.to.join(", "),
+        subject: inferSubject({ subject: input.subject }),
+        html,
+        text: htmlToText(html),
+        ...(replyTo ? { replyTo } : {}),
+        headers: {
+            ...(listUnsubscribe ? { "List-Unsubscribe": listUnsubscribe } : {}),
+        },
+    });
+
+    const accepted = Array.isArray(info.accepted) ? info.accepted.length : 0;
+    const rejected = Array.isArray(info.rejected) ? info.rejected.length : 0;
+    const status = accepted > 0 && rejected === 0 ? "sent" : accepted > 0 ? "partial" : "failed";
+
+    return { messageId: info.messageId, status, accepted: info.accepted, rejected: info.rejected, response: info.response };
+}
+
+async function handle(request: Request, segments: string[]) {
     const method = request.method.toUpperCase();
     const path = `/${segments.join("/")}`;
 
     if (method === "GET" && path === "/health") {
         return json({ status: "ok" });
+    }
+
+    if (method === "GET" && path === "/email/templates") {
+        return json({ items: emailTemplates() });
+    }
+
+    if (method === "POST" && path === "/email/send") {
+        const body = (await readJsonBody(request)) as
+            | { to?: unknown; recipients?: unknown; template_id?: unknown; templateId?: unknown; subject?: unknown; html?: unknown }
+            | undefined;
+
+        const to = Array.isArray(body?.to)
+            ? body?.to.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+            : Array.isArray(body?.recipients)
+              ? body?.recipients.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+              : [];
+        const templateId =
+            typeof body?.templateId === "string"
+                ? body.templateId
+                : typeof body?.template_id === "string"
+                  ? body.template_id
+                  : undefined;
+        const subject = typeof body?.subject === "string" ? body.subject : undefined;
+        const htmlOverride = typeof body?.html === "string" ? body.html : undefined;
+
+        if (to.length === 0) return json({ detail: "Missing recipients" }, { status: 400 });
+        if (!templateId && !htmlOverride) return json({ detail: "Missing template_id or html" }, { status: 400 });
+
+        const templates = emailTemplates();
+        const template = templateId ? templates.find((t) => t.id === templateId) : undefined;
+
+        const html = htmlOverride ?? template?.html;
+        if (!html) return json({ detail: `Unknown template_id: ${templateId}` }, { status: 400 });
+
+        try {
+            const out = await sendEmail({ to, subject: subject ?? template?.name, html });
+            return json(out);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Email send failed";
+            return json({ detail: message }, { status: 500 });
+        }
+    }
+
+    if (process.env.NODE_ENV === "production") {
+        return json({ error: "Not found" }, { status: 404 });
     }
 
     if (method === "GET" && path === "/connectors") {
@@ -176,14 +396,6 @@ async function handle(request: Request, segments: string[]) {
         }
     }
 
-    if (method === "GET" && path === "/email/templates") {
-        return json({ items: [] });
-    }
-
-    if (method === "POST" && path === "/email/send") {
-        return json({ messageId: `msg-${Math.random().toString(16).slice(2)}`, status: "queued" });
-    }
-
     if (method === "GET" && path === "/assistant/actions") {
         return json({ items: [] });
     }
@@ -229,4 +441,3 @@ export async function DELETE(request: Request, ctx: RouteContext) {
     const { path } = await ctx.params;
     return handle(request, path ?? []);
 }
-

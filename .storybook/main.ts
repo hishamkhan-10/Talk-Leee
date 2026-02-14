@@ -14,22 +14,6 @@ const config: StorybookConfig = {
     webpackFinal: async (cfg) => {
         cfg.module = cfg.module ?? { rules: [] };
         cfg.module.rules = cfg.module.rules ?? [];
-        cfg.module.rules.push({
-            test: /\.(ts|tsx)$/,
-            exclude: /node_modules/,
-            use: [
-                {
-                    loader: require.resolve("babel-loader"),
-                    options: {
-                        presets: [
-                            [require.resolve("@babel/preset-env"), { targets: "defaults" }],
-                            [require.resolve("@babel/preset-react"), { runtime: "automatic" }],
-                            require.resolve("@babel/preset-typescript"),
-                        ],
-                    },
-                },
-            ],
-        });
 
         cfg.resolve = cfg.resolve ?? {};
         cfg.resolve.extensions = Array.from(new Set([...(cfg.resolve.extensions ?? []), ".ts", ".tsx"]));

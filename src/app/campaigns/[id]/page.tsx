@@ -150,7 +150,7 @@ export default function CampaignDetailPage() {
     }
 
     return (
-        <DashboardLayout>
+        <DashboardLayout title={campaign?.name} description={campaign?.description ?? "Campaign stats, contacts, and controls."}>
             <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -183,7 +183,7 @@ export default function CampaignDetailPage() {
                     >
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-semibold text-foreground">{campaign.name}</h1>
+                                <h2 className="text-2xl font-semibold text-foreground">{campaign.name}</h2>
                                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusStyle(campaign.status)}`}>
                                     {campaign.status}
                                 </span>
