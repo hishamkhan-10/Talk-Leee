@@ -3,7 +3,13 @@
 import { motion } from "framer-motion";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
-export function TrustedByMarquee() {
+export function TrustedByMarquee({
+  animate = true,
+  transparentContainer = false,
+}: {
+  animate?: boolean;
+  transparentContainer?: boolean;
+}) {
   const industries = useMemo(() => ["Healthcare", "Real Estate", "E-commerce", "Financial Services"], []);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const firstGroupRef = useRef<HTMLDivElement | null>(null);
@@ -39,20 +45,27 @@ export function TrustedByMarquee() {
     };
   }, []);
 
+  const containerClassName = `group relative w-full h-10 md:h-10 overflow-hidden rounded-full px-3 transition-colors duration-300 ease-out mx-auto ${transparentContainer ? "border border-transparent bg-transparent dark:bg-transparent" : "border border-border/60 bg-card/50 dark:bg-white/5 backdrop-blur-sm"}`;
+
   return (
     <div
       ref={containerRef}
-      className="group relative w-full h-10 md:h-10 overflow-hidden rounded-full border border-border/60 bg-card/50 dark:bg-white/5 backdrop-blur-sm px-3 transition-colors duration-300 ease-out mx-auto"
+      className={containerClassName}
       style={viewportWidthPx ? { width: viewportWidthPx, maxWidth: "100%" } : undefined}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
-        <div className="absolute inset-0 heroMarqueeGradientBase" />
-        <div className="absolute -inset-[30%] heroMarqueeGradientBlobs" />
-        <div className="absolute inset-0 heroMarqueeGradientVignette" />
-      </div>
+      {!transparentContainer && (
+        <div className="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
+          <div className="absolute inset-0 heroMarqueeGradientBase" />
+          <div className="absolute -inset-[30%] heroMarqueeGradientBlobs" />
+          <div className="absolute inset-0 heroMarqueeGradientVignette" />
+        </div>
+      )}
 
-      <div className="relative z-10 trustedByMarqueeTrack flex h-full w-max items-center gap-3 md:gap-4">
-        {[0, 1].map((dup) => (
+      <div
+        className="relative z-10 trustedByMarqueeTrack flex h-full w-max items-center gap-3 md:gap-4"
+        style={animate ? undefined : { animation: "none", transform: "translateX(0)" }}
+      >
+        {(animate ? [0, 1] : [0]).map((dup) => (
           <div key={dup} ref={dup === 0 ? firstGroupRef : undefined} className="flex items-center gap-3 md:gap-4">
             {industries.map((name) => (
               <div

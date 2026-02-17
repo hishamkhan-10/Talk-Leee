@@ -87,8 +87,16 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const selectedVoice = VOICE_AGENTS[0];
     const isActive = popupOpen;
     const titleParts = title.split(/\s+/).filter(Boolean);
-    const headlineA = (titleParts[0] || "AI").toUpperCase();
-    const headlineB = (titleParts.slice(1).join(" ") || "DIALER").toUpperCase();
+    const firstTitleToken = titleParts[0] ?? "";
+    const [headlineA, headlineB] = (() => {
+        if (/^AI\w+/i.test(firstTitleToken) && firstTitleToken.length > 2) {
+            const remainder = firstTitleToken.slice(2);
+            const rest = [remainder, ...titleParts.slice(1)].filter(Boolean).join(" ");
+            return ["AI", rest || "DIALER"];
+        }
+        return [firstTitleToken || "AI", titleParts.slice(1).join(" ") || "DIALER"];
+    })().map((part) => part.toUpperCase()) as [string, string];
+    const headline = headlineB ? `${headlineA} ${headlineB}` : headlineA;
     const descriptionParagraphs = useMemo(() => {
         const paragraphs = Array.isArray(description) ? description : [description];
         return paragraphs
@@ -497,7 +505,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             </div>
 
             <div className="pointer-events-auto absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-[720px]">
-                <TrustedByMarquee />
+                <TrustedByMarquee animate={false} transparentContainer />
             </div>
 
             {/* Hero content */}
@@ -514,43 +522,25 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         }}
                         className="flex flex-col items-center gap-2 mb-6"
                     >
-                        <h1 className="md:hidden">
+                        <h1 className="md:hidden whitespace-nowrap">
                             <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
-                                className="block text-5xl font-bold tracking-tighter text-primary dark:text-foreground leading-none"
+                                className="inline-block text-4xl sm:text-5xl font-bold tracking-tighter text-primary dark:text-foreground leading-none"
                             >
-                                {headlineA}
-                            </motion.span>
-                            <motion.span
-                                variants={{
-                                    hidden: { opacity: 0, x: 0 },
-                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                                }}
-                                className="mt-2 block text-4xl font-bold tracking-tighter text-primary dark:text-foreground leading-none break-words"
-                            >
-                                {headlineB}
+                                {headline}
                             </motion.span>
                         </h1>
-                        <h1 className="hidden md:block">
+                        <h1 className="hidden md:block whitespace-nowrap">
                             <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
                             >
-                                <MagneticText text={headlineA} hoverText={headlineA} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
-                            </motion.span>
-                            <motion.span
-                                variants={{
-                                    hidden: { opacity: 0, x: 0 },
-                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                                }}
-                                className="mt-3"
-                            >
-                                <MagneticText text={headlineB} hoverText={headlineB} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
+                                <MagneticText text={headline} hoverText={headline} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
                             </motion.span>
                         </h1>
                     </motion.div>
@@ -576,9 +566,17 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         </div>
                     </div>
                     {stats && stats.length > 0 && (
-                        <div className="flex flex-wrap justify-center gap-8">
+                        <div className="mx-auto grid w-full max-w-[820px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
                             {stats.map((stat, index) => (
-                                <div key={index} className="text-center">
+                                <div
+                                    key={index}
+                                    className="heroStatBox stats-card bg-transparent backdrop-blur-sm rounded-2xl px-6 py-5 shadow-sm border border-border/70 flex flex-col items-center justify-center text-center"
+                                    style={{
+                                        backgroundImage: "var(--home-card-gradient)",
+                                        backgroundSize: "cover",
+                                        backgroundRepeat: "no-repeat",
+                                    }}
+                                >
                                     <div className="text-3xl md:text-4xl font-semibold text-primary dark:text-foreground">{stat.value}</div>
                                     <div className="text-sm text-muted-foreground uppercase tracking-wide mt-1">{stat.label}</div>
                                 </div>
@@ -628,6 +626,20 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                     .heroAnimatedGradientBlobs {
                         animation: none;
                     }
+                }
+
+                :global(.heroStatBox.stats-card)::before {
+                    opacity: 0;
+                    transform: scale(0);
+                    transform-origin: center;
+                    background: radial-gradient(circle at 50% 50%, rgba(8,145,178,0.45) 0%, rgba(8,145,178,0.35) 35%, rgba(8,145,178,0.25) 60%, transparent 80%);
+                    transition: transform 420ms ease-out, opacity 420ms ease-out;
+                    will-change: transform, opacity;
+                }
+
+                :global(.heroStatBox.stats-card:hover)::before {
+                    opacity: 1;
+                    transform: scale(1.18);
                 }
             `}</style>
         </section>
