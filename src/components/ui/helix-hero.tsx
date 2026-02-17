@@ -96,7 +96,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
         }
         return [firstTitleToken || "AI", titleParts.slice(1).join(" ") || "DIALER"];
     })().map((part) => part.toUpperCase()) as [string, string];
-    const headline = headlineB ? `${headlineA} ${headlineB}` : headlineA;
     const descriptionParagraphs = useMemo(() => {
         const paragraphs = Array.isArray(description) ? description : [description];
         return paragraphs
@@ -440,18 +439,12 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     return (
         <section
             ref={sectionRef}
-            className={`relative ${heroHeightClass} w-full font-sans tracking-tight text-foreground bg-transparent overflow-hidden select-none`}
+            className={`relative ${heroHeightClass} w-full font-sans tracking-tight text-foreground bg-transparent overflow-hidden select-none dark`}
         >
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="absolute inset-0 heroAnimatedGradientBase" />
-                <div className="absolute -inset-[30%] heroAnimatedGradientBlobs" />
-                <div className="absolute inset-0 heroAnimatedGradientVignette" />
-            </div>
-
             <motion.div
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="pointer-events-auto absolute top-6 md:top-8 left-1/2 -translate-x-1/2 z-30 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
+                className="pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
             >
                 <CheckCircle className="w-4 h-4 text-foreground" />
                 <span>Trusted by 10,000+ businesses worldwide</span>
@@ -504,10 +497,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 {error && <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-red-500 whitespace-nowrap">{error}</p>}
             </div>
 
-            <div className="pointer-events-auto absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-[720px]">
-                <TrustedByMarquee animate={false} transparentContainer />
-            </div>
-
             {/* Hero content */}
             <div ref={heroContentRef} className="absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16">
                 <div className="w-full max-w-4xl text-center">
@@ -522,25 +511,44 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         }}
                         className="flex flex-col items-center gap-2 mb-6"
                     >
-                        <h1 className="md:hidden whitespace-nowrap">
+                        <h1 className="mt-8 md:hidden">
                             <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
-                                className="inline-block text-4xl sm:text-5xl font-bold tracking-tighter text-primary dark:text-foreground leading-none"
+                                className="heroTitleGlow block text-4xl sm:text-5xl font-semibold tracking-tighter text-foreground leading-none"
                             >
-                                {headline}
+                                {headlineA}
+                            </motion.span>
+                            <motion.span
+                                variants={{
+                                    hidden: { opacity: 0, x: 0 },
+                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                                }}
+                                className="heroTitleGlow mt-2 block whitespace-nowrap text-4xl sm:text-5xl font-bold tracking-tighter text-foreground leading-none"
+                            >
+                                {headlineB}
                             </motion.span>
                         </h1>
-                        <h1 className="hidden md:block whitespace-nowrap">
+                        <h1 className="mt-10 hidden md:block">
                             <motion.span
                                 variants={{
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
+                                className="heroTitleGlow block"
                             >
-                                <MagneticText text={headline} hoverText={headline} className="mx-auto [&_span]:text-5xl md:[&_span]:text-7xl" />
+                                <MagneticText text={headlineA} hoverText={headlineA} className="mx-auto [&_span]:text-4xl md:[&_span]:text-5xl" />
+                            </motion.span>
+                            <motion.span
+                                variants={{
+                                    hidden: { opacity: 0, x: 0 },
+                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
+                                }}
+                                className="heroTitleGlow mt-3 block whitespace-nowrap"
+                            >
+                                <MagneticText text={headlineB} hoverText={headlineB} className="mx-auto [&_span]:text-4xl md:[&_span]:text-5xl" />
                             </motion.span>
                         </h1>
                     </motion.div>
@@ -570,19 +578,17 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                             {stats.map((stat, index) => (
                                 <div
                                     key={index}
-                                    className="heroStatBox stats-card bg-transparent backdrop-blur-sm rounded-2xl px-6 py-5 shadow-sm border border-border/70 flex flex-col items-center justify-center text-center"
-                                    style={{
-                                        backgroundImage: "var(--home-card-gradient)",
-                                        backgroundSize: "cover",
-                                        backgroundRepeat: "no-repeat",
-                                    }}
+                                    className="heroStatBox stats-card rounded-2xl px-6 py-5 shadow-[0_18px_60px_rgba(0,0,0,0.35)] border border-white/10 bg-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center"
                                 >
-                                    <div className="text-3xl md:text-4xl font-semibold text-primary dark:text-foreground">{stat.value}</div>
-                                    <div className="text-sm text-muted-foreground uppercase tracking-wide mt-1">{stat.label}</div>
+                                    <div className="text-3xl md:text-4xl font-semibold text-foreground">{stat.value}</div>
+                                    <div className="text-sm text-foreground/70 uppercase tracking-wide mt-1">{stat.label}</div>
                                 </div>
                             ))}
                         </div>
                     )}
+                    <div className="mt-7 w-full max-w-[720px] mx-auto">
+                        <TrustedByMarquee animate={false} transparentContainer />
+                    </div>
                 </div>
             </div>
 
@@ -593,39 +599,13 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 .heroAskAiPing {
                     animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
                 }
-                .heroAnimatedGradientBase {
-                    background: var(--home-gradient-base);
-                    background-size: 200% 200%;
-                    animation: heroGradientShift 14s ease-in-out infinite;
-                    filter: saturate(1.1);
-                }
-                .heroAnimatedGradientBlobs {
-                    background: var(--home-gradient-blobs);
-                    filter: blur(28px) saturate(1.15);
-                    animation: heroBlobFloat 10s ease-in-out infinite;
-                    transform: translate3d(0, 0, 0);
-                    will-change: transform;
-                }
-                .heroAnimatedGradientVignette {
-                    background: var(--home-gradient-vignette);
-                    pointer-events: none;
-                }
-                @keyframes heroGradientShift {
-                    0% { background-position: 0% 40%; }
-                    50% { background-position: 100% 60%; }
-                    100% { background-position: 0% 40%; }
-                }
-                @keyframes heroBlobFloat {
-                    0% { transform: translate3d(-2%, -1%, 0) scale(1); }
-                    33% { transform: translate3d(2%, -3%, 0) scale(1.04); }
-                    66% { transform: translate3d(-1%, 2%, 0) scale(1.02); }
-                    100% { transform: translate3d(-2%, -1%, 0) scale(1); }
-                }
-                @media (prefers-reduced-motion: reduce) {
-                    .heroAnimatedGradientBase,
-                    .heroAnimatedGradientBlobs {
-                        animation: none;
-                    }
+
+                .heroTitleGlow,
+                :global(.heroTitleGlow span) {
+                    text-shadow:
+                        0 0 18px rgba(34, 211, 238, 0.28),
+                        0 0 42px rgba(56, 189, 248, 0.18),
+                        0 12px 48px rgba(0, 0, 0, 0.55);
                 }
 
                 :global(.heroStatBox.stats-card)::before {

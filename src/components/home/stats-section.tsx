@@ -81,7 +81,7 @@ export function StatsSection() {
               <div className="text-4xl md:text-5xl font-bold text-primary dark:text-foreground mb-2">
                 {stat.value}
               </div>
-              <div className="text-muted-foreground font-medium">{stat.label}</div>
+              <div className="text-gray-700 dark:text-muted-foreground font-medium">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>

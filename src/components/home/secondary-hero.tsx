@@ -341,7 +341,7 @@ export function SecondaryHero() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="w-full h-full overflow-hidden box-border border border-border bg-background/70 dark:bg-background/10 backdrop-blur-sm shadow-sm secondaryHeroCard"
+          className="w-full h-full overflow-hidden box-border bg-background/70 dark:bg-background/10 backdrop-blur-sm shadow-sm secondaryHeroCard"
           style={{
             backgroundImage: "var(--home-card-gradient)",
             backgroundSize: "cover",
@@ -364,7 +364,7 @@ export function SecondaryHero() {
                 Reimagined
               </h2>
 
-              <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl md:mx-0 mx-auto leading-relaxed">
+              <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-gray-700 dark:text-muted-foreground max-w-2xl md:mx-0 mx-auto leading-relaxed">
                 Transform customer interactions with hyper-realistic AI voices that engage, convert, and scale your business
                 24/7.
               </p>

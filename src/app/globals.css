@@ -113,20 +113,45 @@
 }
 
 .homepage-bg {
-  background: #ecfeff;
+  --background: #001022;
+  --foreground: #ffffff;
+  --muted-foreground: #a0aec1;
+  --border: rgba(255, 255, 255, 0.12);
+  --ring: rgba(0, 255, 255, 0.25);
+  background: linear-gradient(180deg, #001022 0%, #004d5e 100%);
   background-attachment: fixed;
   color: var(--foreground);
+  position: relative;
+  isolation: isolate;
 }
 
-.light .homepage-bg {
-  --primary: #083344;
-  --foreground: #155e75;
-  --muted-foreground: #155e75;
+.homepage-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 52% at 50% 0%, rgba(0, 255, 255, 0.16) 0%, rgba(0, 255, 255, 0.06) 28%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.18) 0 1px, rgba(255, 255, 255, 0) 2px),
+    radial-gradient(circle at 62% 22%, rgba(255, 255, 255, 0.14) 0 1px, rgba(255, 255, 255, 0) 2px),
+    radial-gradient(circle at 78% 35%, rgba(255, 255, 255, 0.12) 0 1px, rgba(255, 255, 255, 0) 2px),
+    radial-gradient(circle at 32% 42%, rgba(255, 255, 255, 0.1) 0 1px, rgba(255, 255, 255, 0) 2px),
+    radial-gradient(circle at 54% 58%, rgba(255, 255, 255, 0.1) 0 1px, rgba(255, 255, 255, 0) 2px),
+    radial-gradient(circle at 18% 72%, rgba(255, 255, 255, 0.08) 0 1px, rgba(255, 255, 255, 0) 2px);
+  opacity: 0.9;
 }
 
-.dark .homepage-bg {
-  background: var(--background);
-  background-attachment: fixed;
+.homepage-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(110% 95% at 50% 55%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.58) 100%);
+  opacity: 0.9;
 }
 
 .dark {

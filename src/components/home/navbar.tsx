@@ -14,7 +14,6 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const isCompact = true;
-  const isLightTheme = theme === "light";
 
   const menuItems = [
     { label: "Home", href: "/" },
@@ -62,22 +61,12 @@ export function Navbar() {
   return (
     <nav
       aria-label="Primary"
-      style={
-        isLightTheme
-          ? ({
-              ["--home-hover-bg" as never]: "rgba(255, 255, 255, 0.10)",
-              ["--home-surface-border" as never]: "rgba(255, 255, 255, 0.18)",
-              ["--home-focus-ring" as never]: "rgba(56, 189, 248, 0.35)",
-              ["--home-panel-bg" as never]: "rgba(10, 25, 47, 0.92)",
-            } as React.CSSProperties)
-          : undefined
-      }
       className={[
-        "home-navbar-fixed px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
+        "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
       ].join(" ")}
     >
       <div className="mx-auto w-full max-w-6xl">
-        <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center rounded-full bg-cyan-700 dark:bg-cyan-950/90 border border-white/10 shadow-[0_14px_30px_rgba(0,0,0,0.22)] px-3 sm:px-5">
+        <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-1 sm:px-2">
           <div className="flex items-center gap-3 justify-self-start">
             <details
               ref={mobileMenuRef}
@@ -88,7 +77,7 @@ export function Navbar() {
             >
               <summary
                 className="home-menu-toggle list-none cursor-pointer"
-                style={isLightTheme ? { color: "rgba(226, 232, 240, 0.95)" } : undefined}
+                style={{ color: "rgba(226, 232, 240, 0.95)" }}
                 aria-label="Open navigation menu"
                 aria-haspopup="menu"
                 aria-expanded={mobileMenuOpen}
@@ -192,7 +181,7 @@ export function Navbar() {
               className={[
                 "font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg transition-[font-size] duration-200 ease-out",
                 isCompact ? "text-lg" : "text-xl",
-                isLightTheme ? "text-sky-200 hover:text-white" : "text-foreground",
+                "text-foreground hover:text-foreground",
               ].join(" ")}
               aria-label="Talk-Lee home"
             >
@@ -207,9 +196,7 @@ export function Navbar() {
                   href={item.href}
                   className={[
                     "home-nav-link text-sm focus-visible:outline-none",
-                    isLightTheme
-                      ? "text-slate-200 hover:text-white"
-                      : "text-muted-foreground hover:text-foreground",
+                    "text-foreground/80 hover:text-foreground",
                   ].join(" ")}
                   aria-current={item.href === "/" ? "page" : undefined}
                 >
@@ -225,7 +212,7 @@ export function Navbar() {
                 href="/dashboard"
                 className={[
                   "home-nav-link text-sm focus-visible:outline-none",
-                  isLightTheme ? "text-slate-200 hover:text-white" : "text-muted-foreground hover:text-foreground",
+                  "text-foreground/80 hover:text-foreground",
                 ].join(" ")}
               >
                 Dashboard
@@ -245,9 +232,7 @@ export function Navbar() {
               onClick={toggleTheme}
               className={[
                 "inline-flex items-center justify-center rounded-xl hover:scale-[1.03] transition-[background-color,transform,color,width,height] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isLightTheme
-                  ? "text-slate-200 hover:text-white hover:bg-white/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-foreground/5",
+                "text-foreground/80 hover:text-foreground hover:bg-white/10",
                 isCompact ? "w-9 h-9" : "w-10 h-10",
               ].join(" ")}
               aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}

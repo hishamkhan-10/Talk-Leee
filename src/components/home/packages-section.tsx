@@ -123,7 +123,7 @@ export function PackagesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-base md:text-lg text-muted-foreground"
+            className="text-base md:text-lg text-gray-700 dark:text-muted-foreground"
           >
             Choose a plan that fits your calling needs
           </motion.p>
@@ -166,7 +166,7 @@ export function PackagesSection() {
                   {pkg.points.map((point) => (
                     <li key={point} className="flex items-start gap-2.5">
                       <Check className={`mt-[2px] h-4 w-4 shrink-0 ${pkg.iconColor}`} />
-                      <span className="text-[13px] leading-snug text-muted-foreground">{point}</span>
+                      <span className="text-[13px] leading-snug text-gray-700 dark:text-muted-foreground">{point}</span>
                     </li>
                   ))}
                 </ul>

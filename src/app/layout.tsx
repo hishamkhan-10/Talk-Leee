@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Manrope, Orbitron } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { NotificationToaster } from "@/components/notifications/notification-toaster";
@@ -8,6 +8,16 @@ import { AppProviders } from "@/components/providers/app-providers";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
 });
 
 export const metadata: Metadata = {
@@ -30,7 +40,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${manrope.variable} ${orbitron.variable} font-sans antialiased`}>
         <AppProviders>
           <AuthProvider>
             {children}
