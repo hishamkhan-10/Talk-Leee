@@ -68,7 +68,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const [error, setError] = useState<string | null>(null);
     const [voiceSelected, setVoiceSelected] = useState(false);
 
-    const sectionRef = useRef<HTMLElement | null>(null);
     const heroContentRef = useRef<HTMLDivElement | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
@@ -438,7 +437,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
 
     return (
         <section
-            ref={sectionRef}
             className={`relative ${heroHeightClass} w-full font-sans tracking-tight text-foreground bg-transparent overflow-hidden select-none dark`}
         >
             <motion.div
@@ -447,7 +445,9 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 className="pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
             >
                 <CheckCircle className="w-4 h-4 text-foreground" />
-                <span>Trusted by 10,000+ businesses worldwide</span>
+                <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
+                    Trusted by 10,000+ businesses worldwide
+                </span>
             </motion.div>
 
             <div
@@ -517,7 +517,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
-                                className="heroTitleGlow block text-4xl sm:text-5xl font-semibold tracking-tighter text-foreground leading-none"
+                                className="heroTitleGlow block text-4xl sm:text-5xl font-bold tracking-tighter text-foreground leading-none"
+                                style={{ fontFamily: "var(--font-orbitron)" }}
                             >
                                 {headlineA}
                             </motion.span>
@@ -526,7 +527,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     hidden: { opacity: 0, x: 0 },
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
-                                className="heroTitleGlow mt-2 block whitespace-nowrap text-4xl sm:text-5xl font-bold tracking-tighter text-foreground leading-none"
+                                className="heroTitleGlow mt-2 block whitespace-nowrap text-4xl sm:text-5xl font-extrabold tracking-tighter text-foreground leading-none"
+                                style={{ fontFamily: "var(--font-orbitron)" }}
                             >
                                 {headlineB}
                             </motion.span>
@@ -538,8 +540,15 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
                                 className="heroTitleGlow block"
+                                style={{ fontFamily: "var(--font-orbitron)" }}
                             >
-                                <MagneticText text={headlineA} hoverText={headlineA} className="mx-auto [&_span]:text-4xl md:[&_span]:text-5xl" />
+                                <MagneticText
+                                    text={headlineA}
+                                    hoverText={headlineA}
+                                    className="mx-auto"
+                                    textSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-primary dark:text-foreground"
+                                    hoverTextSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
+                                />
                             </motion.span>
                             <motion.span
                                 variants={{
@@ -547,15 +556,25 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
                                 }}
                                 className="heroTitleGlow mt-3 block whitespace-nowrap"
+                                style={{ fontFamily: "var(--font-orbitron)" }}
                             >
-                                <MagneticText text={headlineB} hoverText={headlineB} className="mx-auto [&_span]:text-4xl md:[&_span]:text-5xl" />
+                                <MagneticText
+                                    text={headlineB}
+                                    hoverText={headlineB}
+                                    className="mx-auto"
+                                    textSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-primary dark:text-foreground whitespace-nowrap"
+                                    hoverTextSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
+                                />
                             </motion.span>
                         </h1>
                     </motion.div>
 
                     <div className="mb-8 max-w-2xl mx-auto">
                         <div className="relative">
-                            <p className="invisible pointer-events-none text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line break-words max-w-full">
+                            <p
+                                className="invisible pointer-events-none text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full"
+                                style={{ fontFamily: "var(--font-manrope)" }}
+                            >
                                 {descriptionSizerParagraph}
                             </p>
                             <div className="absolute inset-0">
@@ -565,7 +584,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                         initial={{ opacity: 0, x: 28 }}
                                         animate={{ opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } }}
                                         exit={{ opacity: 0, x: -28, transition: { duration: 0.5, ease: "easeIn" } }}
-                                        className="text-muted-foreground text-base md:text-lg leading-relaxed font-light tracking-tight whitespace-pre-line break-words max-w-full w-full"
+                                        className="text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full w-full"
+                                        style={{ fontFamily: "var(--font-manrope)" }}
                                     >
                                         {activeParagraph.slice(0, typedChars)}
                                     </motion.p>
@@ -578,16 +598,23 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                             {stats.map((stat, index) => (
                                 <div
                                     key={index}
-                                    className="heroStatBox stats-card rounded-2xl px-6 py-5 shadow-[0_18px_60px_rgba(0,0,0,0.35)] border border-white/10 bg-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center"
+                                    className="heroStatBox stats-card rounded-2xl px-6 py-5 shadow-[0_18px_60px_rgba(0,0,0,0.35)] border border-white/10 bg-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center transition-transform duration-200 ease-out hover:scale-[1.05]"
                                 >
-                                    <div className="text-3xl md:text-4xl font-semibold text-foreground">{stat.value}</div>
-                                    <div className="text-sm text-foreground/70 uppercase tracking-wide mt-1">{stat.label}</div>
+                                    <div className="text-3xl md:text-4xl font-bold text-foreground" style={{ fontFamily: "var(--font-manrope)" }}>
+                                        {stat.value}
+                                    </div>
+                                    <div
+                                        className="text-sm font-medium text-foreground/70 uppercase tracking-wide mt-1"
+                                        style={{ fontFamily: "var(--font-manrope)" }}
+                                    >
+                                        {stat.label}
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     )}
                     <div className="mt-7 w-full max-w-[720px] mx-auto">
-                        <TrustedByMarquee animate={false} transparentContainer />
+                        <TrustedByMarquee animate={false} transparentContainer heroTypography />
                     </div>
                 </div>
             </div>

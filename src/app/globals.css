@@ -253,7 +253,44 @@
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 80;
+  z-index: 500;
+  pointer-events: auto;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.home-navbar-fixed svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.home-navbar-scrolled {
+  color: #0b2a6f;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.home-navbar-scrolled a,
+.home-navbar-scrolled button,
+.home-navbar-scrolled summary {
+  color: #0b2a6f !important;
+  font-weight: 700 !important;
+}
+
+.home-navbar-scrolled svg {
+  filter: none;
+}
+
+.dark .home-navbar-scrolled {
+  color: #7dd3fc;
+}
+
+.dark .home-navbar-scrolled a,
+.dark .home-navbar-scrolled button,
+.dark .home-navbar-scrolled summary {
+  color: #7dd3fc !important;
+}
+
+.dark .home-navbar-scrolled svg {
+  filter: drop-shadow(0 0 10px rgba(125, 211, 252, 0.25));
 }
 
 .home-navbar-offset {
@@ -525,6 +562,60 @@ details[open] > .home-mobile-panel {
 details > summary.home-menu-toggle {
   position: relative;
   z-index: 71;
+}
+
+.home-navbar-menu-open[data-theme="light"] {
+  background: #000;
+  color: #fff;
+  text-shadow: none;
+}
+
+.home-navbar-menu-open[data-theme="light"] a,
+.home-navbar-menu-open[data-theme="light"] button,
+.home-navbar-menu-open[data-theme="light"] summary {
+  color: #fff !important;
+}
+
+.home-navbar-menu-open[data-theme="dark"] {
+  background: #fff;
+  color: #000;
+  text-shadow: none;
+}
+
+.home-navbar-menu-open[data-theme="dark"] a,
+.home-navbar-menu-open[data-theme="dark"] button,
+.home-navbar-menu-open[data-theme="dark"] summary {
+  color: #000 !important;
+}
+
+.home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel {
+  background: #000;
+  color: #fff;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel a,
+.home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel button {
+  color: inherit !important;
+}
+
+.home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel {
+  background: #fff;
+  color: #000;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel a,
+.home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel button {
+  color: inherit !important;
+}
+
+.home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel .home-mobile-link:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel .home-mobile-link:hover {
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .home-mobile-link {

@@ -8,16 +8,18 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
-  const [src, setSrc] = useState("/images/ai-voice-section..mp4");
+  const [src, setSrc] = useState<string | null>(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
   const videoARef = useRef<HTMLVideoElement | null>(null);
   const videoBRef = useRef<HTMLVideoElement | null>(null);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  const [isInView, setIsInView] = useState(false);
 
   const resolvedSrc = useMemo(() => src, [src]);
   const [activeVideo, setActiveVideo] = useState<0 | 1>(0);
   const activeVideoRef = useRef<0 | 1>(0);
   const isCrossfadingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const el = playerRef.current;
@@ -25,9 +27,9 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
     const io = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (!entry?.isIntersecting) return;
-        setShouldLoadVideo(true);
-        io.disconnect();
+        const nextInView = Boolean(entry?.isIntersecting);
+        setIsInView(nextInView);
+        if (nextInView) setShouldLoadVideo(true);
       },
       { rootMargin: "240px 0px", threshold: 0.15 }
     );
@@ -36,7 +38,33 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    if (!shouldLoadVideo) return;
+    if (!shouldLoadVideo || resolvedSrc) return;
+    let cancelled = false;
+    const ac = new AbortController();
+    const candidates = ["/images/ai-voice-section.mp4", "/images/ai-voice-section..mp4"];
+
+    (async () => {
+      for (const candidate of candidates) {
+        try {
+          const res = await fetch(candidate, { method: "HEAD", cache: "force-cache", signal: ac.signal });
+          if (res.ok) {
+            if (!cancelled) setSrc(candidate);
+            return;
+          }
+        } catch {}
+      }
+
+      if (!cancelled) setSrc("/images/ai-voice-section..mp4");
+    })();
+
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [resolvedSrc, shouldLoadVideo]);
+
+  useEffect(() => {
+    if (!shouldLoadVideo || !resolvedSrc) return;
     const playbackRate = 0.8;
 
     const applyPlaybackRate = () => {
@@ -89,7 +117,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   }, [activeVideo]);
 
   useEffect(() => {
-    if (!shouldLoadVideo) return;
+    if (!shouldLoadVideo || !resolvedSrc) return;
     const a = videoARef.current;
     const b = videoBRef.current;
     if (!a || !b) return;
@@ -120,9 +148,9 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   }, [resolvedSrc, shouldLoadVideo]);
 
   useEffect(() => {
-    if (!shouldLoadVideo) return;
-    const crossfadeMs = 180;
-    const loopThresholdSeconds = 0.22;
+    if (!shouldLoadVideo || !resolvedSrc) return;
+    const crossfadeMs = 320;
+    const loopThresholdSeconds = 0.45;
     const loopToTimeSeconds = 0.01;
 
     const waitForStart = (el: HTMLVideoElement, timeoutMs: number) =>
@@ -130,11 +158,16 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         if (!el.paused && !el.ended) return resolve();
 
         let done = false;
+        let frameRequestId = 0;
         const finish = () => {
           if (done) return;
           done = true;
           el.removeEventListener("playing", onPlaying);
           el.removeEventListener("timeupdate", onTimeUpdate);
+          if (frameRequestId) {
+            const cancel = (el as unknown as { cancelVideoFrameCallback?: (id: number) => void }).cancelVideoFrameCallback;
+            cancel?.(frameRequestId);
+          }
           resolve();
         };
 
@@ -145,6 +178,9 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
 
         el.addEventListener("playing", onPlaying);
         el.addEventListener("timeupdate", onTimeUpdate);
+
+        const request = (el as unknown as { requestVideoFrameCallback?: (cb: () => void) => number }).requestVideoFrameCallback;
+        if (request) frameRequestId = request(() => finish());
         window.setTimeout(finish, timeoutMs);
       });
 
@@ -172,7 +208,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         const p = next.play();
         if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
 
-        await waitForStart(next, 250);
+        await waitForStart(next, 350);
 
         setActiveVideo(currentIndex === 0 ? 1 : 0);
         activeVideoRef.current = currentIndex === 0 ? 1 : 0;
@@ -189,11 +225,41 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
       })();
     };
 
-    const intervalId = window.setInterval(check, 60);
-    return () => window.clearInterval(intervalId);
-  }, [resolvedSrc, shouldLoadVideo]);
+    if (!isInView) return;
 
-  if (!shouldLoadVideo) {
+    const tick = () => {
+      check();
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [isInView, resolvedSrc, shouldLoadVideo]);
+
+  useEffect(() => {
+    if (!shouldLoadVideo || !resolvedSrc) return;
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+
+    if (!isInView) {
+      try {
+        a.pause();
+        b.pause();
+      } catch {}
+      return;
+    }
+
+    const currentIndex = activeVideoRef.current;
+    const current = currentIndex === 0 ? a : b;
+    const p = current.play();
+    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+  }, [isInView, resolvedSrc, shouldLoadVideo]);
+
+  if (!shouldLoadVideo || !resolvedSrc) {
     return (
       <div ref={playerRef} className={`secondaryHeroPlayer ${className ?? ""}`}>
         <Image
@@ -265,7 +331,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           e.stopPropagation();
         }}
         onError={() => {
-          setSrc((prev) => (prev.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
+          setSrc((prev) => (prev?.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
         }}
       >
         Your browser does not support the video tag.
@@ -289,7 +355,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           e.stopPropagation();
         }}
         onError={() => {
-          setSrc((prev) => (prev.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
+          setSrc((prev) => (prev?.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
         }}
       >
         Your browser does not support the video tag.
@@ -311,7 +377,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           position: absolute;
           inset: 0;
           opacity: 0;
-          transition: opacity 180ms ease;
+          transition: opacity 320ms ease-in-out;
           will-change: opacity;
         }
 

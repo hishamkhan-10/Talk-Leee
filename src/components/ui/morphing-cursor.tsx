@@ -8,9 +8,17 @@ interface MagneticTextProps {
     text: string
     hoverText?: string
     className?: string
+    textSpanClassName?: string
+    hoverTextSpanClassName?: string
 }
 
-export function MagneticText({ text = "CREATIVE", hoverText = "EXPLORE", className }: MagneticTextProps) {
+export function MagneticText({
+    text = "CREATIVE",
+    hoverText = "EXPLORE",
+    className,
+    textSpanClassName,
+    hoverTextSpanClassName,
+}: MagneticTextProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const circleRef = useRef<HTMLDivElement>(null)
     const innerTextRef = useRef<HTMLDivElement>(null)
@@ -90,7 +98,14 @@ export function MagneticText({ text = "CREATIVE", hoverText = "EXPLORE", classNa
             onMouseLeave={handleMouseLeave}
             className={cn("relative inline-flex items-center justify-center cursor-none select-none", className)}
         >
-            <span className="text-6xl md:text-8xl font-bold tracking-tighter text-primary dark:text-foreground">{text}</span>
+            <span
+                className={cn(
+                    "text-6xl md:text-8xl font-bold tracking-tighter text-primary dark:text-foreground",
+                    textSpanClassName
+                )}
+            >
+                {text}
+            </span>
 
             <div
                 ref={circleRef}
@@ -113,7 +128,12 @@ export function MagneticText({ text = "CREATIVE", hoverText = "EXPLORE", classNa
                         willChange: "transform",
                     }}
                 >
-                    <span className="text-6xl md:text-8xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap">
+                    <span
+                        className={cn(
+                            "text-6xl md:text-8xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap",
+                            hoverTextSpanClassName
+                        )}
+                    >
                         {hoverText}
                     </span>
                 </div>

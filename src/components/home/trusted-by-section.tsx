@@ -6,9 +6,11 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 export function TrustedByMarquee({
   animate = true,
   transparentContainer = false,
+  heroTypography = false,
 }: {
   animate?: boolean;
   transparentContainer?: boolean;
+  heroTypography?: boolean;
 }) {
   const industries = useMemo(() => ["Healthcare", "Real Estate", "E-commerce", "Financial Services"], []);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -70,8 +72,9 @@ export function TrustedByMarquee({
             {industries.map((name) => (
               <div
                 key={`${dup}-${name}`}
-                className="flex items-center justify-center h-8 md:h-9 px-4 md:px-5 rounded-full border border-border/70 bg-card/60 dark:bg-white/5 backdrop-blur-sm text-[11px] md:text-xs font-semibold text-muted-foreground whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-200 ease-out hover:scale-[1.03] hover:bg-card/80 dark:hover:bg-white/10 hover:border-border hover:text-primary dark:hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className={`flex items-center justify-center h-8 md:h-9 px-4 md:px-5 rounded-full border border-border/70 bg-card/60 dark:bg-white/5 backdrop-blur-sm text-[11px] md:text-xs ${heroTypography ? "font-medium" : "font-semibold"} text-muted-foreground whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-200 ease-out hover:scale-[1.03] hover:bg-card/80 dark:hover:bg-white/10 hover:border-border hover:text-primary dark:hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
                 tabIndex={0}
+                style={heroTypography ? { fontFamily: "var(--font-manrope)" } : undefined}
               >
                 {name}
               </div>

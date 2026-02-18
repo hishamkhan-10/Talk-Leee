@@ -14,6 +14,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const isCompact = true;
+  const [isInHeroZone, setIsInHeroZone] = useState(true);
 
   const menuItems = [
     { label: "Home", href: "/" },
@@ -58,12 +59,41 @@ export function Navbar() {
     };
   }, [closeMobileMenu, mobileMenuOpen]);
 
+  useEffect(() => {
+    if (!isHome) return;
+
+    let rafId = 0;
+    const update = () => {
+      rafId = 0;
+      const heroEndY = window.innerHeight - 1;
+      setIsInHeroZone(window.scrollY < heroEndY);
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [isHome]);
+
   return (
     <nav
       aria-label="Primary"
       className={[
         "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
+        isHome && !isInHeroZone ? "home-navbar-scrolled" : "",
+        mobileMenuOpen ? "home-navbar-menu-open" : "",
       ].join(" ")}
+      data-theme={theme}
+      style={{ fontFamily: "var(--font-manrope)" }}
     >
       <div className="mx-auto w-full max-w-6xl">
         <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-1 sm:px-2">
@@ -82,21 +112,23 @@ export function Navbar() {
                 aria-haspopup="menu"
                 aria-expanded={mobileMenuOpen}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path
-                    d="M4 6h16M4 12h16M4 18h16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                {!mobileMenuOpen ? (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M4 6h16M4 12h16M4 18h16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                ) : null}
               </summary>
 
               <div
@@ -112,7 +144,7 @@ export function Navbar() {
                   <Link
                     href="/"
                     className={[
-                      "home-mobile-link text-sm font-semibold tracking-tight focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                      "home-mobile-link text-sm font-medium tracking-tight focus-visible:outline-none text-foreground/90 hover:text-foreground",
                     ].join(" ")}
                     onClick={() => {
                       closeMobileMenu();
@@ -137,7 +169,7 @@ export function Navbar() {
                       <Link
                         href={item.href}
                         className={[
-                          "home-mobile-link text-sm focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                          "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
                         ].join(" ")}
                         onClick={() => {
                           closeMobileMenu();
@@ -151,7 +183,7 @@ export function Navbar() {
                     <Link
                       href="/dashboard"
                       className={[
-                        "home-mobile-link text-sm focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                        "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
                       ].join(" ")}
                       onClick={() => {
                         closeMobileMenu();
@@ -164,7 +196,7 @@ export function Navbar() {
                     <Link
                       href="/dashboard"
                       className={[
-                        "home-mobile-link text-sm focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                        "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
                       ].join(" ")}
                       onClick={() => {
                         closeMobileMenu();
@@ -179,7 +211,7 @@ export function Navbar() {
             <Link
               href="/"
               className={[
-                "font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg transition-[font-size] duration-200 ease-out",
+                "font-medium tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg transition-[font-size] duration-200 ease-out",
                 isCompact ? "text-lg" : "text-xl",
                 "text-foreground hover:text-foreground",
               ].join(" ")}
@@ -195,7 +227,7 @@ export function Navbar() {
                 <Link
                   href={item.href}
                   className={[
-                    "home-nav-link text-sm focus-visible:outline-none",
+                    "home-nav-link text-sm font-medium focus-visible:outline-none",
                     "text-foreground/80 hover:text-foreground",
                   ].join(" ")}
                   aria-current={item.href === "/" ? "page" : undefined}
@@ -211,7 +243,7 @@ export function Navbar() {
               <Link
                 href="/dashboard"
                 className={[
-                  "home-nav-link text-sm focus-visible:outline-none",
+                  "home-nav-link text-sm font-medium focus-visible:outline-none",
                   "text-foreground/80 hover:text-foreground",
                 ].join(" ")}
               >
@@ -221,7 +253,7 @@ export function Navbar() {
             <Link
               href="/dashboard"
               className={[
-                "hidden md:inline-flex px-4 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "hidden md:inline-flex px-4 text-sm font-medium rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isCompact ? "py-1.5" : "py-2",
               ].join(" ")}
             >

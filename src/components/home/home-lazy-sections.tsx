@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const Hero = dynamic(() => import("@/components/ui/helix-hero").then((m) => m.Hero), {
   ssr: false,
@@ -81,6 +81,158 @@ function SectionPlaceholder({ minHeightClassName }: { minHeightClassName: string
   );
 }
 
+function NavbarHeroBackgroundVideo() {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const videoARef = useRef<HTMLVideoElement | null>(null);
+  const videoBRef = useRef<HTMLVideoElement | null>(null);
+  const activeIndexRef = useRef<0 | 1>(0);
+  const isCrossfadingRef = useRef(false);
+  const fadeTimeoutRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState<0 | 1>(0);
+  const [isInView, setIsInView] = useState(true);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsInView(Boolean(entry?.isIntersecting));
+      },
+      { threshold: 0.01 }
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const triggerCrossfade = useCallback(() => {
+    const videoA = videoARef.current;
+    const videoB = videoBRef.current;
+    if (!videoA || !videoB) return;
+    if (isCrossfadingRef.current) return;
+
+    const fromIndex = activeIndexRef.current;
+    const toIndex: 0 | 1 = fromIndex === 0 ? 1 : 0;
+    const from = fromIndex === 0 ? videoA : videoB;
+    const to = toIndex === 0 ? videoA : videoB;
+
+    isCrossfadingRef.current = true;
+
+    try {
+      to.currentTime = 0.01;
+    } catch {}
+    const p = to.play();
+    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+
+    activeIndexRef.current = toIndex;
+    setActiveIndex(toIndex);
+
+    if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
+    fadeTimeoutRef.current = window.setTimeout(() => {
+      try {
+        from.pause();
+        from.currentTime = 0.01;
+      } catch {}
+      isCrossfadingRef.current = false;
+    }, 320);
+  }, []);
+
+  useEffect(() => {
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+
+    if (!isInView) {
+      try {
+        a.pause();
+        b.pause();
+      } catch {}
+      return;
+    }
+
+    const active = activeIndexRef.current === 0 ? a : b;
+    const p = active.play();
+    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+  }, [isInView]);
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    const loopThresholdSeconds = 0.24;
+    const tick = () => {
+      const videoA = videoARef.current;
+      const videoB = videoBRef.current;
+      if (videoA && videoB && !isCrossfadingRef.current) {
+        const active = activeIndexRef.current === 0 ? videoA : videoB;
+        const duration = active.duration;
+        if (Number.isFinite(duration) && duration > 0 && !active.paused && !active.ended) {
+          const remaining = duration - active.currentTime;
+          if (remaining > 0 && remaining <= loopThresholdSeconds) triggerCrossfade();
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [isInView, triggerCrossfade]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
+    };
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="pointer-events-none absolute inset-x-0 top-0 z-0 h-screen overflow-hidden" aria-hidden="true">
+      <video
+        ref={videoARef}
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ opacity: activeIndex === 0 ? 1 : 0, transition: "opacity 320ms ease-in-out" }}
+        src="/images/hero-navbar-video.mp4"
+        autoPlay
+        muted
+        playsInline
+        preload="metadata"
+        disablePictureInPicture
+        disableRemotePlayback
+        onLoadedMetadata={() => {
+          if (!isInView) return;
+          if (activeIndexRef.current !== 0) return;
+          const v = videoARef.current;
+          if (!v) return;
+          void v.play().catch(() => {});
+        }}
+      />
+      <video
+        ref={videoBRef}
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ opacity: activeIndex === 1 ? 1 : 0, transition: "opacity 320ms ease-in-out" }}
+        src="/images/hero-navbar-video.mp4"
+        autoPlay
+        muted
+        playsInline
+        preload="metadata"
+        disablePictureInPicture
+        disableRemotePlayback
+        onLoadedMetadata={() => {
+          if (!isInView) return;
+          if (activeIndexRef.current !== 1) return;
+          const v = videoBRef.current;
+          if (!v) return;
+          void v.play().catch(() => {});
+        }}
+      />
+    </div>
+  );
+}
+
 export function HomeLazySections() {
   const [enabled, setEnabled] = useState(false);
 
@@ -97,40 +249,46 @@ export function HomeLazySections() {
   if (!enabled) {
     return (
       <>
-        <HeroPlaceholder />
-        <SectionPlaceholder minHeightClassName="min-h-[70vh]" />
-        <SectionPlaceholder minHeightClassName="min-h-[260px]" />
-        <SectionPlaceholder minHeightClassName="min-h-[420px]" />
-        <SectionPlaceholder minHeightClassName="min-h-[520px]" />
-        <SectionPlaceholder minHeightClassName="min-h-[320px]" />
-        <SectionPlaceholder minHeightClassName="min-h-[420px]" />
-        <SectionPlaceholder minHeightClassName="min-h-[240px]" />
+        <NavbarHeroBackgroundVideo />
+        <div className="relative z-10">
+          <HeroPlaceholder />
+          <SectionPlaceholder minHeightClassName="min-h-[70vh]" />
+          <SectionPlaceholder minHeightClassName="min-h-[260px]" />
+          <SectionPlaceholder minHeightClassName="min-h-[420px]" />
+          <SectionPlaceholder minHeightClassName="min-h-[520px]" />
+          <SectionPlaceholder minHeightClassName="min-h-[320px]" />
+          <SectionPlaceholder minHeightClassName="min-h-[420px]" />
+          <SectionPlaceholder minHeightClassName="min-h-[240px]" />
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <Hero
-        title="AI Voice Dialer"
-        description={[
-          "Intelligent voice communication platform powered by advanced AI agents, built to operate at scale with high accuracy and reliability. Real-time speech recognition, natural language processing, and seamless call automation support enterprise-scale outbound campaigns.",
-          "The platform enables natural, human-like conversations through adaptive dialogue handling, intent detection, and contextual understanding. It ensures consistent performance across large call volumes while maintaining clarity, responsiveness, and automation efficiency for enterprise communication workflows.",
-        ]}
-        adjustForNavbar
-        stats={[
-          { label: "Response Time", value: "<500ms" },
-          { label: "Concurrent Calls", value: "1000+" },
-          { label: "Completion Rate", value: "94%" },
-        ]}
-      />
-      <SecondaryHero />
-      <StatsSection />
-      <FeaturesSection />
-      <PackagesSection />
-      <CTASection />
-      <ContactSection />
-      <Footer />
+      <NavbarHeroBackgroundVideo />
+      <div className="relative z-10">
+        <Hero
+          title="AI Voice Dialer"
+          description={[
+            "Intelligent voice communication platform powered by advanced AI agents, built to operate at scale with high accuracy and reliability. Real-time speech recognition, natural language processing, and seamless call automation support enterprise-scale outbound campaigns.",
+            "The platform enables natural, human-like conversations through adaptive dialogue handling, intent detection, and contextual understanding. It ensures consistent performance across large call volumes while maintaining clarity, responsiveness, and automation efficiency for enterprise communication workflows.",
+          ]}
+          adjustForNavbar
+          stats={[
+            { label: "Response Time", value: "<500ms" },
+            { label: "Concurrent Calls", value: "1000+" },
+            { label: "Completion Rate", value: "94%" },
+          ]}
+        />
+        <SecondaryHero />
+        <StatsSection />
+        <FeaturesSection />
+        <PackagesSection />
+        <CTASection />
+        <ContactSection />
+        <Footer />
+      </div>
     </>
   );
 }
