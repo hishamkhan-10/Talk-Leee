@@ -19,8 +19,14 @@ async function stabilizePage(page: import("@playwright/test").Page) {
 
 const viewports = [
     { name: "desktop-1920x1080", width: 1920, height: 1080 },
+    { name: "desktop-1440x900", width: 1440, height: 900 },
+    { name: "laptop-1366x768", width: 1366, height: 768 },
+    { name: "tablet-1024x768", width: 1024, height: 768 },
     { name: "tablet-768x1024", width: 768, height: 1024 },
-    { name: "mobile-375x667", width: 375, height: 667 },
+    { name: "mobile-414x896", width: 414, height: 896 },
+    { name: "mobile-390x844", width: 390, height: 844 },
+    { name: "mobile-375x812", width: 375, height: 812 },
+    { name: "mobile-320x568", width: 320, height: 568 },
 ] as const;
 
 for (const vp of viewports) {

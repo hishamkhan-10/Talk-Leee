@@ -45,26 +45,26 @@ const Footer = dynamic(() => import("@/components/home/footer").then((m) => m.Fo
 
 function HeroPlaceholder() {
   return (
-    <section className="relative overflow-hidden bg-cyan-100 dark:bg-background">
+    <section className="relative overflow-hidden bg-transparent">
       <div className="mx-auto flex min-h-[72vh] max-w-7xl flex-col items-center justify-center px-4 py-14 md:px-6 lg:px-8">
         <div className="mb-6 text-center">
-          <h1 className="text-5xl font-bold tracking-tighter text-primary dark:text-foreground md:text-7xl">AI VOICE</h1>
-          <h2 className="mt-2 text-4xl font-bold tracking-tighter text-primary dark:text-foreground md:text-7xl">DIALER</h2>
+          <h1 className="text-5xl font-bold tracking-tighter text-foreground md:text-7xl">AI VOICE</h1>
+          <h2 className="mt-2 text-4xl font-bold tracking-tighter text-foreground md:text-7xl">DIALER</h2>
         </div>
         <p className="mx-auto max-w-2xl text-center text-base font-light leading-relaxed text-muted-foreground md:text-lg">
           Intelligent voice communication platform powered by advanced AI agents, built to operate at scale with high accuracy and reliability.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-8">
           <div className="text-center">
-            <div className="text-3xl font-semibold text-primary dark:text-foreground md:text-4xl">&lt;500ms</div>
+            <div className="text-3xl font-semibold text-foreground md:text-4xl">&lt;500ms</div>
             <div className="mt-1 text-sm uppercase tracking-wide text-muted-foreground">Response Time</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-semibold text-primary dark:text-foreground md:text-4xl">1000+</div>
+            <div className="text-3xl font-semibold text-foreground md:text-4xl">1000+</div>
             <div className="mt-1 text-sm uppercase tracking-wide text-muted-foreground">Concurrent Calls</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-semibold text-primary dark:text-foreground md:text-4xl">94%</div>
+            <div className="text-3xl font-semibold text-foreground md:text-4xl">94%</div>
             <div className="mt-1 text-sm uppercase tracking-wide text-muted-foreground">Completion Rate</div>
           </div>
         </div>

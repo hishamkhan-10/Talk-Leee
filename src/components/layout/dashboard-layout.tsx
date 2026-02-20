@@ -8,6 +8,8 @@ import { useSidebarActions, useSidebarState } from "@/lib/sidebar-client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { HealthIndicator } from "@/components/ui/health-indicator";
 import { useAuth } from "@/lib/auth-context";
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -110,14 +112,27 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
                 {/* Header */}
                 <header className="bg-background/80 backdrop-blur-sm border-b border-border/60 px-4 md:px-8 py-4 md:py-6 transition-colors duration-300">
                     <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                        <div className="min-w-0">
-                            <Breadcrumbs className={title || description ? "mb-1.5" : undefined} />
-                            {title ? (
-                                <h1 className="text-xl md:text-2xl font-semibold text-foreground leading-tight break-words">{title}</h1>
-                            ) : null}
-                            {description ? (
-                                <p className={title ? "mt-1 text-sm text-muted-foreground leading-snug break-words" : "text-sm text-muted-foreground leading-snug break-words"}>{description}</p>
-                            ) : null}
+                        <div className="flex items-start gap-3">
+                            {!isDesktop && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="lg:hidden shrink-0"
+                                    onClick={() => setMobileOpen(true)}
+                                    aria-label="Open sidebar"
+                                >
+                                    <Menu className="h-5 w-5" />
+                                </Button>
+                            )}
+                            <div className="min-w-0">
+                                <Breadcrumbs className={title || description ? "mb-1.5" : undefined} />
+                                {title ? (
+                                    <h1 className="text-xl md:text-2xl font-semibold text-foreground leading-tight break-words">{title}</h1>
+                                ) : null}
+                                {description ? (
+                                    <p className={title ? "mt-1 text-sm text-muted-foreground leading-snug break-words" : "text-sm text-muted-foreground leading-snug break-words"}>{description}</p>
+                                ) : null}
+                            </div>
                         </div>
                         <div className="flex items-center gap-2 justify-self-start md:justify-self-end">
                             <HealthIndicator />

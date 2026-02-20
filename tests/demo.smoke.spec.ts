@@ -29,6 +29,36 @@ const sidebarViewports = [
     { name: "mobile-360x800", width: 360, height: 800 },
 ] as const;
 
+const auditRoutes = [
+    "/",
+    "/ai-voices",
+    "/auth/login",
+    "/auth/register",
+    "/auth/callback",
+    "/connectors/callback?ok=1&type=email",
+    "/connectors/email/callback?ok=1",
+    "/dashboard",
+    "/campaigns",
+    "/campaigns/new",
+    "/campaigns/camp-001",
+    "/calls",
+    "/calls/call-001",
+    "/contacts",
+    "/analytics",
+    "/recordings",
+    "/ai-options",
+    "/assistant",
+    "/assistant/actions",
+    "/assistant/meetings",
+    "/assistant/reminders",
+    "/email",
+    "/meetings",
+    "/reminders",
+    "/settings",
+    "/settings/connectors",
+    "/notifications",
+] as const;
+
 test("sidebar fits without scrolling at common resolutions", async ({ page }) => {
     const issues = isProdAudit ? trackConsoleIssues(page) : [];
     await page.context().addCookies([{ name: "talklee_auth_token", value: "e2e-token", url: "http://127.0.0.1:3100" }]);
@@ -82,6 +112,22 @@ test("sidebar fits without scrolling at common resolutions", async ({ page }) =>
     }
 
     if (isProdAudit) expect(issues, "No console warnings/errors or failed requests in production").toEqual([]);
+});
+
+test("console clean across key routes", async ({ page }) => {
+    const issues = trackConsoleIssues(page);
+    await page.addInitScript(() => {
+        localStorage.setItem("talklee.auth.token", "e2e-token");
+    });
+    await page.context().addCookies([{ name: "talklee_auth_token", value: "e2e-token", url: "http://127.0.0.1:3100" }]);
+
+    for (const route of auditRoutes) {
+        await page.goto(route, { waitUntil: "domcontentloaded", timeout: 60_000 });
+        await page.evaluate(() => document.fonts?.ready);
+        await page.waitForTimeout(250);
+    }
+
+    expect(issues, "No console warnings/errors or failed requests").toEqual([]);
 });
 
 test("demo path: dashboard, meetings, reminders, email, connectors", async ({ page }) => {

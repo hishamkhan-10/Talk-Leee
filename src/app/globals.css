@@ -118,7 +118,8 @@
   --muted-foreground: #a0aec1;
   --border: rgba(255, 255, 255, 0.12);
   --ring: rgba(0, 255, 255, 0.25);
-  background: linear-gradient(180deg, #001022 0%, #004d5e 100%);
+  background-color: #001022;
+  background-image: linear-gradient(180deg, #001022 0%, #004d5e 100%);
   background-attachment: fixed;
   color: var(--foreground);
   position: relative;

@@ -1,6 +1,6 @@
 # Talk-Leee
 
-Talk-Lee Frontend Prototype (Next.js App Router)
+Talk-Lee  (Next.js App Router)
 
 ## Getting Started
 

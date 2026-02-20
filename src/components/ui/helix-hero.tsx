@@ -546,7 +546,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     text={headlineA}
                                     hoverText={headlineA}
                                     className="mx-auto"
-                                    textSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-primary dark:text-foreground"
+                                    textSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-foreground"
                                     hoverTextSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
                                 />
                             </motion.span>
@@ -562,7 +562,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     text={headlineB}
                                     hoverText={headlineB}
                                     className="mx-auto"
-                                    textSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-primary dark:text-foreground whitespace-nowrap"
+                                    textSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-foreground whitespace-nowrap"
                                     hoverTextSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
                                 />
                             </motion.span>
