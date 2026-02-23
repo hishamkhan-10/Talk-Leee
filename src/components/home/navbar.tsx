@@ -10,6 +10,7 @@ import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
 export function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isAiVoices = pathname === "/ai-voices" || pathname.startsWith("/ai-voices/");
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -89,11 +90,18 @@ export function Navbar() {
       aria-label="Primary"
       className={[
         "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
-        isHome && !isInHeroZone ? "home-navbar-scrolled" : "",
+        isAiVoices || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
         mobileMenuOpen ? "home-navbar-menu-open" : "",
       ].join(" ")}
       data-theme={theme}
-      style={{ fontFamily: "var(--font-manrope)" }}
+      style={{
+        fontFamily: "var(--font-manrope)",
+        ...(isAiVoices
+          ? {
+              background: theme === "dark" ? "#001022" : "#ecfeff",
+            }
+          : null),
+      }}
     >
       <div className="mx-auto w-full max-w-6xl">
         <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-1 sm:px-2">
@@ -107,7 +115,9 @@ export function Navbar() {
             >
               <summary
                 className="home-menu-toggle list-none cursor-pointer"
-                style={{ color: "rgba(226, 232, 240, 0.95)" }}
+                style={{
+                  color: isAiVoices ? (theme === "dark" ? "#7dd3fc" : "#0b2a6f") : "rgba(226, 232, 240, 0.95)",
+                }}
                 aria-label="Open navigation menu"
                 aria-haspopup="menu"
                 aria-expanded={mobileMenuOpen}

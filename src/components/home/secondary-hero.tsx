@@ -443,7 +443,7 @@ export function SecondaryHero() {
                   </Button>
                 </Link>
                 <Link href="#packages">
-                  <Button size="lg" variant="outline" className="rounded-full px-6 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold border-border hover:bg-accent text-foreground hover:text-foreground transition-all hover:scale-105">
+                  <Button size="lg" variant="outline" className="rounded-full px-6 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold border-border text-foreground hover:text-foreground transition-all hover:scale-105 hover:bg-background">
                     View Pricing
                   </Button>
                 </Link>
