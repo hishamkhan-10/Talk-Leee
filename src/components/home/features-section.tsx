@@ -2,38 +2,48 @@
 
 import { motion, useAnimationControls } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { BarChart3, Bot, Mic, PhoneCall, Settings, Users } from "lucide-react";
+import { BarChart3, Bot, Megaphone, Mic, PhoneCall, Settings, Target, Users } from "lucide-react";
 
 const services = [
   {
     icon: PhoneCall,
-    title: "Outbound Dialing",
-    description: "Run high-volume outbound campaigns with natural, human-sounding AI voices and instant lead qualification.",
+    title: "Simultaneous Calls",
+    description: "Run 50+ calls in parallel with no queues, ensuring immediate outreach and response.",
   },
   {
     icon: Users,
-    title: "Inbound Support",
-    description: "Provide 24/7 customer assistance with AI agents that can resolve questions and route complex requests.",
-  },
-  {
-    icon: BarChart3,
-    title: "Voice Analytics",
-    description: "Track outcomes, sentiment, and performance trends to continuously improve conversations and conversions.",
+    title: "Knowledgebase Integration",
+    description: "Upload PDFs, images, or crawl websites so agents speak with your latest, accurate information.",
   },
   {
     icon: Bot,
-    title: "AI Agents",
-    description: "Deploy conversational agents tailored to your business goals, scripts, and knowledge base.",
+    title: "AI Builder",
+    description: "Step-by-step wizard to design agent behavior and call flows without writing code.",
   },
   {
     icon: Mic,
-    title: "Voice Studio",
-    description: "Select voices, tune tone, and keep brand consistency across every call and customer interaction.",
+    title: "White‑Label Autocalls",
+    description: "Resell Talkly AI under your own brand with dedicated access (limited spots).",
   },
   {
     icon: Settings,
-    title: "Workflow Automation",
-    description: "Trigger CRMs, webhooks, and internal actions automatically from call events and intent signals.",
+    title: "Human Transfers",
+    description: "Seamlessly forward calls to live agents whenever needed, preserving conversation context.",
+  },
+  {
+    icon: BarChart3,
+    title: "Detailed Reports",
+    description: "Access recordings, transcriptions, and custom charts for performance and QA.",
+  },
+  {
+    icon: Target,
+    title: "Focus on Priorities",
+    description: "Let AI handle repetitive calls so your team can focus on impact.",
+  },
+  {
+    icon: Megaphone,
+    title: "Outbound Campaigns",
+    description: "Import leads or connect with HubSpot/forms for automated outreach.",
   },
 ];
 
@@ -72,7 +82,7 @@ export function FeaturesSection() {
             viewport={{ once: true }}
             className="text-3xl md:text-4xl font-bold tracking-tight text-gray-950 dark:text-foreground"
           >
-            Our Services
+            Talkly AI — The Complete Platform for Automated Phone Calls AI
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -81,7 +91,7 @@ export function FeaturesSection() {
             transition={{ delay: 0.1 }}
             className="text-base sm:text-lg font-light text-gray-700 dark:text-muted-foreground"
           >
-            Clean, scalable AI voice capabilities designed for modern teams.
+            Talkly AI is the all‑in‑one platform to automate and scale phone calls with intelligent voice agents.
           </motion.p>
         </div>
 
@@ -102,7 +112,7 @@ export function FeaturesSection() {
             <motion.div
               key={service.title}
               variants={cardVariants}
-              className="home-services-card group h-full rounded-2xl border border-gray-200 bg-transparent p-8 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:brightness-[1.02] hover:border-gray-200 hover:shadow-md dark:border-border/70"
+              className="home-services-card group h-full rounded-2xl border border-gray-200 bg-transparent p-8 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:border-gray-200 hover:shadow-md dark:border-border/70"
               style={{
                 backgroundImage: "var(--home-card-gradient)",
                 backgroundSize: "cover",
@@ -110,8 +120,8 @@ export function FeaturesSection() {
               }}
             >
               <div className="mb-6 flex items-center justify-start">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm transition-[background-color,border-color] duration-200 ease-out group-hover:bg-gray-100 dark:border-border/70 dark:bg-white/10 dark:group-hover:bg-white/20">
-                  <service.icon className="h-6 w-6 text-gray-900 dark:text-foreground" aria-hidden />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition-[background-color,border-color] duration-200 ease-out group-hover:bg-gray-100 dark:border-border/70 dark:bg-white dark:group-hover:bg-gray-100">
+                  <service.icon className="h-6 w-6 text-black" aria-hidden />
                 </div>
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-gray-950 dark:text-foreground transition-colors duration-200 ease-out">

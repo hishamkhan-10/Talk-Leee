@@ -87,13 +87,35 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const isActive = popupOpen;
     const titleParts = title.split(/\s+/).filter(Boolean);
     const firstTitleToken = titleParts[0] ?? "";
-    const [headlineA, headlineB] = (() => {
+    const normalizedTitleParts = (() => {
         if (/^AI\w+/i.test(firstTitleToken) && firstTitleToken.length > 2) {
             const remainder = firstTitleToken.slice(2);
-            const rest = [remainder, ...titleParts.slice(1)].filter(Boolean).join(" ");
-            return ["AI", rest || "DIALER"];
+            return ["AI", remainder, ...titleParts.slice(1)].filter(Boolean);
         }
-        return [firstTitleToken || "AI", titleParts.slice(1).join(" ") || "DIALER"];
+        return titleParts;
+    })();
+    const [headlineA, headlineB] = (() => {
+        if (normalizedTitleParts.length === 0) return ["AI", "DIALER"];
+        if (normalizedTitleParts.length === 1) return [normalizedTitleParts[0], "DIALER"];
+
+        const minWordsFirstLine = Math.min(2, normalizedTitleParts.length - 1);
+        let bestSplitIndex = minWordsFirstLine;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        for (let i = minWordsFirstLine; i <= normalizedTitleParts.length - 1; i += 1) {
+            const a = normalizedTitleParts.slice(0, i).join(" ");
+            const b = normalizedTitleParts.slice(i).join(" ");
+            const score = Math.abs(a.length - b.length);
+            if (score < bestScore) {
+                bestScore = score;
+                bestSplitIndex = i;
+            }
+        }
+
+        return [
+            normalizedTitleParts.slice(0, bestSplitIndex).join(" "),
+            normalizedTitleParts.slice(bestSplitIndex).join(" "),
+        ];
     })().map((part) => part.toUpperCase()) as [string, string];
     const descriptionParagraphs = useMemo(() => {
         const paragraphs = Array.isArray(description) ? description : [description];

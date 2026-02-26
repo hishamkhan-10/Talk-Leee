@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Moon, Sun, X } from "lucide-react";
+import { Bot, ChevronDown, PhoneCall, Sparkles, Moon, Sun, X, Headphones, BadgeCheck } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
 
@@ -11,6 +11,14 @@ export function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isAiVoices = pathname === "/ai-voices" || pathname.startsWith("/ai-voices/");
+  const isUseCasesPage = pathname.startsWith("/use-cases");
+  const isProductsPage =
+    pathname === "/ai-voice-dialer" ||
+    pathname.startsWith("/ai-voice-dialer/") ||
+    pathname === "/ai-assist" ||
+    pathname.startsWith("/ai-assist/") ||
+    pathname === "/ai-voice-agent" ||
+    pathname.startsWith("/ai-voice-agent/");
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -19,9 +27,47 @@ export function Navbar() {
 
   const menuItems = [
     { label: "Home", href: "/" },
-    { label: "Services", href: isHome ? "#services" : "/#services" },
-    { label: "Packages", href: isHome ? "#packages" : "/#packages" },
-    { label: "AI Voices", href: "/ai-voices" },
+    {
+      label: "Products",
+      items: [
+        {
+          label: "AI Voice Dialer",
+          href: "/ai-voice-dialer",
+          description: "Automate calls, emails, and workflows with human-like voice agents.",
+          icon: PhoneCall,
+        },
+        {
+          label: "AI Assist",
+          href: "/ai-assist",
+          description: "Real-time guidance, call insights, and automated follow-ups for teams.",
+          icon: Sparkles,
+        },
+        {
+          label: "AI Voice Agent",
+          href: "/ai-voice-agent",
+          description: "Smarter conversations with natural dialogue and seamless handoffs.",
+          icon: Bot,
+        },
+      ],
+    },
+    {
+      label: "Use Cases",
+      items: [
+        {
+          label: "Customer Services & Support",
+          href: "/use-cases/customer-services-support",
+          description: "Deliver faster resolutions and consistent support with AI-powered conversations.",
+          icon: Headphones,
+        },
+        {
+          label: "Automated Lead Qualification",
+          href: "/use-cases/automated-lead-qualification",
+          description: "Engage, score, and route leads instantly so reps focus on high-intent prospects.",
+          icon: BadgeCheck,
+        },
+      ],
+    },
+    { label: "FAQ", href: isHome ? "#faq" : "/#faq" },
     { label: "Contact", href: isHome ? "#contact" : "/#contact" },
   ];
 
@@ -90,7 +136,7 @@ export function Navbar() {
       aria-label="Primary"
       className={[
         "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
-        isAiVoices || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
+        isAiVoices || isUseCasesPage || isProductsPage || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
         mobileMenuOpen ? "home-navbar-menu-open" : "",
       ].join(" ")}
       data-theme={theme}
@@ -176,17 +222,45 @@ export function Navbar() {
                 <ul className="grid gap-1" role="list">
                   {menuItems.map((item) => (
                     <li key={item.label}>
-                      <Link
-                        href={item.href}
-                        className={[
-                          "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
-                        ].join(" ")}
-                        onClick={() => {
-                          closeMobileMenu();
-                        }}
-                      >
-                        {item.label}
-                      </Link>
+                      {"items" in item && item.items ? (
+                        <details className="group">
+                          <summary
+                            className={[
+                              "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground cursor-pointer list-none",
+                            ].join(" ")}
+                          >
+                            {item.label}
+                          </summary>
+                          <div className="ml-3 mt-1 grid gap-1">
+                            {item.items.map((child) => (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                className={[
+                                  "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                                ].join(" ")}
+                                onClick={() => {
+                                  closeMobileMenu();
+                                }}
+                              >
+                                {child.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </details>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className={[
+                            "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                          ].join(" ")}
+                          onClick={() => {
+                            closeMobileMenu();
+                          }}
+                        >
+                          {item.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                   <li className="mt-1 border-t border-border/60 pt-1">
@@ -234,16 +308,86 @@ export function Navbar() {
           <ul className="hidden md:flex items-center justify-center gap-4 lg:gap-6" role="list">
             {menuItems.map((item) => (
               <li key={item.label} className="relative">
-                <Link
-                  href={item.href}
-                  className={[
-                    "home-nav-link text-sm font-medium focus-visible:outline-none",
-                    "text-foreground/80 hover:text-foreground",
-                  ].join(" ")}
-                  aria-current={item.href === "/" ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
+                {"items" in item && item.items ? (
+                  <div className="group relative">
+                    <button
+                      type="button"
+                      className={[
+                        "home-nav-link text-sm font-medium focus-visible:outline-none",
+                        "text-foreground/80 hover:text-foreground",
+                        "inline-flex items-center gap-1",
+                      ].join(" ")}
+                      aria-haspopup="menu"
+                    >
+                      {item.label}
+                      <ChevronDown
+                        className="h-4 w-4 transition-transform duration-200 ease-out group-hover:rotate-180 group-focus-within:rotate-180"
+                        aria-hidden
+                      />
+                    </button>
+                    <div
+                      className={[
+                        "absolute left-1/2 top-full z-50 -translate-x-1/2 w-[520px] max-w-[92vw]",
+                        "opacity-0 pointer-events-none translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out",
+                        "group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100",
+                        "group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100",
+                      ].join(" ")}
+                      role="menu"
+                      aria-label={item.label}
+                    >
+                      <div className="h-2" aria-hidden />
+                      <div className="rounded-3xl border border-border/70 bg-cyan-100/90 dark:bg-cyan-950/90 backdrop-blur-sm p-3 shadow-xl">
+                        <ul className="grid grid-cols-1 gap-2" role="list">
+                          {item.items.map((child) => (
+                            <li key={child.href}>
+                              <Link
+                                href={child.href}
+                                className={[
+                                  "group/card block h-full rounded-2xl border border-border/70 bg-transparent p-4",
+                                  "transition-[transform,background-color,box-shadow,border-color,filter] duration-200 ease-out",
+                                  "hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:shadow-md hover:bg-foreground/5",
+                                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                ].join(" ")}
+                                style={{
+                                  backgroundImage: "var(--home-card-gradient)",
+                                  backgroundSize: "cover",
+                                  backgroundRepeat: "no-repeat",
+                                }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-white">
+                                    {"icon" in child && child.icon ? (
+                                      <child.icon className="h-5 w-5 text-black" aria-hidden />
+                                    ) : null}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-foreground">{child.label}</div>
+                                    {"description" in child && child.description ? (
+                                      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                        {child.description}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={[
+                      "home-nav-link text-sm font-medium focus-visible:outline-none",
+                      "text-foreground/80 hover:text-foreground",
+                    ].join(" ")}
+                    aria-current={item.href === "/" ? "page" : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -273,7 +417,7 @@ export function Navbar() {
               type="button"
               onClick={toggleTheme}
               className={[
-                "inline-flex items-center justify-center rounded-xl hover:scale-[1.03] transition-[background-color,transform,color,width,height] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "inline-flex items-center justify-center rounded-full hover:scale-[1.03] transition-[background-color,transform,color,width,height] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 "text-foreground/80 hover:text-foreground hover:bg-white/10",
                 isCompact ? "w-9 h-9" : "w-10 h-10",
               ].join(" ")}

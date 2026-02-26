@@ -11,9 +11,9 @@ export function Footer() {
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Services", href: isHome ? "#services" : "/#services" },
-    { label: "Packages", href: isHome ? "#packages" : "/#packages" },
-    { label: "AI Voices", href: "/ai-voices" },
+    { label: "Products", href: "/ai-voice-dialer" },
+    { label: "Use Cases", href: isHome ? "#use-cases" : "/#use-cases" },
+    { label: "FAQ", href: isHome ? "#faq" : "/#faq" },
     { label: "Contact", href: isHome ? "#contact" : "/#contact" },
   ];
 

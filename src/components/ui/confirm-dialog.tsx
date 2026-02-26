@@ -134,7 +134,7 @@ export function ConfirmDialog({
             }
         >
             <div className={cn("flex items-start gap-3", className)}>
-                <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-300 shrink-0">
+                <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10 text-red-300 shrink-0">
                     <AlertTriangle className="h-4 w-4" aria-hidden />
                 </div>
                 <div className="min-w-0">

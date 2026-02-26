@@ -48,11 +48,12 @@ function HeroPlaceholder() {
     <section className="relative overflow-hidden bg-transparent">
       <div className="mx-auto flex min-h-[72vh] max-w-7xl flex-col items-center justify-center px-4 py-14 md:px-6 lg:px-8">
         <div className="mb-6 text-center">
-          <h1 className="text-5xl font-bold tracking-tighter text-foreground md:text-7xl">AI VOICE</h1>
-          <h2 className="mt-2 text-4xl font-bold tracking-tighter text-foreground md:text-7xl">DIALER</h2>
+          <h1 className="text-4xl font-bold tracking-tighter text-foreground md:text-6xl">
+            AI Voice Agent Platform for Seamless Call Automation
+          </h1>
         </div>
         <p className="mx-auto max-w-2xl text-center text-base font-light leading-relaxed text-muted-foreground md:text-lg">
-          Intelligent voice communication platform powered by advanced AI agents, built to operate at scale with high accuracy and reliability.
+          Automate inbound and outbound calls with intelligent AI voice agents that deliver end-to-end customer support, appointment scheduling, and enterprise-grade engagement — 24/7.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-8">
           <div className="text-center">
@@ -77,6 +78,74 @@ function SectionPlaceholder({ minHeightClassName }: { minHeightClassName: string
   return (
     <section className={`bg-cyan-100 dark:bg-background ${minHeightClassName}`}>
       <div className="mx-auto h-full max-w-7xl px-4 md:px-6 lg:px-8" />
+    </section>
+  );
+}
+
+function FAQSection() {
+  const items = [
+    {
+      question: "What is Talkly AI?",
+      answer:
+        "Talkly AI is a fully featured platform that automates phone calls with intelligent voice agents, helping teams scale conversations without queues or delays.",
+    },
+    {
+      question: "Do I need technical expertise to use Talkly AI?",
+      answer: "No. Our guided AI builder makes it simple to design call flows and prompts without coding.",
+    },
+    {
+      question: "Can Talkly AI integrate with my existing phone system or CRM?",
+      answer: "Yes. Talkly AI connects seamlessly with phone systems, CRMs like HubSpot, and lead forms.",
+    },
+    {
+      question: "How does Talkly AI learn my company information?",
+      answer: "You can upload PDFs, images, or crawl entire websites to instantly train your agent with the right knowledge.",
+    },
+    {
+      question: "Can calls be transferred to human agents?",
+      answer: "Absolutely. Talkly AI can forward calls to live agents whenever needed or requested by customers.",
+    },
+    {
+      question: "Is Talkly AI secure and compliant?",
+      answer: "Yes. We provide built‑in consent handling, encryption, GDPR/TCPA tooling, and enterprise‑grade compliance features.",
+    },
+    {
+      question: "Can I resell Talkly AI under my own brand?",
+      answer: "Yes. Our white‑label program lets you offer AI voice solutions as your own. Limited spots available.",
+    },
+    {
+      question: "Do you provide phone numbers for campaigns?",
+      answer: "Talkly AI issues dedicated numbers for your outbound and inbound campaigns.",
+    },
+  ];
+
+  return (
+    <section id="faq" className="bg-cyan-100 dark:bg-background py-20 px-4 md:px-6 lg:px-8 overflow-hidden">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-center text-2xl md:text-3xl font-semibold text-primary dark:text-foreground">
+          Frequently Asked Questions - Talkly AI
+        </h2>
+        <div className="mt-10 space-y-3">
+          {items.map((item) => (
+            <details
+              key={item.question}
+              className="group rounded-2xl border border-gray-200 bg-transparent backdrop-blur-sm p-5 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:border-gray-200 hover:shadow-md dark:border-border/70"
+              style={{
+                backgroundImage: "var(--home-card-gradient)",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              <summary className="cursor-pointer list-none font-semibold text-primary dark:text-foreground">
+                {item.question}
+              </summary>
+              <p className="mt-3 text-sm sm:text-base text-gray-700 dark:text-muted-foreground leading-relaxed">
+                {item.answer}
+              </p>
+            </details>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
@@ -257,6 +326,7 @@ export function HomeLazySections() {
           <SectionPlaceholder minHeightClassName="min-h-[420px]" />
           <SectionPlaceholder minHeightClassName="min-h-[520px]" />
           <SectionPlaceholder minHeightClassName="min-h-[320px]" />
+          <SectionPlaceholder minHeightClassName="min-h-[520px]" />
           <SectionPlaceholder minHeightClassName="min-h-[420px]" />
           <SectionPlaceholder minHeightClassName="min-h-[240px]" />
         </div>
@@ -269,10 +339,9 @@ export function HomeLazySections() {
       <NavbarHeroBackgroundVideo />
       <div className="relative z-10">
         <Hero
-          title="AI Voice Dialer"
+          title="AI Voice Agent Platform for Seamless Call Automation"
           description={[
-            "Intelligent voice communication platform powered by advanced AI agents, built to operate at scale with high accuracy and reliability. Real-time speech recognition, natural language processing, and seamless call automation support enterprise-scale outbound campaigns.",
-            "The platform enables natural, human-like conversations through adaptive dialogue handling, intent detection, and contextual understanding. It ensures consistent performance across large call volumes while maintaining clarity, responsiveness, and automation efficiency for enterprise communication workflows.",
+            "Automate inbound and outbound calls with intelligent AI voice agents that deliver end-to-end customer support, appointment scheduling, and enterprise-grade engagement — 24/7.",
           ]}
           adjustForNavbar
           stats={[
@@ -283,9 +352,10 @@ export function HomeLazySections() {
         />
         <SecondaryHero />
         <StatsSection />
-        <FeaturesSection />
         <PackagesSection />
+        <FeaturesSection />
         <CTASection />
+        <FAQSection />
         <ContactSection />
         <Footer />
       </div>

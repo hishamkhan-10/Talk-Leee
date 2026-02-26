@@ -91,7 +91,7 @@ export default function CallDetailPage() {
 
                             <div className="space-y-3">
                                 <div className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/60 p-3 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/60 text-foreground transition-colors group-hover:bg-background">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/60 text-foreground transition-colors group-hover:bg-background">
                                         <Phone className="h-5 w-5" />
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -101,7 +101,7 @@ export default function CallDetailPage() {
                                 </div>
 
                                 <div className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/60 p-3 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-background hover:shadow-md">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/60 text-foreground transition-colors group-hover:bg-background">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/60 text-foreground transition-colors group-hover:bg-background">
                                         <Clock className="h-5 w-5" />
                                     </div>
                                     <div className="min-w-0 flex-1">

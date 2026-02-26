@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/home/navbar";
 import { HomeLazySections } from "@/components/home/home-lazy-sections";
+import type { Metadata } from "next";
 import localFont from "next/font/local";
 
 const satoshi = localFont({
@@ -10,6 +11,12 @@ const satoshi = localFont({
   ],
   display: "swap",
 });
+
+export const metadata: Metadata = {
+  title: "Talk-Lee",
+  description:
+    "Scale conversations instantly with Talkly AI. Smart voice agents deliver support, scheduling, and compliance worldwide.",
+};
 
 export default function Home() {
   return (

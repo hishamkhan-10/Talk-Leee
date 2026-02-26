@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Bot, Cpu, Mic, PlayCircle, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -400,40 +400,122 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
 
 export function SecondaryHero() {
   return (
-    <section className="secondaryHeroSection bg-cyan-100 dark:bg-background box-border py-3 sm:py-6 md:py-8 lg:py-10 px-4 md:px-6 lg:px-8 overflow-hidden" style={{ height: "70vh" }}>
-      <div className="w-full max-w-7xl mx-auto h-full">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="w-full h-full overflow-hidden box-border bg-background/70 dark:bg-background/10 backdrop-blur-sm shadow-sm secondaryHeroCard"
-          style={{
-            backgroundImage: "var(--home-card-gradient)",
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-          <div className="secondaryHeroGrid grid h-full grid-rows-[minmax(0,1fr)_minmax(0,1fr)] md:grid-rows-1 md:grid-cols-[minmax(0,520px)_minmax(0,1fr)] md:items-stretch">
+    <>
+      <section className="secondaryHeroSection bg-cyan-100 dark:bg-background box-border py-6 sm:py-10 md:py-12 lg:py-14 px-4 md:px-6 lg:px-8 overflow-visible">
+        <div className="w-full max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="w-full overflow-hidden box-border bg-background/70 dark:bg-background/10 backdrop-blur-sm shadow-sm secondaryHeroCard"
+            style={{
+              backgroundImage: "var(--home-card-gradient)",
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            <div className="secondaryHeroGrid grid grid-cols-1 md:grid-cols-[minmax(0,560px)_minmax(0,1fr)] md:items-stretch">
             <figure
               aria-label="AI voice calling section video"
               tabIndex={0}
-              className="secondaryHeroImageWrap order-1 md:order-1 relative isolate overflow-hidden border-b md:border-b-0 md:border-r border-border/60 bg-background/50 w-full min-h-[160px] h-full md:h-full md:min-h-0 md:max-h-none max-w-[600px] mx-auto md:max-w-none md:mx-0 rounded-[14px] min-h-0"
+              className="secondaryHeroImageWrap order-1 md:order-1 relative isolate overflow-hidden border-b md:border-b-0 md:border-r border-border/60 bg-background/50 w-full min-h-[220px] sm:min-h-[280px] md:min-h-[520px] max-w-[600px] mx-auto md:max-w-none md:mx-0 rounded-[14px]"
             >
               <SecondaryHeroVideoPlayer />
             </figure>
 
-            <div className="secondaryHeroContent order-2 md:order-2 h-full px-4 py-3 sm:px-5 sm:py-7 md:px-10 md:py-10 lg:px-12 lg:py-10 text-center md:text-left flex flex-col justify-center">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary dark:text-foreground leading-[1.04]">
-                AI Voice Calling
-                <br />
-                Reimagined
+            <div className="secondaryHeroContent order-2 md:order-2 px-4 py-6 sm:px-5 sm:py-8 md:px-10 md:py-10 lg:px-12 lg:py-10 text-center md:text-left flex flex-col justify-center">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] font-bold tracking-tight text-primary dark:text-foreground leading-[1.06]">
+                <span className="block">Own Your AI Voice Agent Platform</span>
+                <span className="block">Take Full Control</span>
               </h2>
 
               <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-gray-700 dark:text-muted-foreground max-w-2xl md:mx-0 mx-auto leading-relaxed">
-                Transform customer interactions with hyper-realistic AI voices that engage, convert, and scale your business
-                24/7.
+                Stop renting AI. Start owning it. Protect your IP, secure your data, and scale with confidence on dedicated infrastructure.
               </p>
+
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl md:max-w-none md:mr-10 mx-auto md:mx-0">
+                <div
+                  className="rounded-2xl border border-border/70 bg-background/70 dark:bg-white/5 backdrop-blur-sm p-4 transition-transform duration-200 ease-out hover:scale-[1.01]"
+                  style={{
+                    backgroundImage: "var(--home-card-gradient)",
+                    backgroundSize: "cover",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-white dark:bg-white shadow-sm">
+                      <Bot className="h-4 w-4 text-black" aria-hidden />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-primary dark:text-foreground">Custom AI Voice Agents</div>
+                      <div className="mt-1 text-sm text-gray-700 dark:text-muted-foreground leading-relaxed">
+                        Fine‑tuned with your recordings and transcriptions. Deliver automated phone calls AI, inbound/outbound support, and appointment scheduling that sound truly human.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="rounded-2xl border border-border/70 bg-background/70 dark:bg-white/5 backdrop-blur-sm p-4 transition-transform duration-200 ease-out hover:scale-[1.01]"
+                  style={{
+                    backgroundImage: "var(--home-card-gradient)",
+                    backgroundSize: "cover",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-white dark:bg-white shadow-sm">
+                      <Cpu className="h-4 w-4 text-black" aria-hidden />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-primary dark:text-foreground">Dedicated Infrastructure</div>
+                      <div className="mt-1 text-sm text-gray-700 dark:text-muted-foreground leading-relaxed">
+                        Your servers. Your GPUs. Enterprise‑grade AI call automation built for performance and reliability.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="rounded-2xl border border-border/70 bg-background/70 dark:bg-white/5 backdrop-blur-sm p-4 transition-transform duration-200 ease-out hover:scale-[1.01]"
+                  style={{
+                    backgroundImage: "var(--home-card-gradient)",
+                    backgroundSize: "cover",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-white dark:bg-white shadow-sm">
+                      <Mic className="h-4 w-4 text-black" aria-hidden />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-primary dark:text-foreground">Unique Brand Voice</div>
+                      <div className="mt-1 text-sm text-gray-700 dark:text-muted-foreground leading-relaxed">
+                        Choose a voice actor. Turn your AI voice assistant for call centers into the voice of your brand.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="rounded-2xl border border-border/70 bg-background/70 dark:bg-white/5 backdrop-blur-sm p-4 transition-transform duration-200 ease-out hover:scale-[1.01]"
+                  style={{
+                    backgroundImage: "var(--home-card-gradient)",
+                    backgroundSize: "cover",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-white dark:bg-white shadow-sm">
+                      <ShieldCheck className="h-4 w-4 text-black" aria-hidden />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-primary dark:text-foreground">Protected Data</div>
+                      <div className="mt-1 text-sm text-gray-700 dark:text-muted-foreground leading-relaxed">
+                        Encrypted. Secure. Yours alone. Every customer interaction and call routing stays on your dedicated servers.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div className="secondaryHeroCtas mt-4 sm:mt-6 flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 sm:gap-4">
                 <Link href="/auth/register">
@@ -442,9 +524,9 @@ export function SecondaryHero() {
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </Link>
-                <Link href="#packages">
+                <Link href="#use-cases">
                   <Button size="lg" variant="outline" className="rounded-full px-6 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold border-border text-foreground hover:text-foreground transition-all hover:scale-105 hover:bg-background">
-                    View Pricing
+                    View Use Cases
                   </Button>
                 </Link>
               </div>
@@ -456,10 +538,6 @@ export function SecondaryHero() {
       <style jsx>{`
         .secondaryHeroSection {
           box-sizing: border-box;
-        }
-
-        .secondaryHeroSection > div {
-          height: 100%;
         }
 
         @media (max-height: 700px) {
@@ -536,7 +614,7 @@ export function SecondaryHero() {
 
         @media (hover: hover) and (pointer: fine) {
           .secondaryHeroContent:hover {
-            transform: scale(1.06);
+            transform: none;
           }
         }
 
@@ -553,6 +631,43 @@ export function SecondaryHero() {
           }
         }
       `}</style>
-    </section>
+      </section>
+
+      <section className="bg-cyan-100 dark:bg-background px-4 md:px-6 lg:px-8 pb-12">
+        <div className="mx-auto w-full max-w-7xl">
+          <div
+            className="rounded-2xl border border-border/70 bg-transparent backdrop-blur-sm p-6 sm:p-7 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:border-border hover:shadow-md"
+            style={{
+              backgroundImage: "var(--home-card-gradient)",
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-5">
+              <div className="mx-auto md:mx-0 mt-0.5 flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-white shadow-sm">
+                <PlayCircle className="h-5 w-5 text-black" aria-hidden />
+              </div>
+              <div className="min-w-0 text-center md:text-left">
+                <div className="text-lg font-semibold text-primary dark:text-foreground">Experience Our AI Voice Agent Live</div>
+                <div className="mt-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground leading-relaxed">
+                  See how natural conversations, call automation, and real-time routing work end-to-end.
+                </div>
+                <div className="mt-5 flex justify-center md:justify-start">
+                  <Link href="#contact">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="rounded-full px-7 h-11 text-sm font-semibold border-border transition-transform hover:scale-105 hover:bg-background hover:text-foreground hover:border-border"
+                    >
+                      Talk to our team
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
