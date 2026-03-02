@@ -6,12 +6,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, ChevronDown, PhoneCall, Sparkles, Moon, Sun, X, Headphones, BadgeCheck } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
+import { industryNavItems } from "@/Industries/industries";
 
 export function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isAiVoices = pathname === "/ai-voices" || pathname.startsWith("/ai-voices/");
   const isUseCasesPage = pathname.startsWith("/use-cases");
+  const isIndustriesPage = pathname.startsWith("/industries");
   const isProductsPage =
     pathname === "/ai-voice-dialer" ||
     pathname.startsWith("/ai-voice-dialer/") ||
@@ -67,9 +69,19 @@ export function Navbar() {
         },
       ],
     },
+    { label: "Industries", items: [...industryNavItems] },
     { label: "FAQ", href: isHome ? "#faq" : "/#faq" },
     { label: "Contact", href: isHome ? "#contact" : "/#contact" },
   ];
+
+  type MenuItem = (typeof menuItems)[number];
+  type DropdownWithChildrenItem = Extract<MenuItem, { items: unknown[] }>;
+  type LinkItem = Extract<MenuItem, { href: string }>;
+
+  const isDropdownWithChildrenItem = (item: MenuItem): item is DropdownWithChildrenItem =>
+    "items" in item && Array.isArray(item.items) && item.items.length > 0;
+
+  const isLinkItem = (item: MenuItem): item is LinkItem => "href" in item && typeof item.href === "string";
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -136,7 +148,7 @@ export function Navbar() {
       aria-label="Primary"
       className={[
         "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
-        isAiVoices || isUseCasesPage || isProductsPage || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
+        isAiVoices || isUseCasesPage || isIndustriesPage || isProductsPage || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
         mobileMenuOpen ? "home-navbar-menu-open" : "",
       ].join(" ")}
       data-theme={theme}
@@ -220,49 +232,51 @@ export function Navbar() {
                   </button>
                 </div>
                 <ul className="grid gap-1" role="list">
-                  {menuItems.map((item) => (
-                    <li key={item.label}>
-                      {"items" in item && item.items ? (
-                        <details className="group">
-                          <summary
+                  {menuItems.map((item) => {
+                    return (
+                      <li key={item.label}>
+                        {isDropdownWithChildrenItem(item) ? (
+                          <details className="group">
+                            <summary
+                              className={[
+                                "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground cursor-pointer list-none",
+                              ].join(" ")}
+                            >
+                              {item.label}
+                            </summary>
+                            <div className="ml-3 mt-1 grid gap-1">
+                              {item.items.map((child) => (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  className={[
+                                    "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
+                                  ].join(" ")}
+                                  onClick={() => {
+                                    closeMobileMenu();
+                                  }}
+                                >
+                                  {child.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </details>
+                        ) : isLinkItem(item) ? (
+                          <Link
+                            href={item.href}
                             className={[
-                              "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground cursor-pointer list-none",
+                              "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
                             ].join(" ")}
+                            onClick={() => {
+                              closeMobileMenu();
+                            }}
                           >
                             {item.label}
-                          </summary>
-                          <div className="ml-3 mt-1 grid gap-1">
-                            {item.items.map((child) => (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className={[
-                                  "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
-                                ].join(" ")}
-                                onClick={() => {
-                                  closeMobileMenu();
-                                }}
-                              >
-                                {child.label}
-                              </Link>
-                            ))}
-                          </div>
-                        </details>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          className={[
-                            "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
-                          ].join(" ")}
-                          onClick={() => {
-                            closeMobileMenu();
-                          }}
-                        >
-                          {item.label}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
+                          </Link>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                   <li className="mt-1 border-t border-border/60 pt-1">
                     <Link
                       href="/dashboard"
@@ -306,90 +320,94 @@ export function Navbar() {
           </div>
 
           <ul className="hidden md:flex items-center justify-center gap-4 lg:gap-6" role="list">
-            {menuItems.map((item) => (
-              <li key={item.label} className="relative">
-                {"items" in item && item.items ? (
-                  <div className="group relative">
-                    <button
-                      type="button"
+            {menuItems.map((item) => {
+              const isIndustriesDropdown = item.label === "Industries";
+              const dropdownWidthClass = isIndustriesDropdown ? "w-[680px]" : "w-[520px]";
+              const dropdownGridClass = isIndustriesDropdown ? "grid-cols-2" : "grid-cols-1";
+              return (
+                <li key={item.label} className="relative">
+                  {isDropdownWithChildrenItem(item) ? (
+                    <div className="group relative">
+                      <button
+                        type="button"
+                        className={[
+                          "home-nav-link text-sm font-medium focus-visible:outline-none",
+                          "text-foreground/80 hover:text-foreground",
+                          "inline-flex items-center gap-1",
+                        ].join(" ")}
+                        aria-haspopup="menu"
+                      >
+                        {item.label}
+                        <ChevronDown
+                          className="h-4 w-4 transition-transform duration-200 ease-out group-hover:rotate-180 group-focus-within:rotate-180"
+                          aria-hidden
+                        />
+                      </button>
+                      <div
+                        className={[
+                          `absolute left-1/2 top-full z-50 -translate-x-1/2 ${dropdownWidthClass} max-w-[92vw]`,
+                          "opacity-0 pointer-events-none translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out",
+                          "group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100",
+                          "group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100",
+                        ].join(" ")}
+                        role="menu"
+                        aria-label={item.label}
+                      >
+                        <div className="rounded-3xl border border-border/70 bg-cyan-100/90 dark:bg-cyan-950/90 backdrop-blur-sm p-2 shadow-xl">
+                          <ul className={`grid ${dropdownGridClass} gap-1.5`} role="list">
+                            {item.items.map((child) => (
+                              <li key={child.href}>
+                                <Link
+                                  href={child.href}
+                                  className={[
+                                    "group/card block h-full rounded-2xl border border-border/70 bg-transparent px-3 py-2.5",
+                                    "transition-[transform,background-color,box-shadow,border-color,filter] duration-200 ease-out",
+                                    "hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:shadow-md hover:bg-foreground/5",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                  ].join(" ")}
+                                  style={{
+                                    backgroundImage: "var(--home-card-gradient)",
+                                    backgroundSize: "cover",
+                                    backgroundRepeat: "no-repeat",
+                                  }}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-white">
+                                      {"icon" in child && child.icon ? (
+                                        <child.icon className="h-4 w-4 text-black" aria-hidden />
+                                      ) : null}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="text-sm font-semibold text-foreground">{child.label}</div>
+                                      {"description" in child && child.description ? (
+                                        <div className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                                          {child.description}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : isLinkItem(item) ? (
+                    <Link
+                      href={item.href}
                       className={[
                         "home-nav-link text-sm font-medium focus-visible:outline-none",
                         "text-foreground/80 hover:text-foreground",
-                        "inline-flex items-center gap-1",
                       ].join(" ")}
-                      aria-haspopup="menu"
+                      aria-current={item.href === "/" ? "page" : undefined}
                     >
                       {item.label}
-                      <ChevronDown
-                        className="h-4 w-4 transition-transform duration-200 ease-out group-hover:rotate-180 group-focus-within:rotate-180"
-                        aria-hidden
-                      />
-                    </button>
-                    <div
-                      className={[
-                        "absolute left-1/2 top-full z-50 -translate-x-1/2 w-[520px] max-w-[92vw]",
-                        "opacity-0 pointer-events-none translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out",
-                        "group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100",
-                        "group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100",
-                      ].join(" ")}
-                      role="menu"
-                      aria-label={item.label}
-                    >
-                      <div className="h-2" aria-hidden />
-                      <div className="rounded-3xl border border-border/70 bg-cyan-100/90 dark:bg-cyan-950/90 backdrop-blur-sm p-3 shadow-xl">
-                        <ul className="grid grid-cols-1 gap-2" role="list">
-                          {item.items.map((child) => (
-                            <li key={child.href}>
-                              <Link
-                                href={child.href}
-                                className={[
-                                  "group/card block h-full rounded-2xl border border-border/70 bg-transparent p-4",
-                                  "transition-[transform,background-color,box-shadow,border-color,filter] duration-200 ease-out",
-                                  "hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:shadow-md hover:bg-foreground/5",
-                                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                                ].join(" ")}
-                                style={{
-                                  backgroundImage: "var(--home-card-gradient)",
-                                  backgroundSize: "cover",
-                                  backgroundRepeat: "no-repeat",
-                                }}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-white">
-                                    {"icon" in child && child.icon ? (
-                                      <child.icon className="h-5 w-5 text-black" aria-hidden />
-                                    ) : null}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="text-sm font-semibold text-foreground">{child.label}</div>
-                                    {"description" in child && child.description ? (
-                                      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                                        {child.description}
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className={[
-                      "home-nav-link text-sm font-medium focus-visible:outline-none",
-                      "text-foreground/80 hover:text-foreground",
-                    ].join(" ")}
-                    aria-current={item.href === "/" ? "page" : undefined}
-                  >
-                    {item.label}
-                  </Link>
-                )}
-              </li>
-            ))}
+                    </Link>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="flex items-center gap-3 justify-self-end">
