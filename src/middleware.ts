@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authTokenCookieName } from "./lib/auth-token";
 
+const INTERNAL_BYPASS_HEADER = "x-talklee-mw-internal";
+const WHITE_LABEL_ADMIN_ROLE = "white_label_admin";
+const WHITE_LABEL_DASHBOARD_PATH = "/white-label/dashboard";
+
 function setSecurityHeaders(res: NextResponse, input: { csp: string; inProd: boolean; https: boolean }) {
     res.headers.set("Content-Security-Policy", input.csp);
     res.headers.set("X-Content-Type-Options", "nosniff");
@@ -80,6 +84,60 @@ function isPublicPath(pathname: string) {
     return false;
 }
 
+function isWhiteLabelPath(pathname: string) {
+    return pathname === "/white-label" || pathname.startsWith("/white-label/");
+}
+
+function isApiPath(pathname: string) {
+    return pathname === "/api" || pathname.startsWith("/api/");
+}
+
+function isConnectorCallbackPath(pathname: string) {
+    return pathname.startsWith("/connectors/callback");
+}
+
+function isAdminOrInfrastructurePath(pathname: string) {
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+    if (pathname === "/super-admin" || pathname.startsWith("/super-admin/")) return true;
+    if (pathname === "/system" || pathname.startsWith("/system/")) return true;
+    if (pathname === "/infrastructure" || pathname.startsWith("/infrastructure/")) return true;
+    if (pathname === "/internal" || pathname.startsWith("/internal/")) return true;
+    if (pathname === "/ops" || pathname.startsWith("/ops/")) return true;
+    if (pathname === "/platform" || pathname.startsWith("/platform/")) return true;
+    return false;
+}
+
+function apiBaseUrlForRequest(req: NextRequest) {
+    const configured = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (configured && configured.trim().length > 0) return configured.replace(/\/+$/, "");
+    return `${req.nextUrl.origin}/api/v1`;
+}
+
+async function fetchUserRoleFromBackend(input: { req: NextRequest; token: string }): Promise<string | null> {
+    const baseUrl = apiBaseUrlForRequest(input.req);
+    const endpoints = [`${baseUrl}/auth/me`, `${baseUrl}/me`];
+    for (const url of endpoints) {
+        try {
+            const res = await fetch(url, {
+                method: "GET",
+                headers: {
+                    authorization: `Bearer ${input.token}`,
+                    accept: "application/json",
+                    [INTERNAL_BYPASS_HEADER]: "1",
+                },
+                cache: "no-store",
+            });
+            if (!res.ok) continue;
+            const data = (await res.json().catch(() => null)) as unknown;
+            if (!data || typeof data !== "object") continue;
+            const role = (data as { role?: unknown }).role;
+            if (typeof role === "string" && role.trim().length > 0) return role;
+        } catch {
+        }
+    }
+    return null;
+}
+
 function readCookieFromHeader(req: NextRequest, name: string) {
     const raw = req.headers.get("cookie");
     if (!raw) return undefined;
@@ -100,11 +158,15 @@ function readCookieFromHeader(req: NextRequest, name: string) {
     return undefined;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
     const { pathname, search } = req.nextUrl;
 
     const inProd = process.env.NODE_ENV === "production";
     const https = isHttps(req);
+
+    if (req.headers.get(INTERNAL_BYPASS_HEADER) === "1") {
+        return NextResponse.next();
+    }
 
     if (inProd && !https && !isLocalHost(req)) {
         const res = redirectToHttps(req);
@@ -153,6 +215,51 @@ export function middleware(req: NextRequest) {
 
     const token = readCookieFromHeader(req, authTokenCookieName());
     if (token && token.trim().length > 0) {
+        const shouldCheckRole =
+            !isApiPath(pathname) &&
+            !pathname.startsWith("/_next/") &&
+            !pathname.startsWith("/favicon") &&
+            !pathname.startsWith("/site.webmanifest");
+
+        if (shouldCheckRole) {
+            const role = await fetchUserRoleFromBackend({ req, token });
+
+            if (role === WHITE_LABEL_ADMIN_ROLE) {
+                const isAllowed =
+                    isWhiteLabelPath(pathname) ||
+                    isConnectorCallbackPath(pathname) ||
+                    pathname === "/403" ||
+                    pathname === WHITE_LABEL_DASHBOARD_PATH;
+
+                if (!isAllowed) {
+                    const url = req.nextUrl.clone();
+                    url.pathname = WHITE_LABEL_DASHBOARD_PATH;
+                    url.search = "";
+                    const res = NextResponse.redirect(url);
+                    setSecurityHeaders(res, { csp, inProd, https });
+                    return res;
+                }
+            } else if (role && role !== WHITE_LABEL_ADMIN_ROLE) {
+                if (isWhiteLabelPath(pathname)) {
+                    const url = req.nextUrl.clone();
+                    url.pathname = "/403";
+                    url.search = "";
+                    const res = NextResponse.redirect(url);
+                    setSecurityHeaders(res, { csp, inProd, https });
+                    return res;
+                }
+            } else {
+                if (isWhiteLabelPath(pathname) || isAdminOrInfrastructurePath(pathname)) {
+                    const url = req.nextUrl.clone();
+                    url.pathname = "/403";
+                    url.search = "";
+                    const res = NextResponse.redirect(url);
+                    setSecurityHeaders(res, { csp, inProd, https });
+                    return res;
+                }
+            }
+        }
+
         const res = NextResponse.next({ request: { headers: requestHeaders } });
         setSecurityHeaders(res, { csp, inProd, https });
         return res;

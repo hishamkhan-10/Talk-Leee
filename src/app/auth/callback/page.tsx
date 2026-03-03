@@ -71,8 +71,19 @@ function AuthCallbackInner() {
                     // Ignore - profile creation is optional
                 }
 
-                // Redirect to dashboard
-                router.push("/dashboard");
+                const rawNext = searchParams.get("next");
+                const safeNext =
+                    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
+                let role: string | null = null;
+                try {
+                    const me = await api.getMe();
+                    role = me.role;
+                } catch {
+                    role = null;
+                }
+
+                router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
             } else {
                 // No token found - might be a different callback type
                 // Check if this is a Supabase email confirmation

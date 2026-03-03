@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ type Step = "form" | "otp";
 
 export default function RegisterPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [step, setStep] = useState<Step>("form");
     const [formData, setFormData] = useState({
         email: "",
@@ -94,8 +95,19 @@ export default function RegisterPage() {
                 localStorage.setItem("refresh_token", response.refresh_token);
             }
 
-            // Redirect to dashboard
-            router.push("/dashboard");
+            const rawNext = searchParams.get("next");
+            const safeNext =
+                rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
+            let role: string | null = null;
+            try {
+                const me = await api.getMe();
+                role = me.role;
+            } catch {
+                role = null;
+            }
+
+            router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
         } catch (err) {
             if (err instanceof Error) {
                 setError(err.message);

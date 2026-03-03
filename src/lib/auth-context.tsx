@@ -1,18 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { api } from "@/lib/api";
 import { getBrowserAuthToken } from "@/lib/auth-token";
-
-// Prototype user profile used while backend auth endpoints are not wired.
-const DUMMY_USER = {
-    id: "user-001",
-    email: "demo@talk-lee.ai",
-    name: "Demo User",
-    business_name: "Talk-Lee Demo Inc.",
-    role: "admin",
-    minutes_remaining: 1500,
-};
 
 interface MeResponse {
     id: string;
@@ -41,9 +31,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let active = true;
         const token = getBrowserAuthToken();
-        setUser(token ? DUMMY_USER : null);
-        setLoading(false);
+        if (!token) {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
+
+        api.setToken(token);
+        (async () => {
+            try {
+                const me = await api.getMe();
+                if (!active) return;
+                setUser(me);
+            } catch {
+                if (!active) return;
+                setUser(null);
+            } finally {
+                if (!active) return;
+                setLoading(false);
+            }
+        })();
+
+        return () => {
+            active = false;
+        };
     }, []);
 
     async function login(email: string): Promise<string> {
@@ -63,7 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function verifyOtp(email: string, token: string) {
         const res = await api.verifyOtp(email, token);
         api.setToken(res.access_token);
-        setUser(DUMMY_USER);
+        try {
+            const me = await api.getMe();
+            setUser(me);
+        } catch {
+            setUser(null);
+        }
         return res;
     }
 
@@ -77,23 +95,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     function setToken(token: string) {
         api.setToken(token);
-        setUser(DUMMY_USER);
+        void refreshUser();
     }
 
     async function refreshUser() {
         setLoading(true);
         try {
             const token = getBrowserAuthToken();
-            setUser(token ? DUMMY_USER : null);
+            if (!token) {
+                setUser(null);
+                return;
+            }
+            api.setToken(token);
+            const me = await api.getMe();
+            setUser(me);
+        } catch {
+            setUser(null);
         } finally {
             setLoading(false);
         }
     }
 
-    const value = useMemo(
-        () => ({ user, loading, login, register, verifyOtp, logout, setToken, refreshUser }),
-        [loading, user]
-    );
+    const value = { user, loading, login, register, verifyOtp, logout, setToken, refreshUser };
 
     return (
         <AuthContext.Provider value={value}>

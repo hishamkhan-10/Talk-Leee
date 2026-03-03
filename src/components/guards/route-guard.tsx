@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -57,11 +57,15 @@ function issuesForRequirements(input: { required: RequiredConnectorType[]; statu
 export function RouteGuard({
     title,
     description,
+    requiredRoles,
+    unauthorizedRedirectTo,
     requiredConnectors,
     children,
 }: {
     title: string;
     description?: string;
+    requiredRoles?: string[];
+    unauthorizedRedirectTo?: string;
     requiredConnectors?: RequiredConnectorType[];
     children: React.ReactNode;
 }) {
@@ -69,6 +73,7 @@ export function RouteGuard({
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const pathname = usePathname();
+    const router = useRouter();
     const searchParams = useSearchParams();
 
     const required = useMemo(() => requiredConnectors ?? [], [requiredConnectors]);
@@ -89,6 +94,22 @@ export function RouteGuard({
     }, [required, shouldCheckConnectors, statusesQ.data?.items]);
 
     const shouldBlockOnConnectors = shouldCheckConnectors && (statusesQ.isLoading || statusesQ.isError || connectorIssues.length > 0);
+
+    const unauthorizedHref = useMemo(() => unauthorizedRedirectTo ?? "/403", [unauthorizedRedirectTo]);
+    const shouldBlockOnRole = useMemo(() => {
+        if (!user) return false;
+        if (!requiredRoles || requiredRoles.length === 0) return false;
+        return !requiredRoles.includes(user.role);
+    }, [requiredRoles, user]);
+
+    useEffect(() => {
+        if (!shouldBlockOnRole) return;
+        try {
+            router.replace(unauthorizedHref);
+        } catch {
+            window.location.href = unauthorizedHref;
+        }
+    }, [router, shouldBlockOnRole, unauthorizedHref]);
 
     if (loading) {
         return (
@@ -120,6 +141,25 @@ export function RouteGuard({
                         <div className="text-sm text-muted-foreground">Continue to login to proceed.</div>
                         <Button asChild>
                             <Link href={`/auth/login?next=${encodeURIComponent(next)}`}>Go to login</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    if (shouldBlockOnRole) {
+        return (
+            <div className="mx-auto w-full max-w-5xl px-4 py-10">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Unauthorized</CardTitle>
+                        <CardDescription>Your role does not have permission to access this page.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-sm text-muted-foreground">Redirecting…</div>
+                        <Button asChild>
+                            <Link href={unauthorizedHref}>Continue</Link>
                         </Button>
                     </CardContent>
                 </Card>
