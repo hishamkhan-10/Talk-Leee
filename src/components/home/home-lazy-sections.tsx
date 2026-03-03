@@ -2,11 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-const Hero = dynamic(() => import("@/components/ui/helix-hero").then((m) => m.Hero), {
-  ssr: false,
-  loading: () => <HeroPlaceholder />,
-});
+import { Hero } from "@/components/ui/helix-hero";
 
 const SecondaryHero = dynamic(() => import("@/components/home/secondary-hero").then((m) => m.SecondaryHero), {
   ssr: false,
@@ -42,37 +38,6 @@ const Footer = dynamic(() => import("@/components/home/footer").then((m) => m.Fo
   ssr: false,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[240px]" />,
 });
-
-function HeroPlaceholder() {
-  return (
-    <section className="relative overflow-hidden bg-transparent">
-      <div className="mx-auto flex min-h-[72vh] max-w-7xl flex-col items-center justify-center px-4 py-14 md:px-6 lg:px-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-4xl font-bold tracking-tighter text-foreground md:text-6xl">
-            AI Voice Agent Platform for Seamless Call Automation
-          </h1>
-        </div>
-        <p className="mx-auto max-w-2xl text-center text-base font-light leading-relaxed text-muted-foreground md:text-lg">
-          Automate inbound and outbound calls with intelligent AI voice agents that deliver end-to-end customer support, appointment scheduling, and enterprise-grade engagement — 24/7.
-        </p>
-        <div className="mt-10 flex flex-wrap justify-center gap-8">
-          <div className="text-center">
-            <div className="text-3xl font-semibold text-foreground md:text-4xl">&lt;500ms</div>
-            <div className="mt-1 text-sm uppercase tracking-wide text-muted-foreground">Response Time</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-semibold text-foreground md:text-4xl">1000+</div>
-            <div className="mt-1 text-sm uppercase tracking-wide text-muted-foreground">Concurrent Calls</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-semibold text-foreground md:text-4xl">94%</div>
-            <div className="mt-1 text-sm uppercase tracking-wide text-muted-foreground">Completion Rate</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function SectionPlaceholder({ minHeightClassName }: { minHeightClassName: string }) {
   return (
@@ -320,7 +285,18 @@ export function HomeLazySections() {
       <>
         <NavbarHeroBackgroundVideo />
         <div className="relative z-10">
-          <HeroPlaceholder />
+          <Hero
+            title="AI Voice Agent Platform for Seamless Call Automation"
+            description={[
+              "Automate inbound and outbound calls with intelligent AI voice agents that deliver end-to-end customer support, appointment scheduling, and enterprise-grade engagement — 24/7.",
+            ]}
+            adjustForNavbar
+            stats={[
+              { label: "Response Time", value: "<500ms" },
+              { label: "Concurrent Calls", value: "1000+" },
+              { label: "Completion Rate", value: "94%" },
+            ]}
+          />
           <SectionPlaceholder minHeightClassName="min-h-[70vh]" />
           <SectionPlaceholder minHeightClassName="min-h-[260px]" />
           <SectionPlaceholder minHeightClassName="min-h-[420px]" />

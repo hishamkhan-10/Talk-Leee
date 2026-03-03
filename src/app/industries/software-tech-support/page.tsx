@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Navbar } from "@/components/home/navbar";
 import { Footer } from "@/components/home/footer";
 
@@ -67,11 +68,15 @@ export default function SoftwareTechSupportIndustryPage() {
             In today’s fast-paced software and technology world, delivering fast, reliable, and personalized support is crucial. Talkly AI helps
             software companies automate support, optimize onboarding, and enhance customer interactions with intelligent AI solutions.
           </p>
-          <div className="mt-10">
-            <img
-              src="/images/industries/software-tech-support.png"
-              alt=""
-              className="mx-auto w-full max-w-3xl rounded-3xl border border-border/70 shadow-sm"
+          <div className="mt-10 flex justify-center">
+            <Image
+              src="/images/industries/software-tech-support/12.jpg"
+              alt="Talkly AI dashboard for software and tech support automation"
+              width={1344}
+              height={768}
+              quality={100}
+              className="w-full max-w-4xl rounded-3xl border border-border/70 shadow-sm"
+              sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
             />
           </div>
         </header>
@@ -87,6 +92,11 @@ export default function SoftwareTechSupportIndustryPage() {
                 ))}
               </ul>
             </div>
+            {section.title === "AI for Software Companies" ? (
+              <p className="mt-4 text-sm sm:text-base text-gray-700 dark:text-muted-foreground text-left">
+                Boost your support efficency today
+              </p>
+            ) : null}
           </section>
         ))}
       </div>
@@ -94,4 +104,3 @@ export default function SoftwareTechSupportIndustryPage() {
     </main>
   );
 }
-

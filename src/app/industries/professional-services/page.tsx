@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
 import { Navbar } from "@/components/home/navbar";
 import { Footer } from "@/components/home/footer";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "AI for Professional Services",
@@ -70,6 +73,17 @@ export default function ProfessionalServicesIndustryPage() {
             is handled seamlessly.
           </p>
         </header>
+        <div className="mt-10 flex justify-center">
+          <Image
+            src="/images/industries/professional-services/10.jpg"
+            alt="AI-powered client communication management interface"
+            width={1344}
+            height={768}
+            quality={100}
+            className="w-full max-w-4xl rounded-3xl border border-border/70 shadow-sm"
+            sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
+          />
+        </div>
 
         <section className="mt-14">
           <h2 className="text-2xl md:text-3xl font-semibold text-primary dark:text-foreground">
@@ -87,6 +101,17 @@ export default function ProfessionalServicesIndustryPage() {
                 <p className="mt-3 text-sm sm:text-base text-gray-700 dark:text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
             ))}
+          </div>
+          <div className="mt-10 flex justify-center">
+            <Image
+              src="/images/industries/professional-services/11.jpg"
+              alt="Professional services team supported by AI communication tools"
+              width={1344}
+              height={768}
+              quality={100}
+              className="w-full max-w-5xl rounded-3xl border border-border/70 shadow-sm"
+              sizes="(min-width: 1024px) 1024px, (min-width: 768px) 672px, 100vw"
+            />
           </div>
         </section>
 
@@ -112,10 +137,18 @@ export default function ProfessionalServicesIndustryPage() {
           <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-700 dark:text-muted-foreground leading-relaxed">
             With AI for professional services, Talkly AI helps firms deliver professional, consistent, and responsive client communication.
           </p>
+          <div className="mt-8 flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full px-10 bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              <Link href="/auth/register">Get free access today!</Link>
+            </Button>
+          </div>
         </section>
       </div>
       <Footer />
     </main>
   );
 }
-

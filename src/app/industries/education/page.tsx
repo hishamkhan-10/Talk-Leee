@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Navbar } from "@/components/home/navbar";
 import { Footer } from "@/components/home/footer";
 import { Button } from "@/components/ui/button";
+import { Video } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Talky AI | AI That Transforms Education",
@@ -160,10 +161,14 @@ export default function EducationIndustryPage() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Button type="button" size="lg" className="rounded-full px-8 bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
+              <Video aria-hidden />
               Request a Demo
             </Button>
-            <div className="hidden sm:block text-sm text-muted-foreground font-semibold">|</div>
-            <Button type="button" size="lg" variant="outline" className="rounded-full px-8">
+            <Button
+              type="button"
+              size="lg"
+              className="rounded-full px-8 bg-gray-100 text-gray-900 border border-border/70 shadow-sm hover:bg-gray-200 dark:bg-white/10 dark:text-foreground dark:hover:bg-white/15"
+            >
               Start Free Trial
             </Button>
           </div>
@@ -173,4 +178,3 @@ export default function EducationIndustryPage() {
     </main>
   );
 }
-

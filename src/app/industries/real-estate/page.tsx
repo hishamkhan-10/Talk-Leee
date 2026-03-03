@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
 import { Navbar } from "@/components/home/navbar";
 import { Footer } from "@/components/home/footer";
+import { Button } from "@/components/ui/button";
+import { Video } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Smarter Property Management with AI for Real Estate",
@@ -21,8 +25,9 @@ export default function RealEstateIndustryPage() {
       <Navbar />
       <div className="mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8 py-16 md:py-20">
         <header className="text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary dark:text-foreground">
-            Smarter Property Management with AI for Real Estate
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-[1.06] text-primary dark:text-foreground">
+            <span className="block">Smarter Property Management</span>
+            <span className="block">with AI for Real Estate</span>
           </h1>
           <h2 className="mt-6 text-xl md:text-2xl font-semibold text-primary dark:text-foreground">
             Automate Communication &amp; Close Deals Faster
@@ -47,6 +52,17 @@ export default function RealEstateIndustryPage() {
               <li>• <strong className="text-primary dark:text-foreground">AI real estate call automation</strong> - Handle inbound and outbound calls automatically</li>
               <li>• <strong className="text-primary dark:text-foreground">AI follow-up calls for property leads</strong> - Keep leads engaged 24/7</li>
             </ul>
+          </div>
+          <div className="mt-10 flex justify-start">
+            <Image
+              src="/images/industries/real-estate/real-estate-7.jpg"
+              alt="AI interface for real estate inquiries and follow-ups"
+              width={1344}
+              height={768}
+              quality={100}
+              className="w-full max-w-4xl rounded-3xl border border-border/70 shadow-sm"
+              sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
+            />
           </div>
         </section>
 
@@ -148,10 +164,21 @@ export default function RealEstateIndustryPage() {
           <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-700 dark:text-muted-foreground leading-relaxed">
             Stop juggling calls, inquiries, and appointments manually.
           </p>
+          <div className="mt-8 flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="h-14 px-12 text-base sm:text-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 [&_svg]:size-5"
+            >
+              <Link href="/#contact" className="inline-flex items-center gap-2">
+                <Video aria-hidden />
+                Request a Demo
+              </Link>
+            </Button>
+          </div>
         </section>
       </div>
       <Footer />
     </main>
   );
 }
-

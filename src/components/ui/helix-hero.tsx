@@ -4,7 +4,7 @@ import type React from "react";
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { MagneticText } from "./morphing-cursor";
 import { apiBaseUrl } from "@/lib/env";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { CheckCircle, MessageCircle } from "lucide-react";
 import { TrustedByMarquee } from "../home/trusted-by-section";
 
@@ -123,74 +123,11 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             .map((text) => text.replace(/\s+/g, " ").trim())
             .filter(Boolean);
     }, [description]);
-    const descriptionSizerParagraph = useMemo(() => {
-        let longest = "";
-        for (const paragraph of descriptionParagraphs) {
-            if (paragraph.length > longest.length) longest = paragraph;
-        }
-        return longest;
-    }, [descriptionParagraphs]);
-    const [descriptionIndex, setDescriptionIndex] = useState(0);
-    const [descriptionRenderId, setDescriptionRenderId] = useState(0);
-    const [typedChars, setTypedChars] = useState(0);
-    const activeParagraph = descriptionParagraphs[descriptionIndex] ?? "";
-
-    useEffect(() => {
-        setDescriptionIndex((prev) => {
-            const max = Math.max(0, descriptionParagraphs.length - 1);
-            return Math.min(prev, max);
-        });
-    }, [descriptionParagraphs.length]);
 
     useEffect(() => {
         voiceSelectedRef.current = voiceSelected;
     }, [voiceSelected]);
 
-    useEffect(() => {
-        const fullText = activeParagraph;
-        setTypedChars(0);
-        if (!fullText) return;
-
-        const targetTotalMs = descriptionParagraphs.length > 1 ? 5200 : 2600;
-        const basePerCharMs = Math.max(16, Math.min(38, Math.round(targetTotalMs / Math.max(1, fullText.length))));
-        const startDelayMs = 200;
-
-        let index = 0;
-        let timeoutId = 0;
-
-        const tick = () => {
-            index += 1;
-            setTypedChars(index);
-            if (index >= fullText.length) return;
-
-            const justTyped = fullText[index - 1] ?? "";
-            const isSpace = justTyped === " ";
-            const isPunct = /[.,!?;:]/.test(justTyped);
-            const delay = basePerCharMs + (isSpace ? 70 : 0) + (isPunct ? 160 : 0);
-            timeoutId = window.setTimeout(tick, delay);
-        };
-
-        timeoutId = window.setTimeout(tick, startDelayMs);
-        return () => {
-            if (timeoutId) window.clearTimeout(timeoutId);
-        };
-    }, [activeParagraph, descriptionRenderId, descriptionParagraphs.length]);
-
-    useEffect(() => {
-        if (!activeParagraph) return;
-        if (typedChars < activeParagraph.length) return;
-
-        const holdMs = descriptionParagraphs.length > 1 ? 900 : 1400;
-        const timeoutId = window.setTimeout(() => {
-            setDescriptionRenderId((prev) => prev + 1);
-            setDescriptionIndex((prev) => {
-                const total = Math.max(1, descriptionParagraphs.length);
-                return (prev + 1) % total;
-            });
-        }, holdMs);
-
-        return () => window.clearTimeout(timeoutId);
-    }, [activeParagraph, typedChars, descriptionParagraphs.length]);
 
     const playNextAudioChunk = useCallback(async () => {
         // Start IMMEDIATELY with first chunk - no pre-buffering delay
@@ -523,47 +460,26 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <div ref={heroContentRef} className="absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16">
                 <div className="w-full max-w-4xl text-center">
                     <motion.div
-                        initial="hidden"
-                        animate="visible"
-                        variants={{
-                            hidden: {},
-                            visible: {
-                                transition: { staggerChildren: 0.14, delayChildren: 0.05 },
-                            },
-                        }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } }}
                         className="flex flex-col items-center gap-2 mb-6"
                     >
                         <h1 className="mt-8 md:hidden">
-                            <motion.span
-                                variants={{
-                                    hidden: { opacity: 0, x: 0 },
-                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                                }}
+                            <span
                                 className="heroTitleGlow block text-4xl sm:text-5xl font-bold tracking-tighter text-foreground leading-none"
                                 style={{ fontFamily: "var(--font-orbitron)" }}
                             >
                                 {headlineA}
-                            </motion.span>
-                            <motion.span
-                                variants={{
-                                    hidden: { opacity: 0, x: 0 },
-                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                                }}
+                            </span>
+                            <span
                                 className="heroTitleGlow mt-2 block whitespace-nowrap text-4xl sm:text-5xl font-extrabold tracking-tighter text-foreground leading-none"
                                 style={{ fontFamily: "var(--font-orbitron)" }}
                             >
                                 {headlineB}
-                            </motion.span>
+                            </span>
                         </h1>
                         <h1 className="mt-10 hidden md:block">
-                            <motion.span
-                                variants={{
-                                    hidden: { opacity: 0, x: 0 },
-                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                                }}
-                                className="heroTitleGlow block"
-                                style={{ fontFamily: "var(--font-orbitron)" }}
-                            >
+                            <span className="heroTitleGlow block" style={{ fontFamily: "var(--font-orbitron)" }}>
                                 <MagneticText
                                     text={headlineA}
                                     hoverText={headlineA}
@@ -571,15 +487,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     textSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-foreground"
                                     hoverTextSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
                                 />
-                            </motion.span>
-                            <motion.span
-                                variants={{
-                                    hidden: { opacity: 0, x: 0 },
-                                    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 140, damping: 18 } },
-                                }}
-                                className="heroTitleGlow mt-3 block whitespace-nowrap"
-                                style={{ fontFamily: "var(--font-orbitron)" }}
-                            >
+                            </span>
+                            <span className="heroTitleGlow mt-3 block whitespace-nowrap" style={{ fontFamily: "var(--font-orbitron)" }}>
                                 <MagneticText
                                     text={headlineB}
                                     hoverText={headlineB}
@@ -587,33 +496,26 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     textSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-foreground whitespace-nowrap"
                                     hoverTextSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
                                 />
-                            </motion.span>
+                            </span>
                         </h1>
                     </motion.div>
 
                     <div className="mb-8 max-w-2xl mx-auto">
-                        <div className="relative">
-                            <p
-                                className="invisible pointer-events-none text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full"
-                                style={{ fontFamily: "var(--font-manrope)" }}
-                            >
-                                {descriptionSizerParagraph}
-                            </p>
-                            <div className="absolute inset-0">
-                                <AnimatePresence mode="wait">
-                                    <motion.p
-                                        key={descriptionRenderId}
-                                        initial={{ opacity: 0, x: 28 }}
-                                        animate={{ opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } }}
-                                        exit={{ opacity: 0, x: -28, transition: { duration: 0.5, ease: "easeIn" } }}
-                                        className="text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full w-full"
-                                        style={{ fontFamily: "var(--font-manrope)" }}
-                                    >
-                                        {activeParagraph.slice(0, typedChars)}
-                                    </motion.p>
-                                </AnimatePresence>
-                            </div>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut", delay: 0.05 } }}
+                            className="space-y-3"
+                        >
+                            {descriptionParagraphs.map((paragraph) => (
+                                <p
+                                    key={paragraph}
+                                    className="text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full"
+                                    style={{ fontFamily: "var(--font-manrope)" }}
+                                >
+                                    {paragraph}
+                                </p>
+                            ))}
+                        </motion.div>
                     </div>
                     {stats && stats.length > 0 && (
                         <div className="mx-auto grid w-full max-w-[820px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">

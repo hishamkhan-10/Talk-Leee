@@ -26,6 +26,7 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const isCompact = true;
   const [isInHeroZone, setIsInHeroZone] = useState(true);
+  const [suppressedDropdownLabel, setSuppressedDropdownLabel] = useState<string | null>(null);
 
   const menuItems = [
     { label: "Home", href: "/" },
@@ -101,6 +102,10 @@ export function Navbar() {
   }, [closeMobileMenu, pathname]);
 
   useEffect(() => {
+    setSuppressedDropdownLabel(null);
+  }, [pathname]);
+
+  useEffect(() => {
     if (!mobileMenuOpen) return;
 
     const prevOverflow = document.body.style.overflow;
@@ -161,8 +166,8 @@ export function Navbar() {
           : null),
       }}
     >
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-1 sm:px-2">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-2 sm:px-4">
           <div className="flex items-center gap-3 justify-self-start">
             <details
               ref={mobileMenuRef}
@@ -319,7 +324,7 @@ export function Navbar() {
             </Link>
           </div>
 
-          <ul className="hidden md:flex items-center justify-center gap-4 lg:gap-6" role="list">
+          <ul className="hidden md:flex items-center justify-center gap-5 lg:gap-8 xl:gap-10" role="list">
             {menuItems.map((item) => {
               const isIndustriesDropdown = item.label === "Industries";
               const dropdownWidthClass = isIndustriesDropdown ? "w-[680px]" : "w-[520px]";
@@ -327,7 +332,12 @@ export function Navbar() {
               return (
                 <li key={item.label} className="relative">
                   {isDropdownWithChildrenItem(item) ? (
-                    <div className="group relative">
+                    <div
+                      className="group relative"
+                      onMouseLeave={() => {
+                        setSuppressedDropdownLabel(null);
+                      }}
+                    >
                       <button
                         type="button"
                         className={[
@@ -349,6 +359,9 @@ export function Navbar() {
                           "opacity-0 pointer-events-none translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out",
                           "group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100",
                           "group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100",
+                          suppressedDropdownLabel === item.label
+                            ? "opacity-0 pointer-events-none translate-y-2 scale-[0.98] duration-100"
+                            : "",
                         ].join(" ")}
                         role="menu"
                         aria-label={item.label}
@@ -365,6 +378,10 @@ export function Navbar() {
                                     "hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:shadow-md hover:bg-foreground/5",
                                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                   ].join(" ")}
+                                  onClick={() => {
+                                    setSuppressedDropdownLabel(item.label);
+                                    (document.activeElement as HTMLElement | null)?.blur?.();
+                                  }}
                                   style={{
                                     backgroundImage: "var(--home-card-gradient)",
                                     backgroundSize: "cover",
@@ -410,7 +427,7 @@ export function Navbar() {
             })}
           </ul>
 
-          <div className="flex items-center gap-3 justify-self-end">
+          <div className="flex items-center gap-4 lg:gap-5 justify-self-end">
             <div className="hidden md:inline-flex">
               <Link
                 href="/dashboard"

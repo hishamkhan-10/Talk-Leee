@@ -173,57 +173,68 @@ export default function HealthcareIndustryPage() {
 
         <section className="mt-14">
           <h2 className="text-2xl md:text-3xl font-semibold text-primary dark:text-foreground">Automate Core Healthcare Calls</h2>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-12">
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Appointment Scheduling &amp; Reminders</h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
+                <li>• Live calendar integrations</li>
+                <li>• Confirm, reschedule, or cancel appointments</li>
+                <li>• Reduce no-shows with Patient call routing automation</li>
+              </ul>
+            </div>
 
-          <h3 className="mt-6 text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Appointment Scheduling &amp; Reminders</h3>
-          <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
-            <li>• Live calendar integrations</li>
-            <li>• Confirm, reschedule, or cancel appointments</li>
-            <li>• Reduce no-shows with Patient call routing automation</li>
-          </ul>
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Patient Support &amp; FAQs</h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
+                <li>• Answer common questions instantly</li>
+                <li>• Pull information from internal systems</li>
+                <li>• Escalate complex issues using AI healthcare voice assistant</li>
+              </ul>
+            </div>
 
-          <h3 className="mt-10 text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Patient Support &amp; FAQs</h3>
-          <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
-            <li>• Answer common questions instantly</li>
-            <li>• Pull information from internal systems</li>
-            <li>• Escalate complex issues using AI healthcare voice assistant</li>
-          </ul>
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Intake &amp; Qualification</h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
+                <li>• Collect patient details and verify urgency</li>
+                <li>• Route calls with Healthcare call routing AI</li>
+                <li>• Ensure smooth handoff via AI hospital call management</li>
+              </ul>
+            </div>
 
-          <h3 className="mt-10 text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Intake &amp; Qualification</h3>
-          <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
-            <li>• Collect patient details and verify urgency</li>
-            <li>• Route calls with Healthcare call routing AI</li>
-            <li>• Ensure smooth handoff via AI hospital call management</li>
-          </ul>
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-semibold text-primary dark:text-foreground">
+                How Talkly AI Works for Healthcare
+              </h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
+                <li>• Deploy a single AI agent or scale across multiple locations</li>
+                <li>• Integrates with CRMs, calendars, and CCaaS platforms</li>
+                <li>• Supports natural conversation flow with interruptions and topic changes</li>
+                <li>• Handles 30+ languages and hundreds of accents</li>
+              </ul>
+            </div>
 
-          <h3 className="mt-10 text-xl md:text-2xl font-semibold text-primary dark:text-foreground">
-            How Talkly AI Works for Healthcare
-          </h3>
-          <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
-            <li>• Deploy a single AI agent or scale across multiple locations</li>
-            <li>• Integrates with CRMs, calendars, and CCaaS platforms</li>
-            <li>• Supports natural conversation flow with interruptions and topic changes</li>
-            <li>• Handles 30+ languages and hundreds of accents</li>
-          </ul>
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Personalization Features:</h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
+                <li>• Tailor conversations with patient data</li>
+                <li>• Build workflows using drag-and-drop orchestration</li>
+                <li>• Test and improve performance using built-in A/B testing</li>
+              </ul>
+            </div>
 
-          <h3 className="mt-10 text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Personalization Features:</h3>
-          <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
-            <li>• Tailor conversations with patient data</li>
-            <li>• Build workflows using drag-and-drop orchestration</li>
-            <li>• Test and improve performance using built-in A/B testing</li>
-          </ul>
-        </section>
-
-        <section className="mt-14">
-          <h2 className="text-2xl md:text-3xl font-semibold text-primary dark:text-foreground">Security &amp; Compliance</h2>
-          <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-700 dark:text-muted-foreground leading-relaxed">
-            Talkly AI is built for regulated healthcare environments:
-          </p>
-          <ul className="mt-6 space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
-            <li>• Encrypted calls and secure data storage</li>
-            <li>• Consent handling and compliance with GDPR and TCPA</li>
-            <li>• Enterprise-grade security controls</li>
-            <li>• No patient data is shared externally or used for AI training</li>
-          </ul>
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-semibold text-primary dark:text-foreground">Security &amp; Compliance</h3>
+              <p className="text-sm sm:text-base md:text-lg text-gray-700 dark:text-muted-foreground leading-relaxed">
+                Talkly AI is built for regulated healthcare environments:
+              </p>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground">
+                <li>• Encrypted calls and secure data storage</li>
+                <li>• Consent handling and compliance with GDPR and TCPA</li>
+                <li>• Enterprise-grade security controls</li>
+                <li>• No patient data is shared externally or used for AI training</li>
+              </ul>
+            </div>
+          </div>
         </section>
 
         <section className="mt-14">
