@@ -93,7 +93,7 @@ export default function TravelIndustryIndustryPage() {
             Talkly AI helps travel and hospitality teams automate calls, streamline bookings, and support guests across every stage of the journey.
           </p>
           <div className="mt-10 flex justify-center">
-            <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-border/70 shadow-sm">
+            <div className="group w-full max-w-5xl overflow-hidden rounded-3xl border border-border/70 shadow-sm transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:brightness-[1.02]">
               <div className="relative aspect-[1024/576] w-full">
                 <Image
                   src="/images/industries/travel-industry/hero.png"
@@ -101,7 +101,7 @@ export default function TravelIndustryIndustryPage() {
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 900px, 1024px"
                   quality={100}
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
                 />
               </div>
             </div>

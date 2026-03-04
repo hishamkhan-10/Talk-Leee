@@ -26,6 +26,8 @@ import { ViewportDrawer } from "@/components/ui/viewport-drawer";
 import { HoverTooltip, useHoverTooltip } from "@/components/ui/hover-tooltip";
 import { useSidebarActions, useSidebarState } from "@/lib/sidebar-client";
 import { Button } from "@/components/ui/button";
+import { useWhiteLabelBranding } from "@/components/white-label/white-label-branding-provider";
+import { useTheme } from "@/components/providers/theme-provider";
 
 const DUMMY_USER = {
     id: "user-001",
@@ -52,14 +54,15 @@ const bottomNavigation = [
     { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-import { useTheme } from "@/components/providers/theme-provider";
-
-export function Sidebar({
-    className,
-}: {
-    className?: string;
-}) {
+export function Sidebar({ className }: { className?: string }) {
     const pathname = usePathname();
+    const whiteLabel = useWhiteLabelBranding();
+    const brandName = whiteLabel?.branding.displayName ?? "Talk-Lee";
+    const brandLogoSrc = whiteLabel?.branding.logo.src ?? "/favicon.svg";
+    const brandLogoAlt = whiteLabel?.branding.logo.alt ?? "Talk-Lee";
+    const brandLogoWidth = whiteLabel?.branding.logo.width ?? 28;
+    const brandLogoHeight = whiteLabel?.branding.logo.height ?? 28;
+    const brandHomeHref = whiteLabel ? `/white-label/${whiteLabel.branding.partnerId}/preview` : "/dashboard";
     const { collapsed, mobileOpen } = useSidebarState();
     const { toggleCollapsed, closeMobile } = useSidebarActions();
     const tooltip = useHoverTooltip();
@@ -73,7 +76,10 @@ export function Sidebar({
     const desktopNavItemClass = collapsed ? "justify-center px-2" : "justify-start px-2";
     const desktopTextClass = collapsed ? "hidden" : "block";
 
-    const measurementLabels = useMemo(() => [...navigation.map((x) => x.name), ...bottomNavigation.map((x) => x.name), "Logout", "Talk-Lee"], []);
+    const measurementLabels = useMemo(
+        () => [...navigation.map((x) => x.name), ...bottomNavigation.map((x) => x.name), "Logout", brandName],
+        [brandName]
+    );
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -148,16 +154,16 @@ export function Sidebar({
                         ) : null}
 
                         <Link
-                            href="/dashboard"
+                            href={brandHomeHref}
                             className={cn(
                                 "flex items-center gap-3 min-w-0 overflow-hidden transition-[opacity,transform,max-width] duration-300 ease-in-out",
                                 collapsed ? "max-w-0 opacity-0 -translate-x-2 pointer-events-none" : "max-w-[190px] opacity-100 translate-x-0"
                             )}
                             onClick={onClose}
                         >
-                            <Image src="/favicon.svg" alt="Talk-Lee" width={28} height={28} className="w-7 h-7" />
+                            <Image src={brandLogoSrc} alt={brandLogoAlt} width={brandLogoWidth} height={brandLogoHeight} className="w-7 h-7" />
                             <div className="min-w-0">
-                                <div className="text-base font-black leading-none text-sidebar-foreground tracking-tight">Talk-Lee</div>
+                                <div className="text-base font-black leading-none text-sidebar-foreground tracking-tight">{brandName}</div>
                             </div>
                         </Link>
                     </div>

@@ -88,6 +88,10 @@ function isWhiteLabelPath(pathname: string) {
     return pathname === "/white-label" || pathname.startsWith("/white-label/");
 }
 
+function isWhiteLabelAdminPath(pathname: string) {
+    return pathname === WHITE_LABEL_DASHBOARD_PATH || pathname.startsWith(WHITE_LABEL_DASHBOARD_PATH + "/") || pathname === "/white-label";
+}
+
 function isApiPath(pathname: string) {
     return pathname === "/api" || pathname.startsWith("/api/");
 }
@@ -240,7 +244,7 @@ export async function middleware(req: NextRequest) {
                     return res;
                 }
             } else if (role && role !== WHITE_LABEL_ADMIN_ROLE) {
-                if (isWhiteLabelPath(pathname)) {
+                if (isWhiteLabelAdminPath(pathname)) {
                     const url = req.nextUrl.clone();
                     url.pathname = "/403";
                     url.search = "";
@@ -249,7 +253,7 @@ export async function middleware(req: NextRequest) {
                     return res;
                 }
             } else {
-                if (isWhiteLabelPath(pathname) || isAdminOrInfrastructurePath(pathname)) {
+                if (isWhiteLabelAdminPath(pathname) || isAdminOrInfrastructurePath(pathname)) {
                     const url = req.nextUrl.clone();
                     url.pathname = "/403";
                     url.search = "";

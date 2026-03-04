@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: "Talk-Lee",
   description: "Intelligent voice communication platform powered by advanced AI agents",
   manifest: "/site.webmanifest",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -37,9 +40,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-      </head>
       <body className={`${inter.variable} ${manrope.variable} ${orbitron.variable} font-sans antialiased`}>
         <AppProviders>
           <AuthProvider>

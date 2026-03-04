@@ -74,15 +74,17 @@ export default function ProfessionalServicesIndustryPage() {
           </p>
         </header>
         <div className="mt-10 flex justify-center">
-          <Image
-            src="/images/industries/professional-services/10.jpg"
-            alt="AI-powered client communication management interface"
-            width={1344}
-            height={768}
-            quality={100}
-            className="w-full max-w-4xl rounded-3xl border border-border/70 shadow-sm"
-            sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
-          />
+          <div className="group w-full max-w-4xl overflow-hidden rounded-3xl border border-border/70 shadow-sm transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:brightness-[1.02]">
+            <Image
+              src="/images/industries/professional-services/10.jpg"
+              alt="AI-powered client communication management interface"
+              width={1344}
+              height={768}
+              quality={100}
+              className="h-auto w-full transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+              sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
+            />
+          </div>
         </div>
 
         <section className="mt-14">
@@ -103,15 +105,17 @@ export default function ProfessionalServicesIndustryPage() {
             ))}
           </div>
           <div className="mt-10 flex justify-center">
-            <Image
-              src="/images/industries/professional-services/11.jpg"
-              alt="Professional services team supported by AI communication tools"
-              width={1344}
-              height={768}
-              quality={100}
-              className="w-full max-w-5xl rounded-3xl border border-border/70 shadow-sm"
-              sizes="(min-width: 1024px) 1024px, (min-width: 768px) 672px, 100vw"
-            />
+            <div className="group w-full max-w-5xl overflow-hidden rounded-3xl border border-border/70 shadow-sm transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:brightness-[1.02]">
+              <Image
+                src="/images/industries/professional-services/11.jpg"
+                alt="Professional services team supported by AI communication tools"
+                width={1344}
+                height={768}
+                quality={100}
+                className="h-auto w-full transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+                sizes="(min-width: 1024px) 1024px, (min-width: 768px) 672px, 100vw"
+              />
+            </div>
           </div>
         </section>
 

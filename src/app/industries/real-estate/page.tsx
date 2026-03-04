@@ -54,15 +54,17 @@ export default function RealEstateIndustryPage() {
             </ul>
           </div>
           <div className="mt-10 flex justify-start">
-            <Image
-              src="/images/industries/real-estate/real-estate-7.jpg"
-              alt="AI interface for real estate inquiries and follow-ups"
-              width={1344}
-              height={768}
-              quality={100}
-              className="w-full max-w-4xl rounded-3xl border border-border/70 shadow-sm"
-              sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
-            />
+            <div className="group w-full max-w-4xl overflow-hidden rounded-3xl border border-border/70 shadow-sm transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:brightness-[1.02]">
+              <Image
+                src="/images/industries/real-estate/real-estate-7.jpg"
+                alt="AI interface for real estate inquiries and follow-ups"
+                width={1344}
+                height={768}
+                quality={100}
+                className="h-auto w-full transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+                sizes="(min-width: 1024px) 896px, (min-width: 768px) 672px, 100vw"
+              />
+            </div>
           </div>
         </section>
 

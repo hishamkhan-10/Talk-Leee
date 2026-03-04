@@ -327,7 +327,7 @@ export function Navbar() {
           <ul className="hidden md:flex items-center justify-center gap-5 lg:gap-8 xl:gap-10" role="list">
             {menuItems.map((item) => {
               const isIndustriesDropdown = item.label === "Industries";
-              const dropdownWidthClass = isIndustriesDropdown ? "w-[680px]" : "w-[520px]";
+              const dropdownWidthClass = isIndustriesDropdown ? "w-[680px]" : item.label === "Products" || item.label === "Use Cases" ? "w-[345px]" : "w-[520px]";
               const dropdownGridClass = isIndustriesDropdown ? "grid-cols-2" : "grid-cols-1";
               return (
                 <li key={item.label} className="relative">
@@ -365,6 +365,14 @@ export function Navbar() {
                         ].join(" ")}
                         role="menu"
                         aria-label={item.label}
+                        style={
+                          suppressedDropdownLabel === item.label
+                            ? {
+                                opacity: 0,
+                                pointerEvents: "none",
+                              }
+                            : undefined
+                        }
                       >
                         <div className="rounded-3xl border border-border/70 bg-cyan-100/90 dark:bg-cyan-950/90 backdrop-blur-sm p-2 shadow-xl">
                           <ul className={`grid ${dropdownGridClass} gap-1.5`} role="list">
@@ -386,6 +394,11 @@ export function Navbar() {
                                     backgroundImage: "var(--home-card-gradient)",
                                     backgroundSize: "cover",
                                     backgroundRepeat: "no-repeat",
+                                    ...(item.label === "Products" || item.label === "Use Cases"
+                                      ? {
+                                          width: 329,
+                                        }
+                                      : null),
                                   }}
                                 >
                                   <div className="flex items-start gap-3">

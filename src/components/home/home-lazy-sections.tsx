@@ -126,6 +126,96 @@ function NavbarHeroBackgroundVideo() {
   const [activeIndex, setActiveIndex] = useState<0 | 1>(0);
   const [isInView, setIsInView] = useState(true);
 
+  const fallbackPoster = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#001022"/>
+      <stop offset="1" stop-color="#004d5e"/>
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="44"/>
+    </filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <g filter="url(#blur)" opacity="0.9">
+    <path d="M0 780 C 240 736 480 844 720 802 C 960 760 1200 700 1440 764 C 1680 828 1800 892 1920 868 L1920 1080 L0 1080 Z" fill="#00fff0" fill-opacity="0.22"/>
+    <path d="M0 842 C 280 802 520 910 780 872 C 1040 834 1260 784 1500 836 C 1740 888 1840 936 1920 922 L1920 1080 L0 1080 Z" fill="#00bcd4" fill-opacity="0.18"/>
+    <path d="M0 910 C 240 880 520 1002 780 960 C 1040 918 1240 886 1480 916 C 1720 946 1840 990 1920 980 L1920 1080 L0 1080 Z" fill="#3b82f6" fill-opacity="0.12"/>
+  </g>
+</svg>`
+  )}`;
+
+  const waitForCanPlay = useCallback((video: HTMLVideoElement, timeoutMs: number) => {
+    return new Promise<boolean>((resolve) => {
+      if (video.readyState >= 2) {
+        resolve(true);
+        return;
+      }
+
+      let timeoutId: number | null = null;
+      let finished = false;
+
+      const cleanup = () => {
+        video.removeEventListener("canplay", onCanPlay);
+        video.removeEventListener("error", onError);
+        if (timeoutId) window.clearTimeout(timeoutId);
+        timeoutId = null;
+      };
+
+      const finish = (ok: boolean) => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        resolve(ok);
+      };
+
+      const onCanPlay = () => finish(true);
+      const onError = () => finish(false);
+
+      video.addEventListener("canplay", onCanPlay, { once: true });
+      video.addEventListener("error", onError, { once: true });
+      timeoutId = window.setTimeout(() => finish(video.readyState >= 2), timeoutMs);
+
+      try {
+        video.load();
+      } catch {}
+    });
+  }, []);
+
+  const waitForPlaybackStart = useCallback((video: HTMLVideoElement, timeoutMs: number) => {
+    return new Promise<boolean>((resolve) => {
+      if (!video.paused && video.readyState >= 2) {
+        resolve(true);
+        return;
+      }
+
+      let timeoutId: number | null = null;
+      let finished = false;
+
+      const cleanup = () => {
+        video.removeEventListener("playing", onPlaying);
+        video.removeEventListener("error", onError);
+        if (timeoutId) window.clearTimeout(timeoutId);
+        timeoutId = null;
+      };
+
+      const finish = (ok: boolean) => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        resolve(ok);
+      };
+
+      const onPlaying = () => finish(true);
+      const onError = () => finish(false);
+
+      video.addEventListener("playing", onPlaying, { once: true });
+      video.addEventListener("error", onError, { once: true });
+      timeoutId = window.setTimeout(() => finish(!video.paused && video.readyState >= 2), timeoutMs);
+    });
+  }, []);
+
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -155,24 +245,51 @@ function NavbarHeroBackgroundVideo() {
 
     isCrossfadingRef.current = true;
 
-    try {
-      to.currentTime = 0.01;
-    } catch {}
-    const p = to.play();
-    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+    void (async () => {
+      const canPlay = await waitForCanPlay(to, 1200);
+      if (!canPlay) {
+        isCrossfadingRef.current = false;
+        return;
+      }
 
-    activeIndexRef.current = toIndex;
-    setActiveIndex(toIndex);
-
-    if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
-    fadeTimeoutRef.current = window.setTimeout(() => {
       try {
-        from.pause();
-        from.currentTime = 0.01;
+        to.currentTime = 0.01;
       } catch {}
-      isCrossfadingRef.current = false;
-    }, 320);
-  }, []);
+
+      const playResult = to.play();
+      if (playResult && typeof (playResult as Promise<void>).catch === "function") {
+        const ok = await (playResult as Promise<void>).then(
+          () => true,
+          () => false
+        );
+        if (!ok) {
+          isCrossfadingRef.current = false;
+          return;
+        }
+      }
+
+      const started = await waitForPlaybackStart(to, 900);
+      if (!started) {
+        try {
+          to.pause();
+        } catch {}
+        isCrossfadingRef.current = false;
+        return;
+      }
+
+      activeIndexRef.current = toIndex;
+      setActiveIndex(toIndex);
+
+      if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = window.setTimeout(() => {
+        try {
+          from.pause();
+          from.currentTime = 0.01;
+        } catch {}
+        isCrossfadingRef.current = false;
+      }, 320);
+    })();
+  }, [waitForCanPlay, waitForPlaybackStart]);
 
   useEffect(() => {
     const a = videoARef.current;
@@ -224,7 +341,18 @@ function NavbarHeroBackgroundVideo() {
   }, []);
 
   return (
-    <div ref={wrapRef} className="pointer-events-none absolute inset-x-0 top-0 z-0 h-screen overflow-hidden" aria-hidden="true">
+    <div
+      ref={wrapRef}
+      className="pointer-events-none absolute inset-x-0 top-0 z-0 h-screen overflow-hidden"
+      aria-hidden="true"
+      style={{
+        backgroundImage: `url("${fallbackPoster}")`,
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundColor: "#001022",
+      }}
+    >
       <video
         ref={videoARef}
         className="absolute inset-0 h-full w-full object-cover"
@@ -233,7 +361,8 @@ function NavbarHeroBackgroundVideo() {
         autoPlay
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
+        poster={fallbackPoster}
         disablePictureInPicture
         disableRemotePlayback
         onLoadedMetadata={() => {
@@ -252,7 +381,8 @@ function NavbarHeroBackgroundVideo() {
         autoPlay
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
+        poster={fallbackPoster}
         disablePictureInPicture
         disableRemotePlayback
         onLoadedMetadata={() => {
