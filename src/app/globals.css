@@ -298,6 +298,12 @@
   padding-top: var(--home-navbar-height);
 }
 
+#faq,
+#services,
+#contact {
+  scroll-margin-top: calc(var(--home-navbar-height) + 16px);
+}
+
 .home-nav-link:not(.hidden) {
   display: inline-flex;
   align-items: center;

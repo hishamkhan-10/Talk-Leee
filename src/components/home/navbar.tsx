@@ -97,6 +97,24 @@ export function Navbar() {
     setMobileMenuOpen(false);
   }, []);
 
+  const scrollToHash = useCallback((hash: string) => {
+    const id = hash.startsWith("#") ? hash.slice(1) : "";
+    if (!id) return;
+
+    const attempt = (remaining: number) => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (window.location.hash !== hash) window.history.pushState(null, "", hash);
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (remaining <= 0) return;
+      window.setTimeout(() => attempt(remaining - 1), 120);
+    };
+
+    attempt(60);
+  }, []);
+
   useEffect(() => {
     closeMobileMenu();
   }, [closeMobileMenu, pathname]);
@@ -273,6 +291,11 @@ export function Navbar() {
                               "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
                             ].join(" ")}
                             onClick={() => {
+                              if (isHome && item.href.startsWith("#")) {
+                                closeMobileMenu();
+                                window.setTimeout(() => scrollToHash(item.href), 0);
+                                return;
+                              }
                               closeMobileMenu();
                             }}
                           >
@@ -356,11 +379,11 @@ export function Navbar() {
                       <div
                         className={[
                           `absolute left-1/2 top-full z-50 -translate-x-1/2 ${dropdownWidthClass} max-w-[92vw]`,
-                          "opacity-0 pointer-events-none translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out",
-                          "group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100",
-                          "group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100",
+                          "invisible opacity-0 pointer-events-none translate-y-2 scale-[0.98] transition-[opacity,transform] duration-200 ease-out",
+                          "group-hover:visible group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100",
+                          "group-focus-within:visible group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100",
                           suppressedDropdownLabel === item.label
-                            ? "opacity-0 pointer-events-none translate-y-2 scale-[0.98] duration-100"
+                            ? "invisible opacity-0 pointer-events-none translate-y-2 scale-[0.98] duration-100"
                             : "",
                         ].join(" ")}
                         role="menu"
@@ -431,6 +454,12 @@ export function Navbar() {
                         "text-foreground/80 hover:text-foreground",
                       ].join(" ")}
                       aria-current={item.href === "/" ? "page" : undefined}
+                      onClick={(event) => {
+                        if (!isHome) return;
+                        if (!item.href.startsWith("#")) return;
+                        event.preventDefault();
+                        scrollToHash(item.href);
+                      }}
                     >
                       {item.label}
                     </Link>
