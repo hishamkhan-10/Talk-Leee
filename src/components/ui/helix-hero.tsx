@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useRef, useState, useCallback, useEffect } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect, useLayoutEffect } from "react";
 import { MagneticText } from "./morphing-cursor";
 import { apiBaseUrl } from "@/lib/env";
 import { motion } from "framer-motion";
@@ -67,8 +67,12 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     const [audioLevel, setAudioLevel] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [voiceSelected, setVoiceSelected] = useState(false);
+    const [mobileTitleFontPx, setMobileTitleFontPx] = useState<number>(32);
 
     const heroContentRef = useRef<HTMLDivElement | null>(null);
+    const mobileTitleRef = useRef<HTMLHeadingElement | null>(null);
+    const mobileTitleMeasureARef = useRef<HTMLSpanElement | null>(null);
+    const mobileTitleMeasureBRef = useRef<HTMLSpanElement | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -127,6 +131,53 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
     useEffect(() => {
         voiceSelectedRef.current = voiceSelected;
     }, [voiceSelected]);
+
+    useLayoutEffect(() => {
+        const titleEl = mobileTitleRef.current;
+        const measureAEl = mobileTitleMeasureARef.current;
+        const measureBEl = mobileTitleMeasureBRef.current;
+        if (!titleEl || !measureAEl || !measureBEl) return;
+
+        if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+        const measureFits = (candidatePx: number, availablePx: number) => {
+            measureAEl.style.fontSize = `${candidatePx}px`;
+            measureBEl.style.fontSize = `${candidatePx}px`;
+            const wA = measureAEl.getBoundingClientRect().width;
+            const wB = measureBEl.getBoundingClientRect().width;
+            return wA <= availablePx && wB <= availablePx;
+        };
+
+        const update = () => {
+            const availablePx = Math.max(0, titleEl.getBoundingClientRect().width - 10);
+            if (availablePx <= 0) return;
+
+            const minPx = 20;
+            const maxPx = 34;
+
+            let lo = minPx;
+            let hi = maxPx;
+            let best = minPx;
+
+            while (lo <= hi) {
+                const mid = Math.floor((lo + hi) / 2);
+                if (measureFits(mid, availablePx)) {
+                    best = mid;
+                    lo = mid + 1;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+
+            const next = Math.max(minPx, best - 2);
+            setMobileTitleFontPx((prev) => (prev === next ? prev : next));
+        };
+
+        update();
+        const ro = new ResizeObserver(() => update());
+        ro.observe(titleEl);
+        return () => ro.disconnect();
+    }, [headlineA, headlineB]);
 
 
     const playNextAudioChunk = useCallback(async () => {
@@ -401,7 +452,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <motion.div
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
+                className="pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 hidden md:flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
             >
                 <CheckCircle className="w-4 h-4 text-foreground" />
                 <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
@@ -457,23 +508,36 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             </div>
 
             {/* Hero content */}
-            <div ref={heroContentRef} className="absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16">
+            <div
+                ref={heroContentRef}
+                className="absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16"
+            >
                 <div className="w-full max-w-4xl text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } }}
                         className="flex flex-col items-center gap-2 mb-6"
                     >
-                        <h1 className="mt-8 md:hidden">
+                        <div className="md:hidden mb-3">
+                            <div className="mx-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 border border-border text-[11px] font-medium text-muted-foreground text-center whitespace-nowrap">
+                                <CheckCircle className="w-4 h-4 text-foreground" />
+                                <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
+                                    Trusted by 10,000+ businesses worldwide
+                                </span>
+                            </div>
+                        </div>
+                        <h1
+                            ref={mobileTitleRef}
+                            className="md:hidden w-full text-center"
+                            style={{ fontFamily: "var(--font-orbitron)", fontSize: `${mobileTitleFontPx}px`, lineHeight: 1.02 }}
+                        >
                             <span
-                                className="heroTitleGlow block text-4xl sm:text-5xl font-bold tracking-tighter text-foreground leading-none"
-                                style={{ fontFamily: "var(--font-orbitron)" }}
+                                className="heroTitleGlow block font-bold tracking-tighter text-foreground leading-none whitespace-nowrap"
                             >
                                 {headlineA}
                             </span>
                             <span
-                                className="heroTitleGlow mt-2 block whitespace-nowrap text-4xl sm:text-5xl font-extrabold tracking-tighter text-foreground leading-none"
-                                style={{ fontFamily: "var(--font-orbitron)" }}
+                                className="heroTitleGlow mt-2 block font-extrabold tracking-tighter text-foreground leading-none whitespace-nowrap"
                             >
                                 {headlineB}
                             </span>
@@ -500,7 +564,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         </h1>
                     </motion.div>
 
-                    <div className="mb-8 max-w-2xl mx-auto">
+                    <div className="mb-8 max-w-2xl mx-auto max-[420px]:mb-6 [@media(max-height:700px)]:mb-6">
                         <motion.div
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut", delay: 0.05 } }}
@@ -518,17 +582,17 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         </motion.div>
                     </div>
                     {stats && stats.length > 0 && (
-                        <div className="mx-auto grid w-full max-w-[820px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+                        <div className="mx-auto grid w-full max-w-[820px] grid-cols-1 gap-4 max-[420px]:grid-cols-2 max-[420px]:gap-3 sm:grid-cols-3 sm:gap-6">
                             {stats.map((stat, index) => (
                                 <div
                                     key={index}
-                                    className="heroStatBox stats-card rounded-2xl px-6 py-5 shadow-[0_18px_60px_rgba(0,0,0,0.35)] border border-white/10 bg-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center transition-transform duration-200 ease-out hover:scale-[1.05]"
+                                    className={`heroStatBox stats-card rounded-2xl px-6 py-5 max-[420px]:px-4 max-[420px]:py-4 shadow-[0_18px_60px_rgba(0,0,0,0.35)] border border-white/10 bg-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center transition-transform duration-200 ease-out hover:scale-[1.05] ${index === 2 ? "max-[420px]:col-span-2" : ""}`}
                                 >
-                                    <div className="text-3xl md:text-4xl font-bold text-foreground" style={{ fontFamily: "var(--font-manrope)" }}>
+                                    <div className="text-3xl md:text-4xl max-[420px]:text-2xl font-bold text-foreground" style={{ fontFamily: "var(--font-manrope)" }}>
                                         {stat.value}
                                     </div>
                                     <div
-                                        className="text-sm font-medium text-foreground/70 uppercase tracking-wide mt-1"
+                                        className="text-sm max-[420px]:text-[11px] font-medium text-foreground/70 uppercase tracking-wide mt-1"
                                         style={{ fontFamily: "var(--font-manrope)" }}
                                     >
                                         {stat.label}
@@ -537,10 +601,27 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                             ))}
                         </div>
                     )}
-                    <div className="mt-7 w-full max-w-[720px] mx-auto">
+                    <div className="mt-7 w-full max-w-[720px] mx-auto max-[420px]:mt-6 [@media(max-height:700px)]:mt-6">
                         <TrustedByMarquee animate={false} transparentContainer heroTypography />
                     </div>
                 </div>
+            </div>
+
+            <div className="pointer-events-none absolute -left-[10000px] top-0 opacity-0 whitespace-nowrap">
+                <span
+                    ref={mobileTitleMeasureARef}
+                    className="font-bold tracking-tighter leading-none"
+                    style={{ fontFamily: "var(--font-orbitron)" }}
+                >
+                    {headlineA}
+                </span>
+                <span
+                    ref={mobileTitleMeasureBRef}
+                    className="font-extrabold tracking-tighter leading-none"
+                    style={{ fontFamily: "var(--font-orbitron)" }}
+                >
+                    {headlineB}
+                </span>
             </div>
 
             <style jsx>{`
