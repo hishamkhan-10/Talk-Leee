@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { z } from "zod";
 import { buildResponsiveHtmlDocument } from "@/lib/email-utils";
+import { getWhiteLabelBranding } from "@/lib/white-label/branding";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 
@@ -200,12 +202,106 @@ async function sendEmail(input: { to: string[]; subject?: string; html: string }
     return { messageId: info.messageId, status, accepted: info.accepted, rejected: info.rejected, response: info.response };
 }
 
+type AgentSettings = {
+    systemPrompt: string;
+    greetingMessage: string;
+    transferEnabled: boolean;
+    updatedAt: string;
+};
+
+const AgentSettingsInputSchema = z
+    .object({
+        systemPrompt: z.string(),
+        greetingMessage: z.string(),
+        transferEnabled: z.boolean(),
+    })
+    .strict();
+
+const agentSettingsByTenant = new Map<string, AgentSettings>();
+
+function defaultAgentSettings(input: { partnerId: string; tenantId: string }): AgentSettings {
+    const now = nowIso();
+    const partnerKey = input.partnerId.trim().toLowerCase();
+    const tenantKey = input.tenantId.trim().toLowerCase();
+
+    if (partnerKey === "zen" || tenantKey.includes("salon")) {
+        return {
+            systemPrompt: "You are a friendly salon receptionist. Greet callers politely and assist with booking appointments.",
+            greetingMessage: "Hello! Thank you for calling Zen Salon. How may I assist you today?",
+            transferEnabled: false,
+            updatedAt: now,
+        };
+    }
+
+    return {
+        systemPrompt: "You are a helpful voice assistant. Be concise, polite, and goal-oriented.",
+        greetingMessage: "Hello! Thanks for calling. How may I help you today?",
+        transferEnabled: false,
+        updatedAt: now,
+    };
+}
+
 async function handle(request: Request, segments: string[]) {
     const method = request.method.toUpperCase();
     const path = `/${segments.join("/")}`;
 
     if (method === "GET" && path === "/health") {
         return json({ status: "ok" });
+    }
+
+    {
+        const m = path.match(/^\/white-label\/partners\/([^/]+)\/tenants\/([^/]+)\/agent-settings$/);
+        if (m) {
+            const partnerId = decodeURIComponent(m[1] ?? "");
+            const tenantId = decodeURIComponent(m[2] ?? "");
+            const branding = getWhiteLabelBranding(partnerId);
+            if (!branding) return json({ error: "Unknown partner" }, { status: 404 });
+
+            const allowTransfer = branding.features.callTransfer;
+            const key = `${branding.partnerId}:${tenantId}`;
+            const existing = agentSettingsByTenant.get(key) ?? defaultAgentSettings({ partnerId: branding.partnerId, tenantId });
+            const config = allowTransfer ? existing : { ...existing, transferEnabled: false };
+
+            if (method === "GET") {
+                return json({
+                    partner: { id: branding.partnerId, allowTransfer },
+                    tenant: { id: tenantId },
+                    config: { systemPrompt: config.systemPrompt, greetingMessage: config.greetingMessage, transferEnabled: config.transferEnabled },
+                    updatedAt: config.updatedAt,
+                });
+            }
+
+            if (method === "PATCH") {
+                const body = await readJsonBody(request);
+                const parsed = AgentSettingsInputSchema.safeParse(body);
+                if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+                const nextPrompt = parsed.data.systemPrompt.trim();
+                const nextGreeting = parsed.data.greetingMessage.trim();
+                if (nextPrompt.length === 0) return json({ detail: "System prompt cannot be empty" }, { status: 400 });
+                if (nextGreeting.length === 0) return json({ detail: "Greeting message cannot be empty" }, { status: 400 });
+
+                const nextTransfer = Boolean(parsed.data.transferEnabled);
+                if (nextTransfer && !allowTransfer) return json({ detail: "Call transfer is disabled by partner policy" }, { status: 400 });
+
+                const updated: AgentSettings = {
+                    systemPrompt: nextPrompt,
+                    greetingMessage: nextGreeting,
+                    transferEnabled: allowTransfer ? nextTransfer : false,
+                    updatedAt: nowIso(),
+                };
+                agentSettingsByTenant.set(key, updated);
+
+                return json({
+                    partner: { id: branding.partnerId, allowTransfer },
+                    tenant: { id: tenantId },
+                    config: { systemPrompt: updated.systemPrompt, greetingMessage: updated.greetingMessage, transferEnabled: updated.transferEnabled },
+                    updatedAt: updated.updatedAt,
+                });
+            }
+
+            return json({ error: "Method not allowed" }, { status: 405 });
+        }
     }
 
     if (method === "GET" && path === "/email/templates") {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -330,6 +331,7 @@ export function PartnerTenantsClient({ partnerId, partnerDisplayName }: { partne
                 </div>
 
                 <TenantTable
+                    partnerId={partnerId}
                     items={tenants}
                     loading={!loaded}
                     onEdit={openEdit}
@@ -390,12 +392,14 @@ export function PartnerTenantsClient({ partnerId, partnerDisplayName }: { partne
 }
 
 function TenantTable({
+    partnerId,
     items,
     loading,
     onEdit,
     onSuspend,
     onResume,
 }: {
+    partnerId: string;
     items: Tenant[];
     loading: boolean;
     onEdit: (tenant: Tenant) => void;
@@ -452,6 +456,11 @@ function TenantTable({
                         <div className="hidden text-right tabular-nums md:block">{t.subConcurrency.toLocaleString()}</div>
                         <div className="hidden md:block">{tenantStatusPill(t.status)}</div>
                         <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+                            <Button type="button" variant="secondary" size="sm" asChild>
+                                <Link href={`/white-label/${encodeURIComponent(partnerId)}/tenants/${encodeURIComponent(t.id)}/agent-settings`}>
+                                    Agent Settings
+                                </Link>
+                            </Button>
                             <Button type="button" variant="outline" size="sm" onClick={() => onEdit(t)}>
                                 Edit
                             </Button>
