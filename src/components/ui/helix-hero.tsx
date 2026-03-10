@@ -528,7 +528,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         </div>
                         <h1
                             ref={mobileTitleRef}
-                            className="md:hidden w-full text-center"
+                            className="heroMobileTitle md:hidden w-full text-center"
                             style={{ fontFamily: "var(--font-orbitron)", fontSize: `${mobileTitleFontPx}px`, lineHeight: 1.02 }}
                         >
                             <span
@@ -548,8 +548,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     text={headlineA}
                                     hoverText={headlineA}
                                     className="mx-auto"
-                                    textSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-foreground"
-                                    hoverTextSpanClassName="text-4xl md:text-5xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
+                                    textSpanClassName="!text-4xl lg:!text-5xl font-bold tracking-tighter text-foreground whitespace-nowrap"
+                                    hoverTextSpanClassName="!text-4xl lg:!text-5xl font-bold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
                                 />
                             </span>
                             <span className="heroTitleGlow mt-3 block whitespace-nowrap" style={{ fontFamily: "var(--font-orbitron)" }}>
@@ -557,8 +557,8 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                     text={headlineB}
                                     hoverText={headlineB}
                                     className="mx-auto"
-                                    textSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-foreground whitespace-nowrap"
-                                    hoverTextSpanClassName="text-4xl md:text-5xl font-extrabold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
+                                    textSpanClassName="!text-4xl lg:!text-5xl font-extrabold tracking-tighter text-foreground whitespace-nowrap"
+                                    hoverTextSpanClassName="!text-4xl lg:!text-5xl font-extrabold tracking-tighter text-primary-foreground dark:text-background whitespace-nowrap"
                                 />
                             </span>
                         </h1>
@@ -638,6 +638,42 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         0 0 18px rgba(34, 211, 238, 0.28),
                         0 0 42px rgba(56, 189, 248, 0.18),
                         0 12px 48px rgba(0, 0, 0, 0.55);
+                }
+
+                @media (width: 360px) and (height: 740px) {
+                    .heroMobileTitle {
+                        font-size: 18px !important;
+                        line-height: 1.08 !important;
+                        padding-left: 6px;
+                        padding-right: 6px;
+                    }
+
+                    .heroMobileTitle .heroTitleGlow {
+                        white-space: normal !important;
+                        overflow-wrap: anywhere;
+                        word-break: break-word;
+                    }
+
+                    .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+                        margin-top: 0.4rem !important;
+                    }
+                }
+
+                @media (width: 540px) and (height: 720px) {
+                    .heroMobileTitle {
+                        font-size: 22px !important;
+                        line-height: 1.06 !important;
+                        padding-left: 12px;
+                        padding-right: 12px;
+                    }
+
+                    .heroMobileTitle .heroTitleGlow {
+                        white-space: nowrap !important;
+                    }
+
+                    .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+                        margin-top: 0.5rem !important;
+                    }
                 }
 
                 :global(.heroStatBox.stats-card)::before {

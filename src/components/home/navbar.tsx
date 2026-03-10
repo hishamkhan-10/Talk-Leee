@@ -167,33 +167,34 @@ export function Navbar() {
   }, [isHome]);
 
   return (
-    <nav
-      aria-label="Primary"
-      className={[
-        "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
-        isAiVoices || isUseCasesPage || isIndustriesPage || isProductsPage || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
-        mobileMenuOpen ? "home-navbar-menu-open" : "",
-      ].join(" ")}
-      data-theme={theme}
-      style={{
-        fontFamily: "var(--font-manrope)",
-        ...(isAiVoices
-          ? {
-              background: theme === "dark" ? "#001022" : "#ecfeff",
-            }
-          : null),
-      }}
-    >
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-2 sm:px-4">
-          <div className="flex items-center gap-3 justify-self-start">
-            <details
-              ref={mobileMenuRef}
-              className="relative md:hidden group"
-              onToggle={(event) => {
-                setMobileMenuOpen(event.currentTarget.open);
-              }}
-            >
+    <>
+      <nav
+        aria-label="Primary"
+        className={[
+          "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
+          isAiVoices || isUseCasesPage || isIndustriesPage || isProductsPage || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
+          mobileMenuOpen ? "home-navbar-menu-open" : "",
+        ].join(" ")}
+        data-theme={theme}
+        style={{
+          fontFamily: "var(--font-manrope)",
+          ...(isAiVoices
+            ? {
+                background: theme === "dark" ? "#001022" : "#ecfeff",
+              }
+            : null),
+        }}
+      >
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-2 sm:px-4">
+            <div className="flex items-center gap-3 justify-self-start">
+              <details
+                ref={mobileMenuRef}
+                className="navbarMobileMenu relative md:hidden group"
+                onToggle={(event) => {
+                  setMobileMenuOpen(event.currentTarget.open);
+                }}
+              >
               <summary
                 className="home-menu-toggle list-none cursor-pointer"
                 style={{
@@ -347,7 +348,7 @@ export function Navbar() {
             </Link>
           </div>
 
-          <ul className="hidden md:flex items-center justify-center gap-5 lg:gap-8 xl:gap-10" role="list">
+          <ul className="navbarDesktopNav hidden md:flex items-center justify-center gap-5 lg:gap-8 xl:gap-10" role="list">
             {menuItems.map((item) => {
               const isIndustriesDropdown = item.label === "Industries";
               const dropdownWidthClass = isIndustriesDropdown ? "w-[680px]" : item.label === "Products" || item.label === "Use Cases" ? "w-[345px]" : "w-[520px]";
@@ -470,7 +471,7 @@ export function Navbar() {
           </ul>
 
           <div className="flex items-center gap-4 lg:gap-5 justify-self-end">
-            <div className="hidden md:inline-flex">
+            <div className="navbarDesktopAction hidden md:inline-flex">
               <Link
                 href="/dashboard"
                 className={[
@@ -484,7 +485,7 @@ export function Navbar() {
             <Link
               href="/dashboard"
               className={[
-                "hidden md:inline-flex px-4 text-sm font-medium rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "navbarDesktopAction hidden md:inline-flex px-4 text-sm font-medium rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isCompact ? "py-1.5" : "py-2",
               ].join(" ")}
             >
@@ -511,6 +512,64 @@ export function Navbar() {
           </div>
         </div>
       </div>
-    </nav>
+      </nav>
+      <style jsx>{`
+        @media (width: 768px) and (height: 1024px) and (orientation: portrait) {
+          .navbarMobileMenu {
+            display: block !important;
+          }
+
+          .navbarDesktopNav {
+            display: none !important;
+          }
+
+          .navbarDesktopAction {
+            display: none !important;
+          }
+        }
+
+        @media (width: 820px) and (height: 1180px) and (orientation: portrait) {
+          .navbarMobileMenu {
+            display: block !important;
+          }
+
+          .navbarDesktopNav {
+            display: none !important;
+          }
+
+          .navbarDesktopAction {
+            display: none !important;
+          }
+        }
+
+        @media (width: 1024px) and (height: 1366px) and (orientation: portrait) {
+          .navbarMobileMenu {
+            display: block !important;
+          }
+
+          .navbarDesktopNav {
+            display: none !important;
+          }
+
+          .navbarDesktopAction {
+            display: none !important;
+          }
+        }
+
+        @media (width: 912px) and (height: 1368px) and (orientation: portrait) {
+          .navbarMobileMenu {
+            display: block !important;
+          }
+
+          .navbarDesktopNav {
+            display: none !important;
+          }
+
+          .navbarDesktopAction {
+            display: none !important;
+          }
+        }
+      `}</style>
+    </>
   );
 }
