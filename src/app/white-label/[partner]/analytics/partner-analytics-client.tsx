@@ -243,17 +243,7 @@ function BarChart({
                                     onBlur={() => tooltip.hide()}
                                     className="cursor-default"
                                 >
-                                    <motion.rect
-                                        initial={{ height: 0, y: top + plotH }}
-                                        animate={{ height: h, y }}
-                                        transition={{ duration: 0.5, ease: "easeOut", delay: 0.12 + i * 0.03 }}
-                                        x={x}
-                                        y={y}
-                                        width={barW}
-                                        height={h}
-                                        rx={12}
-                                        fill="url(#minutesBarGradient)"
-                                    />
+                                    <rect x={x} y={y} width={barW} height={h} rx={12} fill="url(#minutesBarGradient)" />
                                     <text
                                         x={x + barW / 2}
                                         y={top + plotH + 20}
@@ -397,17 +387,6 @@ function LineChart({
                         >
                             {xLabel}
                         </text>
-
-                        {highlightMax && maxIdx >= 0 ? (
-                            <rect
-                                x={xFor(maxIdx) - 26}
-                                y={top}
-                                width={52}
-                                height={plotH}
-                                rx={12}
-                                fill="rgba(234,179,8,0.16)"
-                            />
-                        ) : null}
 
                         <path d={areaD} fill={areaColor} />
                         <path d={d} fill="none" stroke={lineColor} strokeWidth={2.75} strokeLinejoin="round" strokeLinecap="round" />
