@@ -19,6 +19,7 @@ type AgentSettings = {
 type AgentSettingsResponse = {
     partner: { id: string; allowTransfer: boolean };
     tenant: { id: string };
+    agentSettings?: { transfer_enabled?: boolean };
     config: AgentSettings;
     updatedAt?: string;
 };
@@ -50,6 +51,11 @@ export default function WhiteLabelTenantAgentSettingsPage() {
     const [baseline, setBaseline] = useState<AgentSettings | null>(null);
     const [inlineError, setInlineError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+
+    const [testParallel, setTestParallel] = useState("10");
+    const [testing, setTesting] = useState(false);
+    const [testSummary, setTestSummary] = useState<{ ok: number; rateLimited: number; other: number } | null>(null);
+    const [cooldownUntil, setCooldownUntil] = useState<number>(0);
 
     const trimmedPrompt = systemPrompt.trim();
     const trimmedGreeting = greetingMessage.trim();
@@ -97,14 +103,15 @@ export default function WhiteLabelTenantAgentSettingsPage() {
             })
             .then((data) => {
                 if (cancelled) return;
-                setAllowTransfer(Boolean(data.partner.allowTransfer));
+                setAllowTransfer(Boolean(data.agentSettings?.transfer_enabled ?? data.partner.allowTransfer));
                 setSystemPrompt(data.config.systemPrompt ?? "");
                 setGreetingMessage(data.config.greetingMessage ?? "");
-                setTransferEnabled(Boolean(data.config.transferEnabled) && Boolean(data.partner.allowTransfer));
+                const transferAllowed = Boolean(data.agentSettings?.transfer_enabled ?? data.partner.allowTransfer);
+                setTransferEnabled(Boolean(data.config.transferEnabled) && transferAllowed);
                 setBaseline({
                     systemPrompt: data.config.systemPrompt ?? "",
                     greetingMessage: data.config.greetingMessage ?? "",
-                    transferEnabled: Boolean(data.config.transferEnabled) && Boolean(data.partner.allowTransfer),
+                    transferEnabled: Boolean(data.config.transferEnabled) && transferAllowed,
                 });
                 setLoaded(true);
             })
@@ -142,7 +149,7 @@ export default function WhiteLabelTenantAgentSettingsPage() {
             return;
         }
         if (transferEnabled && !allowTransfer) {
-            setInlineError("Call transfer is disabled by partner policy.");
+            setInlineError("This feature is disabled by partner policy.");
             return;
         }
 
@@ -159,14 +166,15 @@ export default function WhiteLabelTenantAgentSettingsPage() {
                 throw new Error(msg);
             }
             const out = data as AgentSettingsResponse;
-            setAllowTransfer(Boolean(out.partner.allowTransfer));
+            setAllowTransfer(Boolean(out.agentSettings?.transfer_enabled ?? out.partner.allowTransfer));
             setSystemPrompt(out.config.systemPrompt ?? "");
             setGreetingMessage(out.config.greetingMessage ?? "");
-            setTransferEnabled(Boolean(out.config.transferEnabled) && Boolean(out.partner.allowTransfer));
+            const transferAllowed = Boolean(out.agentSettings?.transfer_enabled ?? out.partner.allowTransfer);
+            setTransferEnabled(Boolean(out.config.transferEnabled) && transferAllowed);
             setBaseline({
                 systemPrompt: out.config.systemPrompt ?? "",
                 greetingMessage: out.config.greetingMessage ?? "",
-                transferEnabled: Boolean(out.config.transferEnabled) && Boolean(out.partner.allowTransfer),
+                transferEnabled: Boolean(out.config.transferEnabled) && transferAllowed,
             });
             setSuccess("Saved changes.");
         } catch (err) {
@@ -177,6 +185,68 @@ export default function WhiteLabelTenantAgentSettingsPage() {
     };
 
     const title = branding ? `${branding.displayName} Agent Settings` : "Agent Settings";
+
+    const canRunTest = useMemo(() => {
+        if (!tenantId) return false;
+        if (loading || saving) return false;
+        if (testing) return false;
+        if (Date.now() < cooldownUntil) return false;
+        const n = Number(testParallel);
+        if (!Number.isFinite(n) || n < 1) return false;
+        return true;
+    }, [cooldownUntil, loading, saving, tenantId, testParallel, testing]);
+
+    const cooldownSeconds = useMemo(() => {
+        const ms = cooldownUntil - Date.now();
+        if (ms <= 0) return 0;
+        return Math.ceil(ms / 1000);
+    }, [cooldownUntil]);
+
+    const runConcurrencyTest = async () => {
+        if (!canRunTest) return;
+        setTesting(true);
+        setTestSummary(null);
+        try {
+            const n = Math.max(1, Math.floor(Number(testParallel)));
+            const results = await Promise.all(
+                Array.from({ length: n }).map(async () => {
+                    try {
+                        const res = await fetch("/api/v1/assistant/execute", {
+                            method: "POST",
+                            headers: { "content-type": "application/json", accept: "application/json" },
+                            body: JSON.stringify({ action_type: "execute", source: "tenant", lead_id: tenantId, context: { partner_id: partnerId } }),
+                        });
+                        return res;
+                    } catch {
+                        return null;
+                    }
+                })
+            );
+            let ok = 0;
+            let rateLimited = 0;
+            let other = 0;
+            let retryAfterMs = 0;
+            for (const r of results) {
+                if (!r) {
+                    other += 1;
+                    continue;
+                }
+                if (r.status === 429) {
+                    rateLimited += 1;
+                    const ra = r.headers.get("retry-after");
+                    const sec = ra ? Number(ra) : 0;
+                    if (Number.isFinite(sec) && sec > 0) retryAfterMs = Math.max(retryAfterMs, sec * 1000);
+                    continue;
+                }
+                if (r.ok) ok += 1;
+                else other += 1;
+            }
+            setTestSummary({ ok, rateLimited, other });
+            if (retryAfterMs > 0) setCooldownUntil(Date.now() + retryAfterMs);
+        } finally {
+            setTesting(false);
+        }
+    };
 
     return (
         <DashboardLayout
@@ -243,28 +313,72 @@ export default function WhiteLabelTenantAgentSettingsPage() {
                     </div>
                 </div>
 
-                <div className="content-card space-y-3">
-                    <div className="text-sm font-semibold text-foreground">Call Transfer</div>
-                    <div className="text-sm text-muted-foreground">
-                        Allow the agent to transfer callers to a human when needed.
+                {allowTransfer ? (
+                    <div className="content-card space-y-3">
+                        <div className="text-sm font-semibold text-foreground">Call Transfer</div>
+                        <div className="text-sm text-muted-foreground">
+                            Allow the agent to transfer callers to a human when needed.
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                                <div className="text-sm font-semibold text-foreground">Enable Call Transfer</div>
+                                <div className="mt-1 text-xs text-muted-foreground">Toggle ON to permit transfer.</div>
+                            </div>
+                            <Switch
+                                checked={transferEnabled}
+                                onCheckedChange={(next) => {
+                                    setTransferEnabled(next);
+                                    setInlineError(null);
+                                    setSuccess(null);
+                                }}
+                                ariaLabel="Enable call transfer"
+                                disabled={loading || saving}
+                            />
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="min-w-0">
-                            <div className="text-sm font-semibold text-foreground">Enable Call Transfer</div>
-                            <div className="mt-1 text-xs text-muted-foreground">
-                                {allowTransfer ? "Toggle ON to permit transfer." : "Disabled by partner policy."}
+                ) : null}
+
+                <div className="content-card space-y-3">
+                    <div className="text-sm font-semibold text-foreground">Concurrency Test</div>
+                    <div className="text-sm text-muted-foreground">Simulate parallel requests from this sub-tenant to validate limit handling.</div>
+                    {testSummary ? (
+                        <div className="rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm text-foreground">
+                            <div className="flex flex-wrap gap-3">
+                                <span>
+                                    OK: <span className="font-semibold tabular-nums">{testSummary.ok}</span>
+                                </span>
+                                <span className="text-border">•</span>
+                                <span>
+                                    Rate-limited: <span className="font-semibold tabular-nums">{testSummary.rateLimited}</span>
+                                </span>
+                                <span className="text-border">•</span>
+                                <span>
+                                    Other: <span className="font-semibold tabular-nums">{testSummary.other}</span>
+                                </span>
                             </div>
                         </div>
-                        <Switch
-                            checked={transferEnabled}
-                            onCheckedChange={(next) => {
-                                setTransferEnabled(next);
-                                setInlineError(null);
-                                setSuccess(null);
-                            }}
-                            ariaLabel="Enable call transfer"
-                            disabled={!allowTransfer || loading || saving}
-                        />
+                    ) : null}
+                    {cooldownSeconds > 0 ? (
+                        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" role="alert">
+                            Concurrency limit reached. Please wait {cooldownSeconds}s before retrying.
+                        </div>
+                    ) : null}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="space-y-2">
+                            <Label htmlFor="parallelCalls">Parallel calls</Label>
+                            <Input
+                                id="parallelCalls"
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={testParallel}
+                                onChange={(e) => setTestParallel(e.target.value)}
+                                disabled={loading || saving || testing}
+                            />
+                        </div>
+                        <Button type="button" onClick={runConcurrencyTest} disabled={!canRunTest}>
+                            {testing ? "Running…" : cooldownSeconds > 0 ? `Blocked (${cooldownSeconds}s)` : "Run Test"}
+                        </Button>
                     </div>
                 </div>
 
@@ -292,4 +406,3 @@ export default function WhiteLabelTenantAgentSettingsPage() {
         </DashboardLayout>
     );
 }
-

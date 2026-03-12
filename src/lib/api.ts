@@ -1,10 +1,57 @@
 import { z } from "zod";
-import { setBrowserAuthToken } from "@/lib/auth-token";
+import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
 import { createHttpClient, ApiClientError } from "@/lib/http-client";
 import { apiBaseUrl } from "@/lib/env";
 
 function isDevAuthStubEnabled() {
     return process.env.NODE_ENV === "development";
+}
+
+function devMeForToken(token: string | null) {
+    const t = token?.trim() ?? "";
+    if (!t) {
+        return { id: "user-guest", email: "guest@talk-lee.ai", name: "Guest", business_name: "Talk-Lee", role: "user", minutes_remaining: 0 };
+    }
+    if (t === "wl-admin-token") {
+        return {
+            id: "usr_wl_admin",
+            email: "wl-admin@example.com",
+            name: "White-label Admin",
+            business_name: "Talk-Lee",
+            role: "white_label_admin",
+            minutes_remaining: 0,
+        };
+    }
+    const partnerToken = t.match(/^partner-([a-z0-9-]+)-token$/i);
+    if (partnerToken) {
+        const partnerId = (partnerToken[1] ?? "").toLowerCase();
+        return {
+            id: `usr_partner_${partnerId}`,
+            email: `partner-${partnerId}@example.com`,
+            name: `Partner Admin (${partnerId.toUpperCase()})`,
+            business_name: `Partner ${partnerId.toUpperCase()}`,
+            role: "partner_admin",
+            minutes_remaining: 0,
+        };
+    }
+    if (t === "dev-token" || t === "e2e-token") {
+        return {
+            id: `usr_${t === "dev-token" ? "dev" : "e2e"}`,
+            email: `${t === "dev-token" ? "dev" : "e2e"}@example.com`,
+            name: t === "dev-token" ? "Dev User" : "E2E User",
+            business_name: "Talk-Lee Demo Inc.",
+            role: "admin",
+            minutes_remaining: 1500,
+        };
+    }
+    return {
+        id: "user-001",
+        email: "demo@talk-lee.ai",
+        name: "Demo User",
+        business_name: "Talk-Lee Demo Inc.",
+        role: "admin",
+        minutes_remaining: 1500,
+    };
 }
 
 export const AuthResponseSchema = z
@@ -150,14 +197,7 @@ class ApiClient {
 
     async getMe(): Promise<MeResponse> {
         if (isDevAuthStubEnabled()) {
-            return MeResponseSchema.parse({
-                id: "user-001",
-                email: "demo@talk-lee.ai",
-                name: "Demo User",
-                business_name: "Talk-Lee Demo Inc.",
-                role: "admin",
-                minutes_remaining: 1500,
-            });
+            return MeResponseSchema.parse(devMeForToken(getBrowserAuthToken()));
         }
         const method = "GET" as const;
         try {

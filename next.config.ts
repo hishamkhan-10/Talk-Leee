@@ -48,6 +48,7 @@ const nextConfig: NextConfig = {
     webpack: (config, { dev }) => {
         if (dev) {
             const systemRootIgnored = /^[A-Z]:\\(?:DumpStack\.log\.tmp|hiberfil\.sys|pagefile\.sys|swapfile\.sys|System Volume Information)(?:\\.*)?$/i;
+            const artifactsIgnored = /[\\/](?:test-results|test-artifacts|playwright-report)[\\/]/i;
             const extraIgnoredGlobs = [
                 "**/DumpStack.log.tmp",
                 "**/hiberfil.sys",
@@ -55,14 +56,17 @@ const nextConfig: NextConfig = {
                 "**/swapfile.sys",
                 "**/System Volume Information",
                 "**/System Volume Information/**",
+                "**/test-results/**",
+                "**/test-artifacts/**",
+                "**/playwright-report/**",
             ];
 
             const existingIgnored = config.watchOptions?.ignored;
             const mergedIgnored =
                 existingIgnored instanceof RegExp
                     ? new RegExp(
-                          `${existingIgnored.source}|${systemRootIgnored.source}`,
-                          Array.from(new Set(`${existingIgnored.flags}${systemRootIgnored.flags}`.split(""))).join("")
+                          `${existingIgnored.source}|${systemRootIgnored.source}|${artifactsIgnored.source}`,
+                          Array.from(new Set(`${existingIgnored.flags}${systemRootIgnored.flags}${artifactsIgnored.flags}`.split(""))).join("")
                       )
                     : Array.isArray(existingIgnored)
                       ? [...existingIgnored, ...extraIgnoredGlobs]
@@ -74,7 +78,7 @@ const nextConfig: NextConfig = {
         }
         return config;
     },
-    // allowedDevOrigins: ["http://127.0.0.1:3100"],
+    allowedDevOrigins: ["http://127.0.0.1:3100", "http://localhost:3100"],
 };
 
 const authToken = process.env.SENTRY_AUTH_TOKEN;

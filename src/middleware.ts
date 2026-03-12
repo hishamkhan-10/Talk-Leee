@@ -3,6 +3,7 @@ import { authTokenCookieName } from "./lib/auth-token";
 
 const INTERNAL_BYPASS_HEADER = "x-talklee-mw-internal";
 const WHITE_LABEL_ADMIN_ROLE = "white_label_admin";
+const PARTNER_ADMIN_ROLE = "partner_admin";
 const WHITE_LABEL_DASHBOARD_PATH = "/white-label/dashboard";
 
 function setSecurityHeaders(res: NextResponse, input: { csp: string; inProd: boolean; https: boolean }) {
@@ -117,7 +118,7 @@ function apiBaseUrlForRequest(req: NextRequest) {
     return `${req.nextUrl.origin}/api/v1`;
 }
 
-async function fetchUserRoleFromBackend(input: { req: NextRequest; token: string }): Promise<string | null> {
+async function fetchUserContextFromBackend(input: { req: NextRequest; token: string }): Promise<{ role: string; partnerId: string | null } | null> {
     const baseUrl = apiBaseUrlForRequest(input.req);
     const endpoints = [`${baseUrl}/auth/me`, `${baseUrl}/me`];
     for (const url of endpoints) {
@@ -135,11 +136,23 @@ async function fetchUserRoleFromBackend(input: { req: NextRequest; token: string
             const data = (await res.json().catch(() => null)) as unknown;
             if (!data || typeof data !== "object") continue;
             const role = (data as { role?: unknown }).role;
-            if (typeof role === "string" && role.trim().length > 0) return role;
+            if (typeof role !== "string" || role.trim().length === 0) continue;
+            const partnerId =
+                (data as { partner_id?: unknown }).partner_id ?? (data as { partnerId?: unknown }).partnerId ?? (data as { partner?: unknown }).partner;
+            return { role, partnerId: typeof partnerId === "string" && partnerId.trim().length > 0 ? partnerId : null };
         } catch {
         }
     }
     return null;
+}
+
+function whiteLabelPartnerFromPath(pathname: string): string | null {
+    const m = pathname.match(/^\/white-label\/([^/]+)(?:\/|$)/);
+    if (!m) return null;
+    const seg = (m[1] ?? "").trim();
+    if (!seg) return null;
+    if (seg.toLowerCase() === "dashboard") return null;
+    return seg;
 }
 
 function readCookieFromHeader(req: NextRequest, name: string) {
@@ -196,7 +209,7 @@ export async function middleware(req: NextRequest) {
         .filter(Boolean)
         .join(" ");
 
-    const csp = [
+    const cspParts = [
         "default-src 'self'",
         `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
         "style-src 'self' 'unsafe-inline'",
@@ -209,9 +222,9 @@ export async function middleware(req: NextRequest) {
         "base-uri 'self'",
         "form-action 'self'",
         "frame-ancestors 'none'",
-        "upgrade-insecure-requests",
-        "block-all-mixed-content",
-    ].join("; ");
+        ...(https ? ["upgrade-insecure-requests", "block-all-mixed-content"] : []),
+    ];
+    const csp = cspParts.join("; ");
 
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("content-security-policy", csp);
@@ -226,7 +239,9 @@ export async function middleware(req: NextRequest) {
             !pathname.startsWith("/site.webmanifest");
 
         if (shouldCheckRole) {
-            const role = await fetchUserRoleFromBackend({ req, token });
+            const ctx = await fetchUserContextFromBackend({ req, token });
+            const role = ctx?.role ?? null;
+            const partnerId = ctx?.partnerId ?? null;
 
             if (role === WHITE_LABEL_ADMIN_ROLE) {
                 const isAllowed =
@@ -251,6 +266,27 @@ export async function middleware(req: NextRequest) {
                     const res = NextResponse.redirect(url);
                     setSecurityHeaders(res, { csp, inProd, https });
                     return res;
+                }
+
+                if (role === PARTNER_ADMIN_ROLE && partnerId && isWhiteLabelPath(pathname)) {
+                    if (pathname === "/white-label" || pathname === "/white-label/") {
+                        const url = req.nextUrl.clone();
+                        url.pathname = `/white-label/${encodeURIComponent(partnerId)}/dashboard`;
+                        url.search = "";
+                        const res = NextResponse.redirect(url);
+                        setSecurityHeaders(res, { csp, inProd, https });
+                        return res;
+                    }
+
+                    const wlPartner = whiteLabelPartnerFromPath(pathname);
+                    if (wlPartner && wlPartner.toLowerCase() !== partnerId.toLowerCase()) {
+                        const url = req.nextUrl.clone();
+                        url.pathname = "/403";
+                        url.search = "";
+                        const res = NextResponse.redirect(url);
+                        setSecurityHeaders(res, { csp, inProd, https });
+                        return res;
+                    }
                 }
             } else {
                 if (isWhiteLabelAdminPath(pathname) || isAdminOrInfrastructurePath(pathname)) {

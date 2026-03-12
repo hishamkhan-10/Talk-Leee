@@ -9,10 +9,10 @@ type RouteContext = { params: Promise<{ path?: string[] }> };
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function json(data: unknown, init?: { status?: number }) {
+function json(data: unknown, init?: { status?: number; headers?: Record<string, string> }) {
     return NextResponse.json(data, {
         status: init?.status ?? 200,
-        headers: { "cache-control": "no-store" },
+        headers: { "cache-control": "no-store", ...(init?.headers ?? {}) },
     });
 }
 
@@ -28,15 +28,117 @@ async function readJsonBody(request: Request) {
     }
 }
 
+type DevMe = {
+    id: string;
+    email: string;
+    name?: string;
+    business_name?: string;
+    role: string;
+    partner_id?: string;
+};
+
+function authTokenFromRequest(request: Request) {
+    const auth = request.headers.get("authorization") ?? "";
+    const m = auth.match(/^Bearer\s+(.+)$/i);
+    if (m) return (m[1] ?? "").trim();
+
+    const cookie = request.headers.get("cookie") ?? "";
+    for (const part of cookie.split(";")) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        const eq = trimmed.indexOf("=");
+        if (eq <= 0) continue;
+        const key = trimmed.slice(0, eq).trim();
+        if (key !== "talklee_auth_token") continue;
+        const raw = trimmed.slice(eq + 1).trim();
+        try {
+            return decodeURIComponent(raw);
+        } catch {
+            return raw;
+        }
+    }
+
+    return "";
+}
+
+function meForToken(token: string): DevMe | null {
+    const t = token.trim();
+    if (!t) return null;
+    if (t === "wl-admin-token") return { id: "usr_wl_admin", email: "wl-admin@example.com", role: "white_label_admin" };
+    const partner = t.match(/^partner-([a-z0-9-]+)-token$/i);
+    if (partner) {
+        const partnerId = (partner[1] ?? "").trim().toLowerCase();
+        if (partnerId) return { id: `usr_partner_${partnerId}`, email: `partner-${partnerId}@example.com`, role: "partner_admin", partner_id: partnerId };
+    }
+    if (t === "e2e-token") return { id: "usr_e2e", email: "e2e@example.com", role: "user" };
+    if (t === "dev-token") return { id: "usr_dev", email: "dev@example.com", role: "user" };
+    return { id: "usr_unknown", email: "unknown@example.com", role: "user" };
+}
+
+type PartnerRecord = {
+    partner_id: string;
+    display_name: string;
+    allow_transfer: boolean;
+    created_at: string;
+    admin_email: string;
+    admin_token: string;
+};
+
+const partnersStore = new Map<string, PartnerRecord>();
+const inflightByPartner = new Map<string, number>();
+
+function normalizePartnerId(raw: string) {
+    return raw.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function ensureSeedPartners() {
+    if (partnersStore.size > 0) return;
+    const created_at = nowIso();
+    for (const p of [
+        { partner_id: "acme", display_name: "Acme", allow_transfer: true },
+        { partner_id: "zen", display_name: "Zen", allow_transfer: false },
+    ]) {
+        partnersStore.set(p.partner_id, {
+            partner_id: p.partner_id,
+            display_name: p.display_name,
+            allow_transfer: p.allow_transfer,
+            created_at,
+            admin_email: `partner-${p.partner_id}@example.com`,
+            admin_token: `partner-${p.partner_id}-token`,
+        });
+    }
+}
+
+function partnerConcurrencyLimit(partnerId: string) {
+    const key = normalizePartnerId(partnerId);
+    if (key === "acme") return 10;
+    if (key === "zen") return 8;
+    return 5;
+}
+
+function brandingLogoUrl(branding: NonNullable<ReturnType<typeof getWhiteLabelBranding>>) {
+    const base = branding.logo.src;
+    const joiner = base.includes("?") ? "&" : "?";
+    return `${base}${joiner}wl=${encodeURIComponent(branding.partnerId)}&v=${encodeURIComponent(branding.version)}`;
+}
+
 type EmailTemplate = { id: string; name: string; html: string; locked?: boolean; thumbnailUrl?: string; updatedAt?: string };
 
-function emailTemplates(): EmailTemplate[] {
+function emailTemplates(input?: { branding?: NonNullable<ReturnType<typeof getWhiteLabelBranding>> | null }): EmailTemplate[] {
+    const branding = input?.branding ?? null;
+    const header = branding
+        ? `<div style="padding: 0 0 12px; margin: 0 0 16px; border-bottom: 1px solid ${branding.colors.secondary}; display: flex; align-items: center; gap: 10px;">
+                <img src="${brandingLogoUrl(branding)}" alt="${branding.logo.alt}" width="${branding.logo.width}" height="${branding.logo.height}" style="display:block;" />
+                <div style="font-size: 14px; font-weight: 600; color: ${branding.colors.primary};">${branding.displayName}</div>
+           </div>`
+        : "";
     return [
         {
             id: "tpl-basic",
             name: "Basic",
             html: buildResponsiveHtmlDocument(
                 `<div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111827;">
+                    ${header}
                     <h1 style="margin: 0 0 12px; font-size: 20px; line-height: 28px;">Hello</h1>
                     <p style="margin: 0 0 12px; font-size: 14px; line-height: 22px;">This is a test email from Talk-Lee.</p>
                     <p style="margin: 0; font-size: 12px; line-height: 18px; color: #6b7280;">If you did not expect this message, you can ignore it.</p>
@@ -50,6 +152,7 @@ function emailTemplates(): EmailTemplate[] {
             name: "Reminder",
             html: buildResponsiveHtmlDocument(
                 `<div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111827;">
+                    ${header}
                     <h1 style="margin: 0 0 12px; font-size: 20px; line-height: 28px;">Reminder</h1>
                     <p style="margin: 0 0 12px; font-size: 14px; line-height: 22px;">You have an upcoming item.</p>
                     <div style="margin: 16px 0; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb;">
@@ -249,6 +352,50 @@ async function handle(request: Request, segments: string[]) {
         return json({ status: "ok" });
     }
 
+    if (method === "GET" && (path === "/auth/me" || path === "/me")) {
+        const token = authTokenFromRequest(request);
+        const me = meForToken(token);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        return json(me);
+    }
+
+    if (path === "/white-label/partners") {
+        ensureSeedPartners();
+        const token = authTokenFromRequest(request);
+        const me = meForToken(token);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        if (me.role !== "white_label_admin") return json({ detail: "Forbidden" }, { status: 403 });
+
+        if (method === "GET") {
+            return json({ items: Array.from(partnersStore.values()).sort((a, b) => a.partner_id.localeCompare(b.partner_id)) });
+        }
+
+        if (method === "POST") {
+            const body = (await readJsonBody(request)) as
+                | { partner_id?: string; display_name?: string; allow_transfer?: boolean; admin_email?: string }
+                | undefined;
+            const partnerId = normalizePartnerId(String(body?.partner_id ?? ""));
+            const displayName = String(body?.display_name ?? "").trim();
+            const adminEmail = String(body?.admin_email ?? "").trim();
+            const allowTransfer = Boolean(body?.allow_transfer ?? true);
+            if (!partnerId) return json({ detail: "partner_id is required" }, { status: 400 });
+            if (!displayName) return json({ detail: "display_name is required" }, { status: 400 });
+            if (!adminEmail || !/@/.test(adminEmail)) return json({ detail: "admin_email must be a valid email" }, { status: 400 });
+            if (partnersStore.has(partnerId)) return json({ detail: "Partner already exists" }, { status: 409 });
+
+            const rec: PartnerRecord = {
+                partner_id: partnerId,
+                display_name: displayName,
+                allow_transfer: allowTransfer,
+                created_at: nowIso(),
+                admin_email: adminEmail,
+                admin_token: `partner-${partnerId}-token`,
+            };
+            partnersStore.set(partnerId, rec);
+            return json(rec, { status: 201 });
+        }
+    }
+
     {
         const m = path.match(/^\/white-label\/partners\/([^/]+)\/tenants\/([^/]+)\/agent-settings$/);
         if (m) {
@@ -257,7 +404,16 @@ async function handle(request: Request, segments: string[]) {
             const branding = getWhiteLabelBranding(partnerId);
             if (!branding) return json({ error: "Unknown partner" }, { status: 404 });
 
-            const allowTransfer = branding.features.callTransfer;
+            const token = authTokenFromRequest(request);
+            const me = meForToken(token);
+            if (me?.role === "partner_admin" && typeof me.partner_id === "string" && me.partner_id.trim().length > 0) {
+                if (me.partner_id.trim().toLowerCase() !== branding.partnerId.trim().toLowerCase()) {
+                    return json({ detail: "Forbidden" }, { status: 403 });
+                }
+            }
+
+            ensureSeedPartners();
+            const allowTransfer = partnersStore.get(branding.partnerId)?.allow_transfer ?? branding.features.callTransfer;
             const key = `${branding.partnerId}:${tenantId}`;
             const existing = agentSettingsByTenant.get(key) ?? defaultAgentSettings({ partnerId: branding.partnerId, tenantId });
             const config = allowTransfer ? existing : { ...existing, transferEnabled: false };
@@ -266,6 +422,7 @@ async function handle(request: Request, segments: string[]) {
                 return json({
                     partner: { id: branding.partnerId, allowTransfer },
                     tenant: { id: tenantId },
+                    agentSettings: { transfer_enabled: allowTransfer },
                     config: { systemPrompt: config.systemPrompt, greetingMessage: config.greetingMessage, transferEnabled: config.transferEnabled },
                     updatedAt: config.updatedAt,
                 });
@@ -282,7 +439,7 @@ async function handle(request: Request, segments: string[]) {
                 if (nextGreeting.length === 0) return json({ detail: "Greeting message cannot be empty" }, { status: 400 });
 
                 const nextTransfer = Boolean(parsed.data.transferEnabled);
-                if (nextTransfer && !allowTransfer) return json({ detail: "Call transfer is disabled by partner policy" }, { status: 400 });
+                if (nextTransfer && !allowTransfer) return json({ detail: "This feature is disabled by partner policy" }, { status: 400 });
 
                 const updated: AgentSettings = {
                     systemPrompt: nextPrompt,
@@ -295,6 +452,7 @@ async function handle(request: Request, segments: string[]) {
                 return json({
                     partner: { id: branding.partnerId, allowTransfer },
                     tenant: { id: tenantId },
+                    agentSettings: { transfer_enabled: allowTransfer },
                     config: { systemPrompt: updated.systemPrompt, greetingMessage: updated.greetingMessage, transferEnabled: updated.transferEnabled },
                     updatedAt: updated.updatedAt,
                 });
@@ -305,7 +463,10 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "GET" && path === "/email/templates") {
-        return json({ items: emailTemplates() });
+        const url = new URL(request.url);
+        const partnerId = (url.searchParams.get("partner") ?? url.searchParams.get("partnerId") ?? "").trim();
+        const branding = partnerId.length > 0 ? getWhiteLabelBranding(partnerId) : null;
+        return json({ items: emailTemplates({ branding }) });
     }
 
     if (method === "POST" && path === "/email/send") {
@@ -512,7 +673,36 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/assistant/execute") {
-        return json({ id: `run-${Math.random().toString(16).slice(2)}`, actionType: "execute", source: "ui", status: "pending", createdAt: nowIso() });
+        const token = authTokenFromRequest(request);
+        const me = meForToken(token);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+
+        const partnerId = typeof me.partner_id === "string" && me.partner_id.trim().length > 0 ? me.partner_id.trim().toLowerCase() : "default";
+        const limit = partnerConcurrencyLimit(partnerId);
+        const inflight = inflightByPartner.get(partnerId) ?? 0;
+        if (inflight >= limit) {
+            return json(
+                { detail: `Concurrency limit reached (${limit}).`, code: "concurrency_limit_reached", partner_id: partnerId, limit, inflight },
+                { status: 429, headers: { "retry-after": "3" } }
+            );
+        }
+        inflightByPartner.set(partnerId, inflight + 1);
+        setTimeout(() => {
+            const cur = inflightByPartner.get(partnerId) ?? 0;
+            if (cur <= 1) inflightByPartner.delete(partnerId);
+            else inflightByPartner.set(partnerId, cur - 1);
+        }, 900);
+
+        return json({
+            id: `run-${Math.random().toString(16).slice(2)}`,
+            actionType: "execute",
+            source: "ui",
+            status: "pending",
+            createdAt: nowIso(),
+            partner_id: partnerId,
+            limit,
+            inflight: inflight + 1,
+        });
     }
 
     return json({ error: "Not found" }, { status: 404 });

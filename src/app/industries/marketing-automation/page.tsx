@@ -6,6 +6,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Video } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Supercharge Marketing with Talkly AI",
   description: "Turn Leads into Customers with Smarter AI Marketing Automation",

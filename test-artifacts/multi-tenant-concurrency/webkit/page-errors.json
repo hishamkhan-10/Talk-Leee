@@ -1,0 +1,18 @@
+[
+  "requestfailed: https://127.0.0.1:3100/_next/static/css/app/layout.css?v=1773343071763 SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/_next/static/chunks/webpack.js?v=1773343071763 SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/_next/static/chunks/app/global-error.js SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/_next/static/chunks/main-app.js?v=1773343071763 SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/_next/static/chunks/app/layout.js SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/_next/static/chunks/app-pages-internals.js SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/_next/static/chunks/app/white-label/dashboard/page.js SSL connect error",
+  "console.error: Failed to load resource: SSL connect error",
+  "requestfailed: https://127.0.0.1:3100/site.webmanifest SSL connect error",
+  "console.error: Failed to load resource: SSL connect error"
+]

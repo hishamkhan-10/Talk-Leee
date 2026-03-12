@@ -507,14 +507,10 @@ function TenantFormModal({
     onSubmit: (tenant: { tenantName: string; allocatedMinutes: number; subConcurrency: number }) => void;
 }) {
     const [draft, setDraft] = useState<TenantDraft>(initialDraft);
-    const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof TenantDraft, string>>>({});
-    const [inlineError, setInlineError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!open) return;
         setDraft(initialDraft);
-        setFieldErrors({});
-        setInlineError(null);
     }, [initialDraft, open]);
 
     const normalizedNames = useMemo(() => {
@@ -526,34 +522,37 @@ function TenantFormModal({
         return set;
     }, [editingTenantId, existingTenants]);
 
-    const validate = () => {
-        const nextErrors: Partial<Record<keyof TenantDraft, string>> = {};
+    const validation = useMemo(() => {
+        const errors: Partial<Record<keyof TenantDraft, string>> = {};
         const name = draft.tenantName.trim();
-        if (name.length === 0) nextErrors.tenantName = "Tenant name is required.";
-        if (name.length > 0 && normalizedNames.has(name.toLowerCase())) nextErrors.tenantName = "Tenant name must be unique for this partner.";
+        if (name.length === 0) errors.tenantName = "Tenant name is required.";
+        if (name.length > 0 && normalizedNames.has(name.toLowerCase())) errors.tenantName = "Tenant name must be unique for this partner.";
 
         const minutes = parseNonNegativeInt(draft.allocatedMinutes);
-        if (minutes === null) nextErrors.allocatedMinutes = "Allocated minutes must be a whole number (0 or greater).";
+        if (minutes === null) errors.allocatedMinutes = "Allocated minutes must be a whole number (0 or greater).";
         if (typeof minutes === "number" && minutes > remainingMinutes) {
-            nextErrors.allocatedMinutes = `Allocated minutes exceed remaining capacity (${remainingMinutes.toLocaleString()}).`;
+            errors.allocatedMinutes = `Allocated minutes exceed remaining capacity (${remainingMinutes.toLocaleString()}).`;
         }
 
         const conc = parsePositiveInt(draft.subConcurrency);
-        if (conc === null) nextErrors.subConcurrency = "Sub-concurrency must be a whole number (1 or greater).";
+        if (conc === null) errors.subConcurrency = "Sub-concurrency must be a whole number (1 or greater).";
         if (typeof conc === "number" && conc > remainingConcurrency) {
-            nextErrors.subConcurrency = `Sub-concurrency exceeds remaining capacity (${remainingConcurrency.toLocaleString()}).`;
+            errors.subConcurrency = `Sub-concurrency exceeds remaining capacity (${remainingConcurrency.toLocaleString()}).`;
         }
 
-        setFieldErrors(nextErrors);
-        const msgs = Object.values(nextErrors).filter(Boolean) as string[];
-        if (msgs.length > 0) {
-            const combined = msgs[0]!;
-            setInlineError(combined);
-            return null;
-        }
-        setInlineError(null);
-        return { tenantName: name, allocatedMinutes: minutes!, subConcurrency: conc! };
-    };
+        const msgs = Object.values(errors).filter(Boolean) as string[];
+        const message = msgs.length > 0 ? msgs[0]! : null;
+        const value =
+            message === null && minutes !== null && conc !== null
+                ? { tenantName: name, allocatedMinutes: minutes, subConcurrency: conc }
+                : null;
+        return { errors, message, value };
+    }, [draft, normalizedNames, remainingConcurrency, remainingMinutes]);
+
+    const showInlineError = Boolean(
+        validation.message &&
+            (draft.tenantName.trim().length > 0 || draft.allocatedMinutes.trim().length > 0 || draft.subConcurrency.trim().length > 0 || remainingConcurrency === 0)
+    );
 
     return (
         <Modal
@@ -570,10 +569,10 @@ function TenantFormModal({
                     </Button>
                     <Button
                         type="button"
+                        disabled={!validation.value}
                         onClick={() => {
-                            const v = validate();
-                            if (!v) return;
-                            onSubmit(v);
+                            if (!validation.value) return;
+                            onSubmit(validation.value);
                         }}
                     >
                         {submitLabel}
@@ -582,9 +581,9 @@ function TenantFormModal({
             }
         >
             <div className="space-y-4">
-                {inlineError ? (
+                {showInlineError ? (
                     <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">
-                        {inlineError}
+                        {validation.message}
                     </div>
                 ) : null}
 
@@ -596,9 +595,9 @@ function TenantFormModal({
                         value={draft.tenantName}
                         onChange={(e) => setDraft((prev) => ({ ...prev, tenantName: e.target.value }))}
                         placeholder="Clinic AI"
-                        aria-invalid={Boolean(fieldErrors.tenantName)}
+                        aria-invalid={Boolean(validation.errors.tenantName)}
                     />
-                    {fieldErrors.tenantName ? <div className="text-xs text-destructive">{fieldErrors.tenantName}</div> : null}
+                    {validation.errors.tenantName ? <div className="text-xs text-destructive">{validation.errors.tenantName}</div> : null}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -613,12 +612,12 @@ function TenantFormModal({
                             value={draft.allocatedMinutes}
                             onChange={(e) => setDraft((prev) => ({ ...prev, allocatedMinutes: e.target.value }))}
                             placeholder="1000"
-                            aria-invalid={Boolean(fieldErrors.allocatedMinutes)}
+                            aria-invalid={Boolean(validation.errors.allocatedMinutes)}
                         />
                         <div className="text-xs text-muted-foreground">
                             Remaining: <span className="font-semibold tabular-nums text-foreground">{remainingMinutes.toLocaleString()}</span>
                         </div>
-                        {fieldErrors.allocatedMinutes ? <div className="text-xs text-destructive">{fieldErrors.allocatedMinutes}</div> : null}
+                        {validation.errors.allocatedMinutes ? <div className="text-xs text-destructive">{validation.errors.allocatedMinutes}</div> : null}
                     </div>
 
                     <div className="space-y-2">
@@ -632,12 +631,12 @@ function TenantFormModal({
                             value={draft.subConcurrency}
                             onChange={(e) => setDraft((prev) => ({ ...prev, subConcurrency: e.target.value }))}
                             placeholder="3"
-                            aria-invalid={Boolean(fieldErrors.subConcurrency)}
+                            aria-invalid={Boolean(validation.errors.subConcurrency)}
                         />
                         <div className="text-xs text-muted-foreground">
                             Remaining: <span className="font-semibold tabular-nums text-foreground">{remainingConcurrency.toLocaleString()}</span>
                         </div>
-                        {fieldErrors.subConcurrency ? <div className="text-xs text-destructive">{fieldErrors.subConcurrency}</div> : null}
+                        {validation.errors.subConcurrency ? <div className="text-xs text-destructive">{validation.errors.subConcurrency}</div> : null}
                     </div>
                 </div>
             </div>
