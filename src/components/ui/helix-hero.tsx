@@ -452,7 +452,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <motion.div
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 hidden md:flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
+                className="heroTrustedBadgeTop pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 hidden md:flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
             >
                 <CheckCircle className="w-4 h-4 text-foreground" />
                 <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
@@ -516,10 +516,10 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } }}
-                        className="flex flex-col items-center gap-2 mb-6"
+                        className="heroHeadlineContainer flex flex-col items-center gap-2 mb-6"
                     >
-                        <div className="md:hidden mb-3">
-                            <div className="mx-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 border border-border text-[11px] font-medium text-muted-foreground text-center whitespace-nowrap">
+                        <div className="heroTrustedBadgeInlineWrap md:hidden mb-3">
+                            <div className="heroTrustedBadgeInline mx-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 border border-border text-[11px] font-medium text-muted-foreground text-center whitespace-nowrap">
                                 <CheckCircle className="w-4 h-4 text-foreground" />
                                 <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
                                     Trusted by 10,000+ businesses worldwide
@@ -542,7 +542,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                                 {headlineB}
                             </span>
                         </h1>
-                        <h1 className="mt-10 hidden md:block">
+                        <h1 className="heroDesktopTitle mt-10 hidden md:block">
                             <span className="heroTitleGlow block" style={{ fontFamily: "var(--font-orbitron)" }}>
                                 <MagneticText
                                     text={headlineA}
@@ -628,6 +628,223 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                 @keyframes ping {
                     75%, 100% { transform: scale(1.15); opacity: 0; }
                 }
+
+                @media (width: 768px) and (height: 1024px) and (orientation: portrait) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
+
+                @media (width: 820px) and (height: 1180px) and (orientation: portrait) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
+
+                @media (width: 834px) and (height: 1194px) and (orientation: portrait) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
+
+                @media (width: 1024px) and (height: 1366px) and (orientation: portrait) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
+
+                @media (width: 912px) and (height: 1368px) and (orientation: portrait) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
+
+                @media (width: 853px) and (height: 1280px) and (orientation: portrait) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
+
+                @media (width: 1280px) and (height: 800px) and (orientation: landscape) {
+                    :global(.heroTrustedBadgeTop) {
+                        display: none !important;
+                    }
+
+                    :global(.heroTrustedBadgeInlineWrap) {
+                        display: block !important;
+                        margin-bottom: 10px !important;
+                    }
+
+                    :global(.heroTrustedBadgeInline) {
+                        display: inline-flex !important;
+                        flex-wrap: wrap !important;
+                        max-width: calc(100vw - 2rem) !important;
+                        padding: 6px 16px !important;
+                        gap: 8px !important;
+                        font-size: 14px !important;
+                        line-height: 1.1 !important;
+                        text-align: center !important;
+                        white-space: normal !important;
+                    }
+
+                    .heroHeadlineContainer {
+                        gap: 8px !important;
+                    }
+
+                    .heroDesktopTitle {
+                        margin-top: 0 !important;
+                    }
+                }
                 .heroAskAiPing {
                     animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
                 }
@@ -656,6 +873,23 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
 
                     .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
                         margin-top: 0.4rem !important;
+                    }
+                }
+
+                @media (width: 344px) and (height: 882px) {
+                    .heroMobileTitle {
+                        font-size: 16px !important;
+                        line-height: 1.08 !important;
+                        padding-left: 10px;
+                        padding-right: 10px;
+                    }
+
+                    .heroMobileTitle .heroTitleGlow {
+                        white-space: nowrap !important;
+                    }
+
+                    .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+                        margin-top: 0.45rem !important;
                     }
                 }
 

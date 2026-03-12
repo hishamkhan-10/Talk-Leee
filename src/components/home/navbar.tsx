@@ -569,6 +569,34 @@ export function Navbar() {
             display: none !important;
           }
         }
+
+        @media (width: 853px) and (height: 1280px) and (orientation: portrait) {
+          .navbarMobileMenu {
+            display: block !important;
+          }
+
+          .navbarDesktopNav {
+            display: none !important;
+          }
+
+          .navbarDesktopAction {
+            display: none !important;
+          }
+        }
+
+        @media (width: 1024px) and (height: 600px) and (orientation: landscape) {
+          .navbarMobileMenu {
+            display: block !important;
+          }
+
+          .navbarDesktopNav {
+            display: none !important;
+          }
+
+          .navbarDesktopAction {
+            display: none !important;
+          }
+        }
       `}</style>
     </>
   );

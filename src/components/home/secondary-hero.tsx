@@ -552,11 +552,16 @@ export function SecondaryHero() {
             grid-template-columns: 1fr !important;
           }
 
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
           :global(.secondaryHeroImageWrap) {
             max-width: 100% !important;
             min-height: 380px !important;
             border-right: 0 !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
           }
 
           :global(.dark) :global(.secondaryHeroImageWrap) {
@@ -586,11 +591,55 @@ export function SecondaryHero() {
             grid-template-columns: 1fr !important;
           }
 
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
           :global(.secondaryHeroImageWrap) {
             max-width: 100% !important;
             min-height: 420px !important;
             border-right: 0 !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
+          }
+
+          :global(.dark) :global(.secondaryHeroImageWrap) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          }
+
+          :global(.secondaryHeroContent) {
+            text-align: center !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+          }
+
+          :global(.secondaryHeroFeatures) {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            max-width: 46rem !important;
+          }
+
+          :global(.secondaryHeroCtas) {
+            justify-content: center !important;
+            align-items: center !important;
+          }
+        }
+
+        @media (width: 834px) and (height: 1194px) and (orientation: portrait) {
+          :global(.secondaryHeroGrid) {
+            grid-template-columns: 1fr !important;
+          }
+
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
+          :global(.secondaryHeroImageWrap) {
+            max-width: 100% !important;
+            min-height: 420px !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
           }
 
           :global(.dark) :global(.secondaryHeroImageWrap) {
@@ -620,11 +669,16 @@ export function SecondaryHero() {
             grid-template-columns: 1fr !important;
           }
 
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
           :global(.secondaryHeroImageWrap) {
             max-width: 100% !important;
             min-height: 520px !important;
             border-right: 0 !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
           }
 
           :global(.dark) :global(.secondaryHeroImageWrap) {
@@ -654,11 +708,16 @@ export function SecondaryHero() {
             grid-template-columns: 1fr !important;
           }
 
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
           :global(.secondaryHeroImageWrap) {
             max-width: 100% !important;
             min-height: 500px !important;
             border-right: 0 !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
           }
 
           :global(.dark) :global(.secondaryHeroImageWrap) {
@@ -675,6 +734,84 @@ export function SecondaryHero() {
             margin-left: auto !important;
             margin-right: auto !important;
             max-width: 48rem !important;
+          }
+
+          :global(.secondaryHeroCtas) {
+            justify-content: center !important;
+            align-items: center !important;
+          }
+        }
+
+        @media (width: 853px) and (height: 1280px) and (orientation: portrait) {
+          :global(.secondaryHeroGrid) {
+            grid-template-columns: 1fr !important;
+          }
+
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
+          :global(.secondaryHeroImageWrap) {
+            max-width: 100% !important;
+            min-height: 520px !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
+          }
+
+          :global(.dark) :global(.secondaryHeroImageWrap) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          }
+
+          :global(.secondaryHeroContent) {
+            text-align: center !important;
+            padding-left: 28px !important;
+            padding-right: 28px !important;
+          }
+
+          :global(.secondaryHeroFeatures) {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            max-width: 50rem !important;
+          }
+
+          :global(.secondaryHeroCtas) {
+            justify-content: center !important;
+            align-items: center !important;
+          }
+        }
+
+        @media (width: 1024px) and (height: 600px) and (orientation: landscape) {
+          :global(.secondaryHeroGrid) {
+            grid-template-columns: 1fr !important;
+          }
+
+          :global(.secondaryHeroPlayer) {
+            max-width: 100% !important;
+          }
+
+          :global(.secondaryHeroImageWrap) {
+            max-width: 100% !important;
+            min-height: 300px !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+            background-color: #ffffff !important;
+          }
+
+          :global(.dark) :global(.secondaryHeroImageWrap) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          }
+
+          :global(.secondaryHeroContent) {
+            text-align: center !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+          }
+
+          :global(.secondaryHeroFeatures) {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            max-width: 46rem !important;
           }
 
           :global(.secondaryHeroCtas) {
