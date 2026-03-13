@@ -186,7 +186,7 @@ export function Navbar() {
         }}
       >
         <div className="mx-auto w-full max-w-7xl">
-          <div className="grid w-full h-full grid-cols-[auto_1fr_auto] items-center px-2 sm:px-4">
+          <div className="grid w-full h-full grid-cols-[1fr_auto_1fr] items-center px-2 sm:px-4">
             <div className="flex items-center gap-3 justify-self-start">
               <details
                 ref={mobileMenuRef}
@@ -339,7 +339,7 @@ export function Navbar() {
               href="/"
               className={[
                 "font-medium tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg transition-[font-size] duration-200 ease-out",
-                isCompact ? "text-lg" : "text-xl",
+                isCompact ? "text-base" : "text-lg",
                 "text-foreground hover:text-foreground",
               ].join(" ")}
               aria-label="Talk-Lee home"
@@ -348,7 +348,10 @@ export function Navbar() {
             </Link>
           </div>
 
-          <ul className="navbarDesktopNav hidden md:flex items-center justify-center gap-5 lg:gap-8 xl:gap-10" role="list">
+          <ul
+            className="navbarDesktopNav hidden md:flex items-center justify-center justify-self-center gap-2 lg:gap-3 xl:gap-4"
+            role="list"
+          >
             {menuItems.map((item) => {
               const isIndustriesDropdown = item.label === "Industries";
               const dropdownWidthClass = isIndustriesDropdown ? "w-[680px]" : item.label === "Products" || item.label === "Use Cases" ? "w-[345px]" : "w-[520px]";
@@ -365,7 +368,7 @@ export function Navbar() {
                       <button
                         type="button"
                         className={[
-                          "home-nav-link text-sm font-medium focus-visible:outline-none",
+                          "home-nav-link text-[13px] font-medium focus-visible:outline-none",
                           "text-foreground/80 hover:text-foreground",
                           "inline-flex items-center gap-1",
                         ].join(" ")}
@@ -451,7 +454,7 @@ export function Navbar() {
                     <Link
                       href={item.href}
                       className={[
-                        "home-nav-link text-sm font-medium focus-visible:outline-none",
+                        "home-nav-link text-[13px] font-medium focus-visible:outline-none",
                         "text-foreground/80 hover:text-foreground",
                       ].join(" ")}
                       aria-current={item.href === "/" ? "page" : undefined}
@@ -470,12 +473,12 @@ export function Navbar() {
             })}
           </ul>
 
-          <div className="flex items-center gap-4 lg:gap-5 justify-self-end">
+          <div className="flex items-center gap-2 lg:gap-3 justify-self-end">
             <div className="navbarDesktopAction hidden md:inline-flex">
               <Link
                 href="/dashboard"
                 className={[
-                  "home-nav-link text-sm font-medium focus-visible:outline-none",
+                  "home-nav-link text-[13px] font-medium focus-visible:outline-none",
                   "text-foreground/80 hover:text-foreground",
                 ].join(" ")}
               >
@@ -485,8 +488,8 @@ export function Navbar() {
             <Link
               href="/dashboard"
               className={[
-                "navbarDesktopAction hidden md:inline-flex px-4 text-sm font-medium rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isCompact ? "py-1.5" : "py-2",
+                "navbarDesktopAction hidden md:inline-flex px-3 text-[13px] font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                isCompact ? "py-1" : "py-1.5",
               ].join(" ")}
             >
               Start Free Trial
@@ -497,16 +500,16 @@ export function Navbar() {
               className={[
                 "inline-flex items-center justify-center rounded-full hover:scale-[1.03] transition-[background-color,transform,color,width,height] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 "text-foreground/80 hover:text-foreground hover:bg-white/10",
-                isCompact ? "w-9 h-9" : "w-10 h-10",
+                isCompact ? "w-8 h-8" : "w-9 h-9",
               ].join(" ")}
               aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
               aria-pressed={theme === "dark"}
               title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
             >
               {theme === "dark" ? (
-                <Sun width={18} height={18} aria-hidden />
+                <Sun width={16} height={16} aria-hidden />
               ) : (
-                <Moon width={18} height={18} aria-hidden />
+                <Moon width={16} height={16} aria-hidden />
               )}
             </button>
           </div>
