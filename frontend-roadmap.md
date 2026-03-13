@@ -1,10 +1,128 @@
-# Talk-Lee Frontend-roadmap.md
+## System Architecture
+- The Talk-lee platform is composed of four primary layers that work together to deliver real-time voice sessions while exposing configuration, operations, and observability through the dashboard:
+  - Frontend (Next.js Dashboard): the web UI that users and operators interact with to configure AI options, manage connectors, view sessions/records, and trigger workflows
+  - Backend API Layer: the authoritative system-of-record for users, tenants, configuration, and operational workflows; exposes REST endpoints consumed by the dashboard
+  - Session + Voice Pipeline: real-time session orchestration and audio processing that manages active calls and voice interaction flows
+  - Telephony Infrastructure: SIP routing and call handling systems that connect Talk-lee to carriers and BYO SIP providers
+
+### Architecture Flow
+```text
+Browser Dashboard
+        |
+        v
+Next.js Frontend
+        |
+        v
+Backend API
+        |
+        v
+Session Layer
+        |
+        v
+Call Stability Layer
+        |
+        v
+Voice Pipeline (C++)
+        |
+        v
+Asterisk
+        |
+        v
+OpenSIPS
+        |
+        v
+SIP Provider / BYO SIP
+```
+
+### Layer Responsibilities (High-Level)
+- Browser Dashboard: renders the UI, handles authenticated navigation, and triggers API calls (React Query + typed API modules)
+- Next.js Frontend: application shell, feature pages, UI components, and a small set of local Next route handlers used for proxying/prototyping in this repo
+- Backend API: validates auth/tenant context, persists configuration and workflows, and provides endpoints for dashboard features (connectors, meetings, reminders, email, voice configuration)
+- Session Layer: manages the lifecycle of live sessions (call initiation, session state, handoffs) and exposes session-related operations to the backend
+- Call Stability Layer: focuses on resiliency during live calls (reconnect/retry strategies, health checks, and graceful degradation)
+- Voice Pipeline (C++): real-time audio/voice processing and integration glue used during active calls
+- Asterisk: core telephony engine handling call setup/media bridging and interaction with SIP systems
+- OpenSIPS: SIP proxy/routing and policy layer that routes calls to upstream carriers or BYO SIP endpoints
+- SIP Provider / BYO SIP: external carrier/provider interface or partner-managed SIP infrastructure
+
+### How the Frontend Fits In
+- The Next.js dashboard does not talk directly to SIP infrastructure. It interacts with the platform via the Backend API.
+- Configuration and workflows created in the dashboard (AI provider settings, connector state, meeting/reminder actions, email templates) are persisted and enforced by the Backend API.
+- Live session and call operations surface through the Backend API, which coordinates downstream session and telephony layers.
 
 ## 1) Project Overview
 - Framework: Next.js App Router (Next 15) + React 19 ([package.json](file:///c:/Users/User/Desktop/Talk-Leee/package.json))
 - UI approach: Tailwind CSS v4 + a shadcn-style component set in `src/components/ui` (see [globals.css](file:///c:/Users/User/Desktop/Talk-Leee/src/app/globals.css))
 - Data layer: TanStack React Query v5 for server state + a few lightweight client stores for UI/local persistence (see [app-providers.tsx](file:///c:/Users/User/Desktop/Talk-Leee/src/components/providers/app-providers.tsx), [notifications.ts](file:///c:/Users/User/Desktop/Talk-Leee/src/lib/notifications.ts), [email-audit.ts](file:///c:/Users/User/Desktop/Talk-Leee/src/lib/email-audit.ts))
 - API strategy: a custom HTTP client + typed “API modules” and React Query hooks; plus a local `/api/v1/*` Next route acting as a dev/prototype backend for many features (see [http-client.ts](file:///c:/Users/User/Desktop/Talk-Leee/src/lib/http-client.ts), [api-hooks.ts](file:///c:/Users/User/Desktop/Talk-Leee/src/lib/api-hooks.ts), [route.ts](file:///c:/Users/User/Desktop/Talk-Leee/src/app/api/v1/%5B...path%5D/route.ts))
+
+## Environment Configuration
+- The frontend uses environment variables (typically via `.env.local`) to select backend routing, control observability integration, and set runtime environment behavior.
+
+### Frontend Environment Variables
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL used by the frontend to call backend APIs. If unset, the app may fallback to local `/api/v1` behavior depending on runtime and environment defaults. |
+| `NEXT_PUBLIC_SENTRY_DSN` | Enables Sentry monitoring for client-side error reporting when configured. |
+| `NEXT_PUBLIC_APP_ENV` | Defines the application environment: `development`, `staging`, or `production`. |
+
+### `NEXT_PUBLIC_APP_ENV` Values
+- `development`
+- `staging`
+- `production`
+
+### Example: `.env.local`
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3100/api/v1
+NEXT_PUBLIC_APP_ENV=development
+```
+
+### Environment Rules
+- Production deployments must define `NEXT_PUBLIC_API_BASE_URL`.
+- Local development may fallback to `/api/v1` when `NEXT_PUBLIC_API_BASE_URL` is not set (see [env.ts](file:///c:/Users/User/Desktop/Talk-Leee/src/lib/env.ts#L55-L66)).
+
+## Development Workflow
+### Start the Project
+```bash
+npm install
+npm run dev
+```
+
+- The application runs at: `http://localhost:3000`
+
+### Connecting to Backend Environments
+- Local backend:
+  - `NEXT_PUBLIC_API_BASE_URL=http://localhost:3100/api/v1`
+- Remote development backend:
+  - `NEXT_PUBLIC_API_BASE_URL=https://dev-api.talklee.ai`
+
+### Testing
+```bash
+npm run test
+npm run test:visual
+```
+
+### Linting and Type Checking
+```bash
+npm run lint
+npm run typecheck
+```
+
+### Storybook
+```bash
+npm run storybook
+```
+
+- Storybook is used for UI component development and visual testing of shared primitives under `src/components/ui`.
+
+## Local dev commands (canonical):
+  - `npm run dev`
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run test`
+  - `npm run test:visual`
+  - `npm run storybook`
+  ([package.json](file:///c:/Users/User/Desktop/Talk-Leee/package.json))
 
 ## 2) Folder Structure & Key Files
 - `src/app/*`: App Router pages + local API routes
@@ -105,6 +223,43 @@ Screenshot:
 Screenshot:
 
 
+## Feature Ownership
+- Feature ownership helps developers and external partners identify the team responsible for maintenance, implementation decisions, and review routing.
+
+| Feature | Owner |
+| --- | --- |
+| AI Options | AI Team |
+| Voice Configuration | Voice Team |
+| Connectors | Integration Team |
+| Meetings | Scheduling Team |
+| Assistant Actions | Agent Team |
+
+## Feature Integration Status
+- This table indicates which frontend modules are production-ready end-to-end and which are still operating in prototype mode (local routes/dummy modules) and require a real backend at `NEXT_PUBLIC_API_BASE_URL`.
+
+| Feature | Status |
+| --- | --- |
+| AI Voices | Production |
+| Email | Production |
+| Meetings | Prototype |
+| Reminders | Prototype |
+| Contacts Import | Prototype |
+| Recordings | Prototype |
+
+## White-Label Compatibility
+- The Talk-lee frontend supports multi-tenant white-label deployments where multiple tenant organizations share the same codebase while keeping data and feature access isolated.
+
+### Key Capabilities
+- Tenant-scoped data: all feature data is expected to be tenant-isolated by the backend and surfaced in the dashboard per authenticated tenant context.
+- Configurable branding layer: partner-specific branding (logo, colors, naming) can be applied without changing core product flows.
+- Feature flagging per tenant: features can be enabled/disabled for a tenant to support phased rollouts and partner contracts.
+- Tenant-specific dashboard configuration: navigation, default views, and available modules can be tailored per tenant.
+
+### What White-Label Partners Receive
+- Custom branded dashboard aligned to partner identity
+- Restricted feature access via tenant-level feature flags and role-based access control
+- Tenant-isolated data governed by the Backend API and auth context
+
 ## 8) Styling, Theming & UI System
 - Tailwind v4 is used for styling (see dependencies in [package.json](file:///c:/Users/User/Desktop/Talk-Leee/package.json))
 - App-wide styling lives in [globals.css](file:///c:/Users/User/Desktop/Talk-Leee/src/app/globals.css) (custom background shapes, `content-card` style, theme tokens)
@@ -146,17 +301,9 @@ Screenshot:
 
 ### Screenshots and Links
 - Product imagery:
- - [public/images/login-page.jpg](file:///c:/Users/User/Desktop/Talk-Leee/public/images/login-page.jpg)
+  - [public/images/login-page.jpg](file:///c:/Users/User/Desktop/Talk-Leee/public/images/login-page.jpg)
   - [public/images/ai-voice-section..jpg](file:///c:/Users/User/Desktop/Talk-Leee/public/images/ai-voice-section..jpg)
 - Visual regression snapshots (Playwright):
   - [dashboard-kpi-row-*](file:///c:/Users/User/Desktop/Talk-Leee/tests/dashboard-first-row.visual.spec.ts-snapshots/)
   - [home-hero-player-*](file:///c:/Users/User/Desktop/Talk-Leee/tests/home-hero.video.visual.spec.ts-snapshots/)
   - [home-secondary-hero-player-*](file:///c:/Users/User/Desktop/Talk-Leee/tests/home-secondary-hero.video.visual.spec.ts-snapshots/)
-## Local dev commands (canonical):
-  - `npm run dev`
-  `npm run lint`
-  `npm run typecheck`
-  `npm run test`
-  `npm run test:visual`
-  `npm run storybook`
-  ([package.json](file:///c:/Users/User/Desktop/Talk-Leee/package.json))
