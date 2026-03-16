@@ -187,7 +187,7 @@ export function Navbar() {
       >
         <div className="mx-auto w-full max-w-7xl">
           <div className="grid w-full h-full grid-cols-[1fr_auto_1fr] items-center px-2 sm:px-4">
-            <div className="flex items-center gap-3 justify-self-start">
+            <div className="col-start-1 flex items-center gap-3 justify-self-start">
               <details
                 ref={mobileMenuRef}
                 className="navbarMobileMenu relative md:hidden group"
@@ -349,7 +349,7 @@ export function Navbar() {
           </div>
 
           <ul
-            className="navbarDesktopNav hidden md:flex items-center justify-center justify-self-center gap-2 lg:gap-3 xl:gap-4"
+            className="navbarDesktopNav col-start-2 hidden md:flex items-center justify-center justify-self-center gap-2 lg:gap-3 xl:gap-4"
             role="list"
           >
             {menuItems.map((item) => {
@@ -473,7 +473,7 @@ export function Navbar() {
             })}
           </ul>
 
-          <div className="flex items-center gap-2 lg:gap-3 justify-self-end">
+          <div className="navbarThemeWrap col-start-3 flex items-center gap-2 lg:gap-3 justify-self-end">
             <div className="navbarDesktopAction hidden md:inline-flex">
               <Link
                 href="/dashboard"
@@ -598,6 +598,60 @@ export function Navbar() {
 
           .navbarDesktopAction {
             display: none !important;
+          }
+        }
+
+        @media (width: 375px) and (height: 667px) {
+          .navbarThemeWrap {
+            position: absolute !important;
+            right: 4px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+          }
+        }
+
+        @media (width: 414px) and (height: 896px) {
+          .navbarThemeWrap {
+            position: absolute !important;
+            right: 6px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+          }
+        }
+
+        @media (width: 390px) and (height: 844px) {
+          .navbarThemeWrap {
+            position: absolute !important;
+            right: 6px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+          }
+        }
+
+        @media (width: 430px) and (height: 932px) {
+          .navbarThemeWrap {
+            position: absolute !important;
+            right: 6px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+          }
+        }
+
+        @media (width: 412px) and (height: 915px) {
+          .navbarThemeWrap {
+            position: absolute !important;
+            right: 6px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+          }
+        }
+
+        @media (width: 360px) and (height: 740px) {
+          .navbarThemeWrap {
+            position: absolute !important;
+            right: 4px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
           }
         }
       `}</style>
