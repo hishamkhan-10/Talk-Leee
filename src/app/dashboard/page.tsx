@@ -301,7 +301,7 @@ function OutcomePieChart({
 
     return (
         <div className="relative">
-            <HoverTooltip state={tooltip.state} />
+            <HoverTooltip tooltip={tooltip} />
             <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[260px] h-auto mx-auto">
                 {paths.map((p) => (
                     <path
@@ -400,7 +400,7 @@ function StatusStackedBarsChart({
 
     return (
         <div className="relative">
-            <HoverTooltip state={tooltip.state} />
+            <HoverTooltip tooltip={tooltip} />
             <svg
                 ref={svgRef}
                 viewBox={`0 0 ${w} ${height}`}
@@ -602,7 +602,7 @@ function CampaignLinesChart({
 
     return (
         <div className="relative">
-            <HoverTooltip state={tooltip.state} />
+            <HoverTooltip tooltip={tooltip} />
             <svg
                 ref={svgRef}
                 viewBox={`0 0 ${w} ${height}`}
@@ -1567,7 +1567,7 @@ export default function DashboardPage() {
                             className="rounded-2xl border border-border bg-background/70 backdrop-blur-sm p-6 shadow-sm transition-[background-color,box-shadow] duration-150 ease-out dark:hover:bg-background dark:hover:shadow-md"
                         >
                             <h3 className="text-xl font-bold text-gray-900 dark:text-foreground mb-4 uppercase tracking-wide">Minutes Usage</h3>
-                            <HoverTooltip state={minutesTooltip.state} className="w-[280px] text-sm font-semibold" />
+                            <HoverTooltip tooltip={minutesTooltip} className="w-[280px] text-sm font-semibold" />
                             <motion.div
                                 className="group rounded-2xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                 tabIndex={0}

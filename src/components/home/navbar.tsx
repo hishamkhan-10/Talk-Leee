@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, ChevronDown, PhoneCall, Sparkles, Moon, Sun, X, Headphones, BadgeCheck } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { getBrowserAuthToken, setBrowserAuthToken } from "@/lib/auth-token";
@@ -10,6 +10,7 @@ import { industryNavItems } from "@/Industries/industries";
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === "/";
   const isAiVoices = pathname === "/ai-voices" || pathname.startsWith("/ai-voices/");
   const isUseCasesPage = pathname.startsWith("/use-cases");
@@ -27,53 +28,56 @@ export function Navbar() {
   const isCompact = true;
   const [isInHeroZone, setIsInHeroZone] = useState(true);
   const [suppressedDropdownLabel, setSuppressedDropdownLabel] = useState<string | null>(null);
+  const prefetchedRef = useRef<Set<string>>(new Set());
 
-  const menuItems = [
-    { label: "Home", href: "/" },
-    {
-      label: "Products",
-      items: [
-        {
-          label: "AI Voice Dialer",
-          href: "/ai-voice-dialer",
-          description: "Automate calls, emails, and workflows with human-like voice agents.",
-          icon: PhoneCall,
-        },
-        {
-          label: "AI Assist",
-          href: "/ai-assist",
-          description: "Real-time guidance, call insights, and automated follow-ups for teams.",
-          icon: Sparkles,
-        },
-        {
-          label: "AI Voice Agent",
-          href: "/ai-voice-agent",
-          description: "Smarter conversations with natural dialogue and seamless handoffs.",
-          icon: Bot,
-        },
-      ],
-    },
-    {
-      label: "Use Cases",
-      items: [
-        {
-          label: "Customer Services & Support",
-          href: "/use-cases/customer-services-support",
-          description: "Deliver faster resolutions and consistent support with AI-powered conversations.",
-          icon: Headphones,
-        },
-        {
-          label: "Automated Lead Qualification",
-          href: "/use-cases/automated-lead-qualification",
-          description: "Engage, score, and route leads instantly so reps focus on high-intent prospects.",
-          icon: BadgeCheck,
-        },
-      ],
-    },
-    { label: "Industries", items: [...industryNavItems] },
-    { label: "FAQ", href: isHome ? "#faq" : "/#faq" },
-    { label: "Contact", href: isHome ? "#contact" : "/#contact" },
-  ];
+  const menuItems = useMemo(() => {
+    return [
+      { label: "Home", href: "/" },
+      {
+        label: "Products",
+        items: [
+          {
+            label: "AI Voice Dialer",
+            href: "/ai-voice-dialer",
+            description: "Automate calls, emails, and workflows with human-like voice agents.",
+            icon: PhoneCall,
+          },
+          {
+            label: "AI Assist",
+            href: "/ai-assist",
+            description: "Real-time guidance, call insights, and automated follow-ups for teams.",
+            icon: Sparkles,
+          },
+          {
+            label: "AI Voice Agent",
+            href: "/ai-voice-agent",
+            description: "Smarter conversations with natural dialogue and seamless handoffs.",
+            icon: Bot,
+          },
+        ],
+      },
+      {
+        label: "Use Cases",
+        items: [
+          {
+            label: "Customer Services & Support",
+            href: "/use-cases/customer-services-support",
+            description: "Deliver faster resolutions and consistent support with AI-powered conversations.",
+            icon: Headphones,
+          },
+          {
+            label: "Automated Lead Qualification",
+            href: "/use-cases/automated-lead-qualification",
+            description: "Engage, score, and route leads instantly so reps focus on high-intent prospects.",
+            icon: BadgeCheck,
+          },
+        ],
+      },
+      { label: "Industries", items: [...industryNavItems] },
+      { label: "FAQ", href: isHome ? "#faq" : "/#faq" },
+      { label: "Contact", href: isHome ? "#contact" : "/#contact" },
+    ];
+  }, [isHome]);
 
   type MenuItem = (typeof menuItems)[number];
   type DropdownWithChildrenItem = Extract<MenuItem, { items: unknown[] }>;
@@ -83,6 +87,18 @@ export function Navbar() {
     "items" in item && Array.isArray(item.items) && item.items.length > 0;
 
   const isLinkItem = (item: MenuItem): item is LinkItem => "href" in item && typeof item.href === "string";
+
+  const prefetchHref = useCallback(
+    (href: string) => {
+      if (!href.startsWith("/")) return;
+      if (prefetchedRef.current.has(href)) return;
+      prefetchedRef.current.add(href);
+      try {
+        router.prefetch(href);
+      } catch {}
+    },
+    [router]
+  );
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -363,6 +379,9 @@ export function Navbar() {
                       className="group relative"
                       onMouseLeave={() => {
                         setSuppressedDropdownLabel(null);
+                      }}
+                      onMouseEnter={() => {
+                        for (const child of item.items) prefetchHref(child.href);
                       }}
                     >
                       <button

@@ -19,7 +19,6 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   const [activeVideo, setActiveVideo] = useState<0 | 1>(0);
   const activeVideoRef = useRef<0 | 1>(0);
   const isCrossfadingRef = useRef(false);
-  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const el = playerRef.current;
@@ -227,15 +226,19 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
 
     if (!isInView) return;
 
-    const tick = () => {
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+
+    const onTimeUpdate = () => {
       check();
-      rafRef.current = requestAnimationFrame(tick);
     };
 
-    rafRef.current = requestAnimationFrame(tick);
+    a.addEventListener("timeupdate", onTimeUpdate);
+    b.addEventListener("timeupdate", onTimeUpdate);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+      a.removeEventListener("timeupdate", onTimeUpdate);
+      b.removeEventListener("timeupdate", onTimeUpdate);
     };
   }, [isInView, resolvedSrc, shouldLoadVideo]);
 

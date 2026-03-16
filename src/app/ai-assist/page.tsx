@@ -10,8 +10,6 @@ export const metadata: Metadata = {
 };
 
 export default function AIAssistPage() {
-  const cardClassName =
-    "rounded-2xl border border-border/70 bg-background/70 dark:bg-white/5 backdrop-blur-sm p-6 shadow-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-border";
   const accentCardClassName =
     "group rounded-2xl border border-border/70 bg-transparent backdrop-blur-sm p-6 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:brightness-[1.02] hover:border-border hover:shadow-md";
   const accentCardStyle = {

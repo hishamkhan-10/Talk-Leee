@@ -122,7 +122,6 @@ function NavbarHeroBackgroundVideo() {
   const activeIndexRef = useRef<0 | 1>(0);
   const isCrossfadingRef = useRef(false);
   const fadeTimeoutRef = useRef<number | null>(null);
-  const rafRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<0 | 1>(0);
   const [isInView, setIsInView] = useState(true);
 
@@ -311,26 +310,26 @@ function NavbarHeroBackgroundVideo() {
 
   useEffect(() => {
     if (!isInView) return;
+    const videoA = videoARef.current;
+    const videoB = videoBRef.current;
+    if (!videoA || !videoB) return;
 
     const loopThresholdSeconds = 0.24;
-    const tick = () => {
-      const videoA = videoARef.current;
-      const videoB = videoBRef.current;
-      if (videoA && videoB && !isCrossfadingRef.current) {
-        const active = activeIndexRef.current === 0 ? videoA : videoB;
-        const duration = active.duration;
-        if (Number.isFinite(duration) && duration > 0 && !active.paused && !active.ended) {
-          const remaining = duration - active.currentTime;
-          if (remaining > 0 && remaining <= loopThresholdSeconds) triggerCrossfade();
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick);
+    const onTimeUpdate = () => {
+      if (isCrossfadingRef.current) return;
+      const active = activeIndexRef.current === 0 ? videoA : videoB;
+      const duration = active.duration;
+      if (!Number.isFinite(duration) || duration <= 0) return;
+      if (active.paused || active.ended) return;
+      const remaining = duration - active.currentTime;
+      if (remaining > 0 && remaining <= loopThresholdSeconds) triggerCrossfade();
     };
 
-    rafRef.current = requestAnimationFrame(tick);
+    videoA.addEventListener("timeupdate", onTimeUpdate);
+    videoB.addEventListener("timeupdate", onTimeUpdate);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+      videoA.removeEventListener("timeupdate", onTimeUpdate);
+      videoB.removeEventListener("timeupdate", onTimeUpdate);
     };
   }, [isInView, triggerCrossfade]);
 

@@ -168,7 +168,7 @@ function BarChart({
             </div>
 
             <div className="mt-4 relative">
-                <HoverTooltip state={tooltip.state} />
+                <HoverTooltip tooltip={tooltip} />
                 <div className="overflow-x-auto">
                     <svg width={width} height={height} className="min-w-full">
                         <rect x={left} y={top} width={width - left - right} height={plotH} rx={14} fill="hsl(var(--muted) / 0.45)" />
@@ -340,7 +340,7 @@ function LineChart({
             </div>
 
             <div className="mt-4 relative">
-                <HoverTooltip state={tooltip.state} />
+                <HoverTooltip tooltip={tooltip} />
                 <div className="overflow-x-auto">
                     <svg width={width} height={height} className="min-w-full">
                         <rect x={left} y={top} width={plotW} height={plotH} rx={14} fill="hsl(var(--muted) / 0.45)" />

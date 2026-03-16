@@ -332,7 +332,7 @@ export function Sidebar({ className }: { className?: string }) {
                 {NavContent}
             </ViewportDrawer>
 
-            <HoverTooltip state={tooltip.state} />
+            <HoverTooltip tooltip={tooltip} />
 
             <div ref={measureRef} className="pointer-events-none absolute -left-[10000px] top-0 opacity-0 whitespace-nowrap">
                 {measurementLabels.map((label) => (
