@@ -3,6 +3,17 @@ import nodemailer from "nodemailer";
 import { z } from "zod";
 import { buildResponsiveHtmlDocument } from "@/lib/email-utils";
 import { getWhiteLabelBranding } from "@/lib/white-label/branding";
+import {
+    authMeFromRequest,
+    authTokenFromRequest,
+    buildSessionCookie,
+    clearSessionCookie,
+    clientIpFromRequest,
+    loginWithPassword,
+    logoutSession,
+    registerUser,
+    userAgentFromRequest,
+} from "@/server/auth-core";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 
@@ -12,6 +23,13 @@ export const dynamic = "force-dynamic";
 function json(data: unknown, init?: { status?: number; headers?: Record<string, string> }) {
     return NextResponse.json(data, {
         status: init?.status ?? 200,
+        headers: { "cache-control": "no-store", ...(init?.headers ?? {}) },
+    });
+}
+
+function noContent(init?: { status?: number; headers?: Record<string, string> }) {
+    return new NextResponse(null, {
+        status: init?.status ?? 204,
         headers: { "cache-control": "no-store", ...(init?.headers ?? {}) },
     });
 }
@@ -28,51 +46,10 @@ async function readJsonBody(request: Request) {
     }
 }
 
-type DevMe = {
-    id: string;
-    email: string;
-    name?: string;
-    business_name?: string;
-    role: string;
-    partner_id?: string;
-};
-
-function authTokenFromRequest(request: Request) {
-    const auth = request.headers.get("authorization") ?? "";
-    const m = auth.match(/^Bearer\s+(.+)$/i);
-    if (m) return (m[1] ?? "").trim();
-
-    const cookie = request.headers.get("cookie") ?? "";
-    for (const part of cookie.split(";")) {
-        const trimmed = part.trim();
-        if (!trimmed) continue;
-        const eq = trimmed.indexOf("=");
-        if (eq <= 0) continue;
-        const key = trimmed.slice(0, eq).trim();
-        if (key !== "talklee_auth_token") continue;
-        const raw = trimmed.slice(eq + 1).trim();
-        try {
-            return decodeURIComponent(raw);
-        } catch {
-            return raw;
-        }
-    }
-
-    return "";
-}
-
-function meForToken(token: string): DevMe | null {
-    const t = token.trim();
-    if (!t) return null;
-    if (t === "wl-admin-token") return { id: "usr_wl_admin", email: "wl-admin@example.com", role: "white_label_admin" };
-    const partner = t.match(/^partner-([a-z0-9-]+)-token$/i);
-    if (partner) {
-        const partnerId = (partner[1] ?? "").trim().toLowerCase();
-        if (partnerId) return { id: `usr_partner_${partnerId}`, email: `partner-${partnerId}@example.com`, role: "partner_admin", partner_id: partnerId };
-    }
-    if (t === "e2e-token") return { id: "usr_e2e", email: "e2e@example.com", role: "user" };
-    if (t === "dev-token") return { id: "usr_dev", email: "dev@example.com", role: "user" };
-    return { id: "usr_unknown", email: "unknown@example.com", role: "user" };
+function isHttps(request: Request) {
+    const forwarded = request.headers.get("x-forwarded-proto");
+    if (forwarded) return forwarded.split(",")[0]!.trim().toLowerCase() === "https";
+    return request.url.startsWith("https:");
 }
 
 type PartnerRecord = {
@@ -322,6 +299,24 @@ const AgentSettingsInputSchema = z
 
 const agentSettingsByTenant = new Map<string, AgentSettings>();
 
+const RegisterInputSchema = z
+    .object({
+        email: z.string().email(),
+        password: z.string().min(1),
+        username: z.string().min(3).max(64).optional(),
+        name: z.string().min(1).max(120).optional(),
+        business_name: z.string().min(1).max(160).optional(),
+    })
+    .strict();
+
+const LoginInputSchema = z
+    .object({
+        email: z.string().email().optional(),
+        identifier: z.string().min(1).optional(),
+        password: z.string().min(1),
+    })
+    .strict();
+
 function defaultAgentSettings(input: { partnerId: string; tenantId: string }): AgentSettings {
     const now = nowIso();
     const partnerKey = input.partnerId.trim().toLowerCase();
@@ -353,16 +348,87 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "GET" && (path === "/auth/me" || path === "/me")) {
-        const token = authTokenFromRequest(request);
-        const me = meForToken(token);
+        const me = await authMeFromRequest(request);
         if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
         return json(me);
     }
 
+    if (method === "POST" && path === "/auth/register") {
+        const body = await readJsonBody(request);
+        const parsed = RegisterInputSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+        try {
+            const res = await registerUser({
+                email: parsed.data.email,
+                password: parsed.data.password,
+                username: parsed.data.username,
+                name: parsed.data.name,
+                businessName: parsed.data.business_name,
+            });
+            if (!res.ok && res.code === "weak_password") {
+                return json({ detail: "Password does not meet requirements", failures: res.failures }, { status: 400 });
+            }
+            if (!res.ok && res.code === "conflict") {
+                return json({ detail: "Email is already in use" }, { status: 409 });
+            }
+            if (!res.ok) return json({ detail: "Registration failed" }, { status: 400 });
+            return json(res.user, { status: 201 });
+        } catch {
+            return json({ detail: "Registration failed" }, { status: 500 });
+        }
+    }
+
+    if (method === "POST" && path === "/auth/login") {
+        const body = await readJsonBody(request);
+        const parsed = LoginInputSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const identifier = (parsed.data.email ?? parsed.data.identifier ?? "").trim();
+        if (!identifier) return json({ detail: "Invalid credentials" }, { status: 401 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const userAgent = userAgentFromRequest(request);
+
+        const result = await loginWithPassword({
+            identifier,
+            password: parsed.data.password,
+            ipAddress,
+            userAgent,
+        });
+
+        if (!result.ok && result.code === "rate_limited") {
+            return json(
+                { detail: "Too many login attempts" },
+                { status: 429, headers: { "retry-after": String(result.retryAfterSeconds) } }
+            );
+        }
+        if (!result.ok && result.code === "db_unavailable") {
+            return json({ detail: "Service unavailable" }, { status: 503 });
+        }
+        if (!result.ok) {
+            return json({ detail: "Invalid credentials" }, { status: 401 });
+        }
+
+        const cookie = buildSessionCookie({ sessionId: result.session.sessionId, expiresAt: result.session.expiresAt, secure: isHttps(request) });
+        return json(
+            { id: result.user.id, email: result.user.email, role: result.user.role, message: "ok" },
+            { headers: { "set-cookie": cookie } }
+        );
+    }
+
+    if (method === "POST" && path === "/auth/logout") {
+        const token = authTokenFromRequest(request);
+        try {
+            await logoutSession(token);
+        } catch {
+        }
+        const cookie = clearSessionCookie({ secure: isHttps(request) });
+        return noContent({ headers: { "set-cookie": cookie } });
+    }
+
     if (path === "/white-label/partners") {
         ensureSeedPartners();
-        const token = authTokenFromRequest(request);
-        const me = meForToken(token);
+        const me = await authMeFromRequest(request);
         if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
         if (me.role !== "white_label_admin") return json({ detail: "Forbidden" }, { status: 403 });
 
@@ -404,8 +470,7 @@ async function handle(request: Request, segments: string[]) {
             const branding = getWhiteLabelBranding(partnerId);
             if (!branding) return json({ error: "Unknown partner" }, { status: 404 });
 
-            const token = authTokenFromRequest(request);
-            const me = meForToken(token);
+            const me = await authMeFromRequest(request);
             if (me?.role === "partner_admin" && typeof me.partner_id === "string" && me.partner_id.trim().length > 0) {
                 if (me.partner_id.trim().toLowerCase() !== branding.partnerId.trim().toLowerCase()) {
                     return json({ detail: "Forbidden" }, { status: 403 });
@@ -673,8 +738,7 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/assistant/execute") {
-        const token = authTokenFromRequest(request);
-        const me = meForToken(token);
+        const me = await authMeFromRequest(request);
         if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
 
         const partnerId = typeof me.partner_id === "string" && me.partner_id.trim().length > 0 ? me.partner_id.trim().toLowerCase() : "default";

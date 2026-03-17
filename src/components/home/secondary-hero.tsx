@@ -165,7 +165,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           el.removeEventListener("timeupdate", onTimeUpdate);
           if (frameRequestId) {
             const cancel = (el as unknown as { cancelVideoFrameCallback?: (id: number) => void }).cancelVideoFrameCallback;
-            cancel?.(frameRequestId);
+            cancel?.call(el, frameRequestId);
           }
           resolve();
         };
@@ -179,7 +179,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         el.addEventListener("timeupdate", onTimeUpdate);
 
         const request = (el as unknown as { requestVideoFrameCallback?: (cb: () => void) => number }).requestVideoFrameCallback;
-        if (request) frameRequestId = request(() => finish());
+        if (request) frameRequestId = request.call(el, () => finish());
         window.setTimeout(finish, timeoutMs);
       });
 
