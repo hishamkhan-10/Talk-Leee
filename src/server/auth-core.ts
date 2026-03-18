@@ -35,6 +35,12 @@ type DbSessionRow = {
     revoked_at: Date | null;
 };
 
+type DbUserMfaRow = {
+    user_id: string;
+    secret_encrypted: string;
+    is_enabled: boolean;
+};
+
 let authSchemaReady: Promise<void> | undefined;
 
 function nowMs() {
@@ -207,11 +213,63 @@ export async function ensureAuthSchema() {
             )
         `);
         await sql.unsafe(`create index if not exists auth_rate_limits_window_idx on auth_rate_limits (window_start)`);
+
+        await sql.unsafe(`
+            create table if not exists user_mfa (
+                user_id uuid primary key references users(id) on delete cascade,
+                secret_encrypted text not null,
+                is_enabled boolean not null default false,
+                created_at timestamptz not null default now(),
+                updated_at timestamptz not null default now()
+            )
+        `);
+        await sql.unsafe(`create index if not exists user_mfa_enabled_idx on user_mfa (is_enabled)`);
+
+        await sql.unsafe(`
+            create table if not exists recovery_codes (
+                id uuid primary key,
+                user_id uuid not null references users(id) on delete cascade,
+                code_hash text not null,
+                used boolean not null default false,
+                created_at timestamptz not null default now()
+            )
+        `);
+        await sql.unsafe(`create index if not exists recovery_codes_user_id_idx on recovery_codes (user_id)`);
+        await sql.unsafe(`create index if not exists recovery_codes_used_idx on recovery_codes (used)`);
+
+        await sql.unsafe(`
+            create table if not exists user_passkeys (
+                id uuid primary key,
+                user_id uuid not null references users(id) on delete cascade,
+                credential_id text not null,
+                public_key bytea not null,
+                sign_count bigint not null default 0,
+                device_name text,
+                created_at timestamptz not null default now(),
+                updated_at timestamptz not null default now()
+            )
+        `);
+        await sql.unsafe(`create unique index if not exists user_passkeys_credential_id_unique on user_passkeys (credential_id)`);
+        await sql.unsafe(`create index if not exists user_passkeys_user_id_idx on user_passkeys (user_id)`);
+
+        await sql.unsafe(`
+            create table if not exists auth_webauthn_challenges (
+                challenge text primary key,
+                kind text not null check (kind in ('registration','authentication')),
+                user_id uuid references users(id) on delete cascade,
+                identifier text,
+                ip_address text,
+                user_agent text,
+                expires_at timestamptz not null,
+                created_at timestamptz not null default now()
+            )
+        `);
+        await sql.unsafe(`create index if not exists auth_webauthn_challenges_expires_at_idx on auth_webauthn_challenges (expires_at)`);
     })();
     return authSchemaReady;
 }
 
-async function consumeRateLimit(input: { bucket: string; limit: number; windowSeconds: number }) {
+export async function consumeAuthRateLimit(input: { bucket: string; limit: number; windowSeconds: number }) {
     const sql = getSql();
     const now = new Date();
     const windowMs = input.windowSeconds * 1000;
@@ -425,8 +483,6 @@ export async function loginWithPassword(input: { identifier: string; password: s
     }
     await ensureAuthSchema();
 
-    const sql = getSql();
-
     const ipBucketLimit = parsePositiveInt(process.env.AUTH_LOGIN_LIMIT_PER_IP_PER_MINUTE, 10);
     const userBucketLimit = parsePositiveInt(process.env.AUTH_LOGIN_LIMIT_PER_IDENTIFIER_PER_MINUTE, 10);
 
@@ -434,8 +490,8 @@ export async function loginWithPassword(input: { identifier: string; password: s
     const idBucket = `login:id:${input.identifier.trim().toLowerCase() || "unknown"}`;
 
     const [ipLimit, idLimit] = await Promise.all([
-        consumeRateLimit({ bucket: ipBucket, limit: ipBucketLimit, windowSeconds: 60 }),
-        consumeRateLimit({ bucket: idBucket, limit: userBucketLimit, windowSeconds: 60 }),
+        consumeAuthRateLimit({ bucket: ipBucket, limit: ipBucketLimit, windowSeconds: 60 }),
+        consumeAuthRateLimit({ bucket: idBucket, limit: userBucketLimit, windowSeconds: 60 }),
     ]);
 
     if (!ipLimit.allowed || !idLimit.allowed) {
@@ -460,14 +516,95 @@ export async function loginWithPassword(input: { identifier: string; password: s
 
     await clearFailedLoginState(user.id);
 
+    const session = await createSessionForUser({
+        userId: user.id,
+        ipAddress: input.ipAddress,
+        userAgent: input.userAgent,
+        mfaVerified: false,
+    });
+    if (!session.ok) return session;
+    return { ok: true as const, session: session.session, user: { id: user.id, email: user.email, role: user.role } };
+}
+
+export async function verifyPasswordLoginAttempt(input: { identifier: string; password: string; ipAddress: string; userAgent: string }) {
+    if (!isDatabaseConfigured()) {
+        return { ok: false as const, code: "db_unavailable" as const };
+    }
+    await ensureAuthSchema();
+
+    const ipBucketLimit = parsePositiveInt(process.env.AUTH_LOGIN_LIMIT_PER_IP_PER_MINUTE, 10);
+    const userBucketLimit = parsePositiveInt(process.env.AUTH_LOGIN_LIMIT_PER_IDENTIFIER_PER_MINUTE, 10);
+
+    const ipBucket = `login:ip:${input.ipAddress || "unknown"}`;
+    const idBucket = `login:id:${input.identifier.trim().toLowerCase() || "unknown"}`;
+
+    const [ipLimit, idLimit] = await Promise.all([
+        consumeAuthRateLimit({ bucket: ipBucket, limit: ipBucketLimit, windowSeconds: 60 }),
+        consumeAuthRateLimit({ bucket: idBucket, limit: userBucketLimit, windowSeconds: 60 }),
+    ]);
+
+    if (!ipLimit.allowed || !idLimit.allowed) {
+        const retryAfterSeconds = Math.max(ipLimit.retryAfterSeconds, idLimit.retryAfterSeconds);
+        return { ok: false as const, code: "rate_limited" as const, retryAfterSeconds };
+    }
+
+    const user = await findUserByIdentifier(input.identifier);
+    const lockedUntil = user ? (await getUserSecurity(user.id)).locked_until : null;
+    if (lockedUntil && lockedUntil.getTime() > nowMs()) {
+        await verifyPassword(await dummyHash(), input.password).catch(() => false);
+        return { ok: false as const, code: "invalid_credentials" as const };
+    }
+
+    const passwordHash = user?.password_hash ?? (await dummyHash());
+    const valid = await verifyPassword(passwordHash, input.password).catch(() => false);
+
+    if (!user || !valid || user.status !== "active") {
+        if (user) await recordFailedLoginAttempt(user.id);
+        return { ok: false as const, code: "invalid_credentials" as const };
+    }
+
+    await clearFailedLoginState(user.id);
+    return { ok: true as const, user: { id: user.id, email: user.email, role: user.role } };
+}
+
+export async function getUserPasswordHashById(userId: string) {
+    if (!isDatabaseConfigured()) return null;
+    await ensureAuthSchema();
+    const sql = getSql();
+    const rows = await sql<{ password_hash: string }[]>`
+        select password_hash
+        from users
+        where id = ${userId}::uuid
+        limit 1
+    `;
+    return rows[0]?.password_hash ?? null;
+}
+
+export async function createSessionForUser(input: { userId: string; ipAddress: string; userAgent: string; mfaVerified: boolean }) {
+    if (!isDatabaseConfigured()) {
+        return { ok: false as const, code: "db_unavailable" as const };
+    }
+    await ensureAuthSchema();
+
+    const sql = getSql();
+    const mfaRows = await sql<DbUserMfaRow[]>`
+        select user_id, secret_encrypted, is_enabled
+        from user_mfa
+        where user_id = ${input.userId}::uuid
+        limit 1
+    `;
+    const mfa = mfaRows[0] ?? null;
+    if (mfa?.is_enabled && !input.mfaVerified) {
+        return { ok: false as const, code: "mfa_required" as const };
+    }
+
     const sessionId = randomSessionId();
     const expiresAt = new Date(nowMs() + sessionTtlSeconds() * 1000);
     await sql`
         insert into sessions (session_id, user_id, expires_at, ip_address, user_agent, revoked_at)
-        values (${sessionId}, ${user.id}::uuid, ${expiresAt}, ${input.ipAddress || null}, ${input.userAgent || null}, null)
+        values (${sessionId}, ${input.userId}::uuid, ${expiresAt}, ${input.ipAddress || null}, ${input.userAgent || null}, null)
     `;
-
-    return { ok: true as const, session: { sessionId, expiresAt }, user: { id: user.id, email: user.email, role: user.role } };
+    return { ok: true as const, session: { sessionId, expiresAt } };
 }
 
 export async function logoutSession(sessionId: string) {

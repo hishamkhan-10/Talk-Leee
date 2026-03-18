@@ -9,11 +9,14 @@ import {
     buildSessionCookie,
     clearSessionCookie,
     clientIpFromRequest,
-    loginWithPassword,
+    createSessionForUser,
     logoutSession,
     registerUser,
     userAgentFromRequest,
+    verifyPasswordLoginAttempt,
 } from "@/server/auth-core";
+import { disableTotpMfa, startTotpEnrollment, verifyMfaForLogin, verifyTotpEnrollment } from "@/server/mfa";
+import { getPasskeyAuthenticationOptions, getPasskeyRegistrationOptions, verifyPasskeyAuthentication, verifyPasskeyRegistration } from "@/server/passkeys";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 
@@ -314,6 +317,44 @@ const LoginInputSchema = z
         email: z.string().email().optional(),
         identifier: z.string().min(1).optional(),
         password: z.string().min(1),
+        totp_code: z.string().min(1).optional(),
+        recovery_code: z.string().min(1).optional(),
+    })
+    .strict();
+
+const MfaEnrollVerifySchema = z
+    .object({
+        code: z.string().min(1),
+    })
+    .strict();
+
+const MfaDisableSchema = z
+    .object({
+        password: z.string().min(1).optional(),
+        totp_code: z.string().min(1).optional(),
+    })
+    .strict();
+
+const PasskeyRegistrationOptionsSchema = z.object({}).strict();
+
+const PasskeyRegistrationVerifySchema = z
+    .object({
+        attestation: z.unknown(),
+        device_name: z.string().min(1).max(120).optional(),
+    })
+    .strict();
+
+const PasskeyLoginOptionsSchema = z
+    .object({
+        identifier: z.string().min(1),
+    })
+    .strict();
+
+const PasskeyLoginVerifySchema = z
+    .object({
+        assertion: z.unknown(),
+        totp_code: z.string().min(1).optional(),
+        recovery_code: z.string().min(1).optional(),
     })
     .strict();
 
@@ -389,7 +430,7 @@ async function handle(request: Request, segments: string[]) {
         const ipAddress = clientIpFromRequest(request);
         const userAgent = userAgentFromRequest(request);
 
-        const result = await loginWithPassword({
+        const result = await verifyPasswordLoginAttempt({
             identifier,
             password: parsed.data.password,
             ipAddress,
@@ -409,11 +450,109 @@ async function handle(request: Request, segments: string[]) {
             return json({ detail: "Invalid credentials" }, { status: 401 });
         }
 
-        const cookie = buildSessionCookie({ sessionId: result.session.sessionId, expiresAt: result.session.expiresAt, secure: isHttps(request) });
+        const mfa = await verifyMfaForLogin({
+            userId: result.user.id,
+            ipAddress,
+            totpCode: parsed.data.totp_code,
+            recoveryCode: parsed.data.recovery_code,
+        });
+        if (!mfa.ok && mfa.code === "rate_limited") {
+            return json(
+                { detail: "Too many verification attempts" },
+                { status: 429, headers: { "retry-after": String(mfa.retryAfterSeconds) } }
+            );
+        }
+        if (!mfa.ok && mfa.code === "mfa_required") {
+            return json({ detail: "MFA required", mfa_required: true }, { status: 401 });
+        }
+        if (!mfa.ok && (mfa.code === "db_unavailable" || mfa.code === "service_unavailable")) {
+            return json({ detail: "Service unavailable" }, { status: 503 });
+        }
+        if (!mfa.ok) {
+            return json({ detail: "Invalid credentials" }, { status: 401 });
+        }
+
+        const session = await createSessionForUser({
+            userId: result.user.id,
+            ipAddress,
+            userAgent,
+            mfaVerified: mfa.required,
+        });
+        if (!session.ok && session.code === "mfa_required") {
+            return json({ detail: "MFA required", mfa_required: true }, { status: 401 });
+        }
+        if (!session.ok && session.code === "db_unavailable") {
+            return json({ detail: "Service unavailable" }, { status: 503 });
+        }
+        if (!session.ok) {
+            return json({ detail: "Login failed" }, { status: 500 });
+        }
+
+        const cookie = buildSessionCookie({ sessionId: session.session.sessionId, expiresAt: session.session.expiresAt, secure: isHttps(request) });
         return json(
             { id: result.user.id, email: result.user.email, role: result.user.role, message: "ok" },
             { headers: { "set-cookie": cookie } }
         );
+    }
+
+    if (method === "POST" && path === "/auth/mfa/enroll/start") {
+        const me = await authMeFromRequest(request);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+
+        const res = await startTotpEnrollment({ userId: me.id, email: me.email });
+        if (!res.ok && res.code === "already_enabled") return json({ detail: "MFA already enabled" }, { status: 409 });
+        if (!res.ok && (res.code === "db_unavailable" || res.code === "service_unavailable")) return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok) return json({ detail: "MFA enrollment failed" }, { status: 400 });
+        return json({ otpauth_uri: res.otpauthUri, secret_base32: res.secretBase32 });
+    }
+
+    if (method === "POST" && path === "/auth/mfa/enroll/verify") {
+        const me = await authMeFromRequest(request);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+
+        const body = await readJsonBody(request);
+        const parsed = MfaEnrollVerifySchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const res = await verifyTotpEnrollment({ userId: me.id, ipAddress, code: parsed.data.code });
+        if (!res.ok && res.code === "rate_limited") {
+            return json(
+                { detail: "Too many verification attempts" },
+                { status: 429, headers: { "retry-after": String(res.retryAfterSeconds) } }
+            );
+        }
+        if (!res.ok && (res.code === "db_unavailable" || res.code === "service_unavailable")) return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok) return json({ detail: "Invalid credentials" }, { status: 401 });
+        if (res.alreadyEnabled) return json({ message: "ok" });
+        return json({ recovery_codes: res.recoveryCodes });
+    }
+
+    if (method === "POST" && path === "/auth/mfa/disable") {
+        const me = await authMeFromRequest(request);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+
+        const body = await readJsonBody(request);
+        const parsed = MfaDisableSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const res = await disableTotpMfa({
+            userId: me.id,
+            ipAddress,
+            password: parsed.data.password,
+            totpCode: parsed.data.totp_code,
+        });
+        if (!res.ok && res.code === "rate_limited") {
+            return json(
+                { detail: "Too many verification attempts" },
+                { status: 429, headers: { "retry-after": String(res.retryAfterSeconds) } }
+            );
+        }
+        if (!res.ok && (res.code === "db_unavailable" || res.code === "service_unavailable")) return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok && res.code === "verification_required") return json({ detail: "Password or TOTP code required" }, { status: 400 });
+        if (!res.ok) return json({ detail: "Invalid credentials" }, { status: 401 });
+        return json({ message: "ok" });
     }
 
     if (method === "POST" && path === "/auth/logout") {
@@ -424,6 +563,141 @@ async function handle(request: Request, segments: string[]) {
         }
         const cookie = clearSessionCookie({ secure: isHttps(request) });
         return noContent({ headers: { "set-cookie": cookie } });
+    }
+
+    if (method === "POST" && path === "/auth/passkeys/registration/options") {
+        const me = await authMeFromRequest(request);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+
+        const body = await readJsonBody(request);
+        const parsed = PasskeyRegistrationOptionsSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const userAgent = userAgentFromRequest(request);
+        const res = await getPasskeyRegistrationOptions({
+            request,
+            userId: me.id,
+            email: me.email,
+            displayName: me.name ?? me.email,
+            ipAddress,
+            userAgent,
+        });
+        if (!res.ok && res.code === "rate_limited") {
+            return json(
+                { detail: "Too many registration attempts" },
+                { status: 429, headers: { "retry-after": String(res.retryAfterSeconds) } }
+            );
+        }
+        if (!res.ok && res.code === "db_unavailable") return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok) return json({ detail: "Passkey registration unavailable" }, { status: 503 });
+        return json(res.options);
+    }
+
+    if (method === "POST" && path === "/auth/passkeys/registration/verify") {
+        const me = await authMeFromRequest(request);
+        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+
+        const body = await readJsonBody(request);
+        const parsed = PasskeyRegistrationVerifySchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const userAgent = userAgentFromRequest(request);
+        const res = await verifyPasskeyRegistration({
+            request,
+            userId: me.id,
+            deviceName: parsed.data.device_name,
+            ipAddress,
+            userAgent,
+            attestation: parsed.data.attestation as never,
+        });
+        if (!res.ok && res.code === "rate_limited") {
+            return json(
+                { detail: "Too many registration attempts" },
+                { status: 429, headers: { "retry-after": String(res.retryAfterSeconds) } }
+            );
+        }
+        if (!res.ok && res.code === "duplicate_credential") return json({ detail: "Passkey already registered" }, { status: 409 });
+        if (!res.ok && res.code === "db_unavailable") return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok) return json({ detail: "Invalid passkey attestation" }, { status: 400 });
+        return json({ message: "ok" }, { status: 201 });
+    }
+
+    if (method === "POST" && path === "/auth/passkeys/login/options") {
+        const body = await readJsonBody(request);
+        const parsed = PasskeyLoginOptionsSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const userAgent = userAgentFromRequest(request);
+        const res = await getPasskeyAuthenticationOptions({
+            request,
+            identifier: parsed.data.identifier,
+            ipAddress,
+            userAgent,
+        });
+        if (!res.ok && res.code === "rate_limited") {
+            return json({ detail: "Too many login attempts" }, { status: 429, headers: { "retry-after": String(res.retryAfterSeconds) } });
+        }
+        if (!res.ok && res.code === "db_unavailable") return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok) return json({ detail: "Passkey login unavailable" }, { status: 503 });
+        return json(res.options);
+    }
+
+    if (method === "POST" && path === "/auth/passkeys/login/verify") {
+        const body = await readJsonBody(request);
+        const parsed = PasskeyLoginVerifySchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const ipAddress = clientIpFromRequest(request);
+        const userAgent = userAgentFromRequest(request);
+        const res = await verifyPasskeyAuthentication({
+            request,
+            assertion: parsed.data.assertion as never,
+            ipAddress,
+            userAgent,
+            totpCode: parsed.data.totp_code,
+            recoveryCode: parsed.data.recovery_code,
+        });
+
+        if (!res.ok && res.code === "rate_limited") {
+            return json({ detail: "Too many login attempts" }, { status: 429, headers: { "retry-after": String(res.retryAfterSeconds) } });
+        }
+        if (!res.ok && res.code === "mfa_required") {
+            return json({ detail: "MFA required", mfa_required: true }, { status: 401 });
+        }
+        if (!res.ok && res.code === "db_unavailable") {
+            return json({ detail: "Service unavailable" }, { status: 503 });
+        }
+        if (!res.ok && res.code === "service_unavailable") {
+            return json({ detail: "Service unavailable" }, { status: 503 });
+        }
+        if (!res.ok) {
+            return json({ detail: "Invalid credentials" }, { status: 401 });
+        }
+
+        const session = await createSessionForUser({
+            userId: res.user.id,
+            ipAddress,
+            userAgent,
+            mfaVerified: res.mfaVerified,
+        });
+        if (!session.ok && session.code === "mfa_required") {
+            return json({ detail: "MFA required", mfa_required: true }, { status: 401 });
+        }
+        if (!session.ok && session.code === "db_unavailable") {
+            return json({ detail: "Service unavailable" }, { status: 503 });
+        }
+        if (!session.ok) {
+            return json({ detail: "Login failed" }, { status: 500 });
+        }
+
+        const cookie = buildSessionCookie({ sessionId: session.session.sessionId, expiresAt: session.session.expiresAt, secure: isHttps(request) });
+        return json(
+            { id: res.user.id, email: res.user.email, role: res.user.role, message: "ok" },
+            { headers: { "set-cookie": cookie } }
+        );
     }
 
     if (path === "/white-label/partners") {
