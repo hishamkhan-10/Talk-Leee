@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { api } from "@/lib/api";
-import { getBrowserAuthToken } from "@/lib/auth-token";
 
 interface MeResponse {
     id: string;
@@ -11,6 +10,8 @@ interface MeResponse {
     business_name?: string;
     role: string;
     minutes_remaining: number;
+    partner_id?: string;
+    tenant_id?: string;
 }
 
 interface AuthContextType {
@@ -32,14 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         let active = true;
-        const token = getBrowserAuthToken();
-        if (!token) {
-            setUser(null);
-            setLoading(false);
-            return;
-        }
-
-        api.setToken(token);
         (async () => {
             try {
                 const me = await api.getMe();
@@ -101,12 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function refreshUser() {
         setLoading(true);
         try {
-            const token = getBrowserAuthToken();
-            if (!token) {
-                setUser(null);
-                return;
-            }
-            api.setToken(token);
             const me = await api.getMe();
             setUser(me);
         } catch {

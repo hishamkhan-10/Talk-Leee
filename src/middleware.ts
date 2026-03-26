@@ -126,7 +126,7 @@ async function fetchUserContextFromBackend(input: { req: NextRequest; token: str
             const res = await fetch(url, {
                 method: "GET",
                 headers: {
-                    authorization: `Bearer ${input.token}`,
+                    cookie: `${authTokenCookieName()}=${encodeURIComponent(input.token)}`,
                     accept: "application/json",
                     [INTERNAL_BYPASS_HEADER]: "1",
                 },

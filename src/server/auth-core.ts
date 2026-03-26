@@ -1,9 +1,15 @@
 import { hash as argon2Hash, verify as argon2Verify } from "@node-rs/argon2";
 import crypto from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { captureMessage } from "@/lib/monitoring";
 import { getSql, isDatabaseConfigured } from "@/server/db";
+import { ensureDefaultPartnerAndTenantForUser, ensureTenantAccounts, getAuthzContextForUser, getTenantAccounts, type RoleName } from "@/server/rbac";
 
 export type AuthUserStatus = "active" | "suspended" | "disabled";
-export type AuthRole = "user" | "admin" | "partner_admin" | "white_label_admin";
+export type AuthRole =
+    | RoleName
+    | "admin"
+    | "white_label_admin";
 
 export type AuthMe = {
     id: string;
@@ -13,6 +19,7 @@ export type AuthMe = {
     role: AuthRole;
     minutes_remaining?: number;
     partner_id?: string;
+    tenant_id?: string;
 };
 
 type DbUserRow = {
@@ -29,10 +36,20 @@ type DbUserRow = {
 type DbSessionRow = {
     session_id: string;
     user_id: string;
+    created_at: Date;
     expires_at: Date;
+    last_activity_at: Date;
     ip_address: string | null;
     user_agent: string | null;
+    revoked: boolean;
     revoked_at: Date | null;
+    rotated_from: string | null;
+    replaced_by: string | null;
+    scope_role: string | null;
+    scope_partner_id: string | null;
+    scope_tenant_id: string | null;
+    scope_usage_account_id: string | null;
+    scope_billing_account_id: string | null;
 };
 
 type DbUserMfaRow = {
@@ -50,6 +67,12 @@ function nowMs() {
 function parsePositiveInt(input: unknown, fallback: number) {
     const n = typeof input === "string" ? Number(input) : typeof input === "number" ? input : NaN;
     if (!Number.isFinite(n) || n <= 0) return fallback;
+    return Math.floor(n);
+}
+
+function parseNonNegativeInt(input: unknown, fallback: number) {
+    const n = typeof input === "string" ? Number(input) : typeof input === "number" ? input : NaN;
+    if (!Number.isFinite(n) || n < 0) return fallback;
     return Math.floor(n);
 }
 
@@ -154,6 +177,101 @@ function sessionTtlSeconds() {
     return parsePositiveInt(process.env.AUTH_SESSION_TTL_SECONDS, 60 * 60 * 24 * 7);
 }
 
+function sessionIdleTimeoutSeconds() {
+    return parsePositiveInt(process.env.AUTH_SESSION_IDLE_TIMEOUT_SECONDS, 30 * 60);
+}
+
+function sessionRotationSeconds() {
+    return parseNonNegativeInt(process.env.AUTH_SESSION_ROTATE_SECONDS, 6 * 60 * 60);
+}
+
+function sessionBindingMode(): "strict" | "soft" {
+    const v = String(process.env.AUTH_SESSION_BINDING_MODE ?? "").trim().toLowerCase();
+    return v === "soft" ? "soft" : "strict";
+}
+
+function isSecureRequest(request: Request) {
+    const forwarded = request.headers.get("x-forwarded-proto");
+    if (forwarded) return forwarded.split(",")[0]!.trim().toLowerCase() === "https";
+    return request.url.startsWith("https:");
+}
+
+type AuthSessionScope = { role: AuthRole; partner_id?: string; tenant_id?: string };
+
+function computeScopeFromAuthz(authz: Awaited<ReturnType<typeof getAuthzContextForUser>>): AuthSessionScope {
+    if (authz.platformRole === "platform_admin") {
+        return { role: "platform_admin" };
+    }
+
+    const partnerAdmins = Array.from(new Set(authz.partnerRoles.filter((r) => r.role === "partner_admin").map((r) => r.partnerId)));
+    if (partnerAdmins.length > 0) {
+        return { role: "partner_admin", ...(partnerAdmins.length === 1 ? { partner_id: partnerAdmins[0] } : {}) };
+    }
+
+    if (authz.tenantRoles.length > 0) {
+        const rank: Record<RoleName, number> = { platform_admin: 100, partner_admin: 90, tenant_admin: 50, user: 10, readonly: 1 };
+        const active = authz.tenantRoles.filter((t) => t.tenantStatus === "active");
+        const candidates = active.length > 0 ? active : authz.tenantRoles;
+        const top = candidates.slice().sort((a, b) => (rank[b.role] ?? 0) - (rank[a.role] ?? 0))[0];
+        if (top) return { role: top.role, partner_id: top.partnerId, tenant_id: top.tenantId };
+    }
+
+    return { role: "user" };
+}
+
+export type AuthSessionEventType =
+    | "session_created"
+    | "session_rotated"
+    | "session_revoked"
+    | "logout_all_sessions"
+    | "session_scope_updated";
+
+export type AuthSessionEvent = {
+    type: AuthSessionEventType;
+    user_id: string;
+    session_id?: string;
+    rotated_from?: string;
+    reason?: string;
+    ip_address?: string | null;
+    user_agent?: string | null;
+    partner_id?: string | null;
+    tenant_id?: string | null;
+    usage_account_id?: string | null;
+    billing_account_id?: string | null;
+};
+
+function emitAuthSessionEvent(event: AuthSessionEvent) {
+    try {
+        captureMessage(`auth.${event.type}`, event);
+    } catch {
+    }
+}
+
+function sessionHandleSecret() {
+    const raw = String(process.env.AUTH_SESSION_HANDLE_SECRET ?? "").trim();
+    if (raw) return raw;
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("AUTH_SESSION_HANDLE_SECRET is required in production");
+    }
+    return "dev-insecure-session-handle-secret";
+}
+
+export function sessionHandleForSessionId(sessionId: string) {
+    const h = createHmac("sha256", sessionHandleSecret()).update(sessionId, "utf8").digest("base64url");
+    return h;
+}
+
+function safeEqual(a: string, b: string) {
+    const aa = Buffer.from(String(a ?? ""), "utf8");
+    const bb = Buffer.from(String(b ?? ""), "utf8");
+    if (aa.length !== bb.length) return false;
+    try {
+        return timingSafeEqual(aa, bb);
+    } catch {
+        return false;
+    }
+}
+
 export async function ensureAuthSchema() {
     if (authSchemaReady) return authSchemaReady;
     authSchemaReady = (async () => {
@@ -182,16 +300,62 @@ export async function ensureAuthSchema() {
                 user_id uuid not null references users(id) on delete cascade,
                 created_at timestamptz not null default now(),
                 expires_at timestamptz not null,
+                last_activity_at timestamptz not null default now(),
                 ip_address text,
                 user_agent text,
+                revoked boolean not null default false,
                 revoked_at timestamptz,
-                rotated_from text,
-                replaced_by text
+                rotated_from text references sessions(session_id) on delete set null,
+                replaced_by text references sessions(session_id) on delete set null,
+                scope_role text,
+                scope_partner_id text,
+                scope_tenant_id text,
+                scope_usage_account_id uuid,
+                scope_billing_account_id uuid
             )
+        `);
+        await sql.unsafe(`alter table sessions add column if not exists last_activity_at timestamptz`);
+        await sql.unsafe(`alter table sessions add column if not exists revoked boolean`);
+        await sql.unsafe(`alter table sessions add column if not exists rotated_from text`);
+        await sql.unsafe(`alter table sessions add column if not exists replaced_by text`);
+        await sql.unsafe(`alter table sessions add column if not exists scope_role text`);
+        await sql.unsafe(`alter table sessions add column if not exists scope_partner_id text`);
+        await sql.unsafe(`alter table sessions add column if not exists scope_tenant_id text`);
+        await sql.unsafe(`alter table sessions add column if not exists scope_usage_account_id uuid`);
+        await sql.unsafe(`alter table sessions add column if not exists scope_billing_account_id uuid`);
+        await sql.unsafe(`update sessions set last_activity_at = coalesce(last_activity_at, created_at, now()) where last_activity_at is null`);
+        await sql.unsafe(`update sessions set revoked = false where revoked is null`);
+        await sql.unsafe(`alter table sessions alter column last_activity_at set default now()`);
+        await sql.unsafe(`alter table sessions alter column last_activity_at set not null`);
+        await sql.unsafe(`alter table sessions alter column revoked set default false`);
+        await sql.unsafe(`alter table sessions alter column revoked set not null`);
+        await sql.unsafe(`
+            do $$
+            begin
+                alter table sessions add constraint sessions_rotated_from_fk
+                    foreign key (rotated_from) references sessions(session_id) on delete set null;
+            exception when duplicate_object then
+                null;
+            end $$;
+        `);
+        await sql.unsafe(`
+            do $$
+            begin
+                alter table sessions add constraint sessions_replaced_by_fk
+                    foreign key (replaced_by) references sessions(session_id) on delete set null;
+            exception when duplicate_object then
+                null;
+            end $$;
         `);
         await sql.unsafe(`create index if not exists sessions_user_id_idx on sessions (user_id)`);
         await sql.unsafe(`create index if not exists sessions_expires_at_idx on sessions (expires_at)`);
         await sql.unsafe(`create index if not exists sessions_revoked_at_idx on sessions (revoked_at)`);
+        await sql.unsafe(`create index if not exists sessions_last_activity_at_idx on sessions (last_activity_at)`);
+        await sql.unsafe(`create index if not exists sessions_user_id_revoked_expires_at_idx on sessions (user_id, revoked, expires_at)`);
+        await sql.unsafe(`create index if not exists sessions_scope_partner_id_idx on sessions (scope_partner_id)`);
+        await sql.unsafe(`create index if not exists sessions_scope_tenant_id_idx on sessions (scope_tenant_id)`);
+        await sql.unsafe(`create index if not exists sessions_scope_usage_account_id_idx on sessions (scope_usage_account_id)`);
+        await sql.unsafe(`create index if not exists sessions_scope_billing_account_id_idx on sessions (scope_billing_account_id)`);
 
         await sql.unsafe(`
             create table if not exists auth_user_security (
@@ -363,7 +527,7 @@ async function clearFailedLoginState(userId: string) {
 function devMeForToken(token: string): AuthMe | null {
     const t = token.trim();
     if (!t) return null;
-    if (t === "wl-admin-token") return { id: "usr_wl_admin", email: "wl-admin@example.com", role: "white_label_admin" };
+    if (t === "wl-admin-token") return { id: "usr_platform_admin", email: "platform-admin@example.com", role: "platform_admin" };
     const partner = t.match(/^partner-([a-z0-9-]+)-token$/i);
     if (partner) {
         const partnerId = (partner[1] ?? "").trim().toLowerCase();
@@ -374,65 +538,471 @@ function devMeForToken(token: string): AuthMe | null {
     return null;
 }
 
-export async function authMeFromRequest(request: Request): Promise<AuthMe | null> {
+export type AuthMeResult = {
+    me: AuthMe;
+    sessionId: string;
+    setCookie?: string;
+};
+
+export async function rotateSessionNow(input: {
+    sessionId: string;
+    expiresAt: Date;
+    userId: string;
+    request: Request;
+    ipAddress: string;
+    userAgent: string;
+    reason: string;
+    scope: {
+        role: string;
+        partnerId: string | null;
+        tenantId: string | null;
+        usageAccountId: string | null;
+        billingAccountId: string | null;
+    };
+}) {
+    if (!isDatabaseConfigured()) return null;
+    await ensureAuthSchema();
+    const sql = getSql();
+
+    const newSessionId = randomSessionId();
+    await sql.begin(async (tx) => {
+        const q = tx as unknown as ReturnType<typeof getSql>;
+        await q`
+            insert into sessions (
+                session_id,
+                user_id,
+                expires_at,
+                last_activity_at,
+                ip_address,
+                user_agent,
+                revoked,
+                revoked_at,
+                rotated_from,
+                replaced_by,
+                scope_role,
+                scope_partner_id,
+                scope_tenant_id,
+                scope_usage_account_id,
+                scope_billing_account_id
+            )
+            values (
+                ${newSessionId},
+                ${input.userId}::uuid,
+                ${input.expiresAt},
+                now(),
+                ${input.ipAddress || null},
+                ${input.userAgent || null},
+                false,
+                null,
+                ${input.sessionId},
+                null,
+                ${input.scope.role || null},
+                ${input.scope.partnerId},
+                ${input.scope.tenantId},
+                ${input.scope.usageAccountId}::uuid,
+                ${input.scope.billingAccountId}::uuid
+            )
+        `;
+        await q`
+            update sessions
+            set revoked = true, revoked_at = now(), replaced_by = ${newSessionId}
+            where session_id = ${input.sessionId} and revoked = false and revoked_at is null
+        `;
+    });
+
+    emitAuthSessionEvent({
+        type: "session_rotated",
+        user_id: input.userId,
+        session_id: newSessionId,
+        rotated_from: input.sessionId,
+        reason: input.reason,
+        ip_address: input.ipAddress || null,
+        user_agent: input.userAgent || null,
+        partner_id: input.scope.partnerId,
+        tenant_id: input.scope.tenantId,
+        usage_account_id: input.scope.usageAccountId,
+        billing_account_id: input.scope.billingAccountId,
+    });
+
+    const setCookie = buildSessionCookie({ sessionId: newSessionId, expiresAt: input.expiresAt, secure: isSecureRequest(input.request) });
+    return { sessionId: newSessionId, setCookie };
+}
+
+export async function authMeFromRequest(request: Request, options?: { rotate?: boolean }): Promise<AuthMeResult | null> {
     const token = authTokenFromRequest(request);
     if (!token) return null;
 
     const devEnabled = process.env.NODE_ENV !== "production" && process.env.TALKLEE_DEV_AUTH_TOKENS !== "0";
     if (devEnabled) {
         const dev = devMeForToken(token);
-        if (dev) return dev;
+        if (dev) return { me: dev, sessionId: token };
     }
 
     if (!isDatabaseConfigured()) return null;
     await ensureAuthSchema();
 
     const sql = getSql();
-    const rows = await sql<
-        Array<DbUserRow & DbSessionRow>
-    >`
-        select
-            s.session_id,
-            s.user_id,
-            s.expires_at,
-            s.ip_address,
-            s.user_agent,
-            s.revoked_at,
-            u.id,
-            u.email,
-            u.username,
-            u.password_hash,
-            u.status,
-            u.role,
-            u.name,
-            u.business_name
-        from sessions s
-        join users u on u.id = s.user_id
-        where s.session_id = ${token}
-        limit 1
-    `;
-
-    const row = rows[0];
-    if (!row) return null;
-    if (row.revoked_at) return null;
-    if (row.expires_at.getTime() <= nowMs()) return null;
-    if (row.status !== "active") return null;
-
     const ip = clientIpFromRequest(request);
     const ua = userAgentFromRequest(request);
-    const storedIp = (row.ip_address ?? "").trim();
-    const storedUa = (row.user_agent ?? "").trim();
-    if (storedIp && storedUa && ip && ua) {
-        if (storedIp !== ip && storedUa !== ua) return null;
+    const rotate = options?.rotate !== false;
+
+    const authRow = await sql.begin(async (tx) => {
+        const q = tx as unknown as ReturnType<typeof getSql>;
+        const rows = await q<Array<DbUserRow & DbSessionRow>>`
+            select
+                s.session_id,
+                s.user_id,
+                s.created_at,
+                s.expires_at,
+                s.last_activity_at,
+                s.ip_address,
+                s.user_agent,
+                s.revoked,
+                s.revoked_at,
+                s.rotated_from,
+                s.replaced_by,
+                s.scope_role,
+                s.scope_partner_id,
+                s.scope_tenant_id,
+                s.scope_usage_account_id::text as scope_usage_account_id,
+                s.scope_billing_account_id::text as scope_billing_account_id,
+                u.id,
+                u.email,
+                u.username,
+                u.password_hash,
+                u.status,
+                u.role,
+                u.name,
+                u.business_name
+            from sessions s
+            join users u on u.id = s.user_id
+            where s.session_id = ${token}
+            limit 1
+            for update
+        `;
+
+        const row = rows[0];
+        if (!row) return { ok: false as const };
+
+        if (row.revoked || row.revoked_at) return { ok: false as const };
+        if (row.expires_at.getTime() <= nowMs()) {
+            await q`
+                update sessions
+                set revoked = true, revoked_at = now()
+                where session_id = ${token} and revoked = false and revoked_at is null
+            `;
+            emitAuthSessionEvent({
+                type: "session_revoked",
+                user_id: row.user_id,
+                session_id: row.session_id,
+                reason: "expired",
+                ip_address: ip || null,
+                user_agent: ua || null,
+                partner_id: row.scope_partner_id,
+                tenant_id: row.scope_tenant_id,
+                usage_account_id: row.scope_usage_account_id,
+                billing_account_id: row.scope_billing_account_id,
+            });
+            return { ok: false as const };
+        }
+        if (row.status !== "active") return { ok: false as const };
+
+        const idleSeconds = sessionIdleTimeoutSeconds();
+        const lastActivityMs = row.last_activity_at?.getTime?.() ? row.last_activity_at.getTime() : row.created_at.getTime();
+        if (idleSeconds > 0 && lastActivityMs + idleSeconds * 1000 <= nowMs()) {
+            await q`
+                update sessions
+                set revoked = true, revoked_at = now()
+                where session_id = ${token} and revoked = false and revoked_at is null
+            `;
+            emitAuthSessionEvent({
+                type: "session_revoked",
+                user_id: row.user_id,
+                session_id: row.session_id,
+                reason: "idle_timeout",
+                ip_address: ip || null,
+                user_agent: ua || null,
+                partner_id: row.scope_partner_id,
+                tenant_id: row.scope_tenant_id,
+                usage_account_id: row.scope_usage_account_id,
+                billing_account_id: row.scope_billing_account_id,
+            });
+            return { ok: false as const };
+        }
+
+        const storedIp = (row.ip_address ?? "").trim();
+        const storedUa = (row.user_agent ?? "").trim();
+        const ipMismatch = storedIp && ip ? storedIp !== ip : false;
+        const uaMismatch = storedUa && ua ? storedUa !== ua : false;
+        if (ipMismatch || uaMismatch) {
+            if (sessionBindingMode() === "strict") {
+                await q`
+                    update sessions
+                    set revoked = true, revoked_at = now()
+                    where session_id = ${token} and revoked = false and revoked_at is null
+                `;
+                emitAuthSessionEvent({
+                    type: "session_revoked",
+                    user_id: row.user_id,
+                    session_id: row.session_id,
+                    reason: "session_binding_mismatch",
+                    ip_address: ip || null,
+                    user_agent: ua || null,
+                    partner_id: row.scope_partner_id,
+                    tenant_id: row.scope_tenant_id,
+                    usage_account_id: row.scope_usage_account_id,
+                    billing_account_id: row.scope_billing_account_id,
+                });
+                return { ok: false as const };
+            }
+            try {
+                captureMessage("session_binding_mismatch", {
+                    session_id: row.session_id,
+                    user_id: row.user_id,
+                    stored_ip: storedIp || null,
+                    stored_ua: storedUa || null,
+                    request_ip: ip || null,
+                    request_ua: ua || null,
+                });
+            } catch {
+            }
+        }
+
+        const rotateSeconds = sessionRotationSeconds();
+        if (rotate && rotateSeconds > 0 && row.created_at.getTime() + rotateSeconds * 1000 <= nowMs()) {
+            const newSessionId = randomSessionId();
+            await q`
+                insert into sessions (
+                    session_id,
+                    user_id,
+                    expires_at,
+                    last_activity_at,
+                    ip_address,
+                    user_agent,
+                    revoked,
+                    revoked_at,
+                    rotated_from,
+                    replaced_by,
+                    scope_role,
+                    scope_partner_id,
+                    scope_tenant_id,
+                    scope_usage_account_id,
+                    scope_billing_account_id
+                )
+                values (
+                    ${newSessionId},
+                    ${row.user_id}::uuid,
+                    ${row.expires_at},
+                    now(),
+                    ${ip || storedIp || null},
+                    ${ua || storedUa || null},
+                    false,
+                    null,
+                    ${row.session_id},
+                    null,
+                    ${row.scope_role},
+                    ${row.scope_partner_id},
+                    ${row.scope_tenant_id},
+                    ${row.scope_usage_account_id}::uuid,
+                    ${row.scope_billing_account_id}::uuid
+                )
+            `;
+            await q`
+                update sessions
+                set revoked = true, revoked_at = now(), replaced_by = ${newSessionId}
+                where session_id = ${row.session_id} and revoked = false and revoked_at is null
+            `;
+            emitAuthSessionEvent({
+                type: "session_rotated",
+                user_id: row.user_id,
+                session_id: newSessionId,
+                rotated_from: row.session_id,
+                reason: "interval",
+                ip_address: (ip || storedIp) || null,
+                user_agent: (ua || storedUa) || null,
+                partner_id: row.scope_partner_id,
+                tenant_id: row.scope_tenant_id,
+                usage_account_id: row.scope_usage_account_id,
+                billing_account_id: row.scope_billing_account_id,
+            });
+            const setCookie = buildSessionCookie({ sessionId: newSessionId, expiresAt: row.expires_at, secure: isSecureRequest(request) });
+            return { ok: true as const, row, sessionId: newSessionId, setCookie };
+        }
+
+        await q`
+            update sessions
+            set last_activity_at = now(),
+                ip_address = case when ip_address is null or btrim(ip_address) = '' then ${ip || null} else ip_address end,
+                user_agent = case when user_agent is null or btrim(user_agent) = '' then ${ua || null} else user_agent end
+            where session_id = ${token} and revoked = false and revoked_at is null
+        `;
+        return { ok: true as const, row, sessionId: row.session_id, setCookie: undefined as string | undefined };
+    });
+
+    if (!authRow.ok) return null;
+
+    const row = authRow.row;
+
+    await ensureDefaultPartnerAndTenantForUser({ userId: row.id, email: row.email, businessName: row.business_name });
+    const authz = await getAuthzContextForUser(row.id);
+    const computed = computeScopeFromAuthz(authz);
+    const storedRole = (row.scope_role ?? "").trim();
+    const storedPartnerId = (row.scope_partner_id ?? "").trim();
+    const storedTenantId = (row.scope_tenant_id ?? "").trim();
+    const storedUsageAccountId = (row.scope_usage_account_id ?? "").trim();
+    const storedBillingAccountId = (row.scope_billing_account_id ?? "").trim();
+
+    let expectedUsageAccountId: string | null = null;
+    let expectedBillingAccountId: string | null = null;
+
+    if (computed.tenant_id && computed.partner_id) {
+        await ensureTenantAccounts({ tenantId: computed.tenant_id, partnerId: computed.partner_id }).catch(() => undefined);
+        const accounts = await getTenantAccounts({ tenantId: computed.tenant_id }).catch(() => ({ ok: false as const, status: 503 as const }));
+        if (!accounts.ok) {
+            await logoutSession(authRow.sessionId);
+            emitAuthSessionEvent({
+                type: "session_revoked",
+                user_id: row.id,
+                session_id: authRow.sessionId,
+                reason: "tenant_accounts_unavailable",
+                ip_address: ip || null,
+                user_agent: ua || null,
+                partner_id: computed.partner_id ?? null,
+                tenant_id: computed.tenant_id ?? null,
+            });
+            return null;
+        }
+        expectedUsageAccountId = accounts.usageAccountId;
+        expectedBillingAccountId = accounts.billingAccountId;
+    } else if (computed.partner_id) {
+        const billingRows = await sql<{ id: string }[]>`
+            insert into billing_accounts (id, partner_id, created_at)
+            values (${crypto.randomUUID()}::uuid, ${computed.partner_id}, now())
+            on conflict (partner_id)
+            do update set partner_id = excluded.partner_id
+            returning id::text as id
+        `;
+        expectedBillingAccountId = billingRows[0]?.id ?? null;
+    }
+
+    const scopeMissing = !storedRole && !storedPartnerId && !storedTenantId;
+    const scopeChanged =
+        (storedRole && storedRole !== computed.role) ||
+        (storedPartnerId && storedPartnerId !== (computed.partner_id ?? "")) ||
+        (storedTenantId && storedTenantId !== (computed.tenant_id ?? ""));
+
+    const accountsMissing =
+        (!storedUsageAccountId && expectedUsageAccountId) || (!storedBillingAccountId && expectedBillingAccountId);
+    const accountsChanged =
+        (storedUsageAccountId && expectedUsageAccountId && storedUsageAccountId !== expectedUsageAccountId) ||
+        (storedBillingAccountId && expectedBillingAccountId && storedBillingAccountId !== expectedBillingAccountId);
+
+    if (!scopeMissing) {
+        if (storedTenantId) {
+            const ok =
+                authz.platformRole === "platform_admin" ||
+                authz.tenantRoles.some((t) => t.tenantId === storedTenantId && (!storedPartnerId || t.partnerId === storedPartnerId));
+            if (!ok) {
+                await logoutSession(authRow.sessionId);
+                emitAuthSessionEvent({
+                    type: "session_revoked",
+                    user_id: row.id,
+                    session_id: authRow.sessionId,
+                    reason: "scope_no_longer_allowed",
+                    ip_address: ip || null,
+                    user_agent: ua || null,
+                    partner_id: storedPartnerId || null,
+                    tenant_id: storedTenantId || null,
+                });
+                return null;
+            }
+        } else if (storedPartnerId) {
+            const ok = authz.platformRole === "platform_admin" || authz.partnerRoles.some((p) => p.partnerId === storedPartnerId && p.role === "partner_admin");
+            if (!ok) {
+                await logoutSession(authRow.sessionId);
+                emitAuthSessionEvent({
+                    type: "session_revoked",
+                    user_id: row.id,
+                    session_id: authRow.sessionId,
+                    reason: "scope_no_longer_allowed",
+                    ip_address: ip || null,
+                    user_agent: ua || null,
+                    partner_id: storedPartnerId || null,
+                    tenant_id: null,
+                });
+                return null;
+            }
+        }
+    }
+
+    let sessionId = authRow.sessionId;
+    let setCookie = authRow.setCookie;
+
+    if ((scopeChanged || accountsChanged) && !setCookie) {
+        const rotated = await rotateSessionNow({
+            sessionId: authRow.sessionId,
+            expiresAt: row.expires_at,
+            userId: row.id,
+            request,
+            ipAddress: ip,
+            userAgent: ua,
+            reason: scopeChanged ? "role_or_scope_changed" : "usage_or_billing_changed",
+            scope: {
+                role: computed.role,
+                partnerId: computed.partner_id ?? null,
+                tenantId: computed.tenant_id ?? null,
+                usageAccountId: expectedUsageAccountId,
+                billingAccountId: expectedBillingAccountId,
+            },
+        });
+        if (rotated) {
+            sessionId = rotated.sessionId;
+            setCookie = rotated.setCookie;
+        }
+    }
+
+    if (scopeMissing || (scopeChanged && !!setCookie) || accountsMissing || (accountsChanged && !!setCookie)) {
+        if (isDatabaseConfigured()) {
+            try {
+                await sql`
+                    update sessions
+                    set scope_role = ${computed.role},
+                        scope_partner_id = ${computed.partner_id ?? null},
+                        scope_tenant_id = ${computed.tenant_id ?? null},
+                        scope_usage_account_id = ${expectedUsageAccountId}::uuid,
+                        scope_billing_account_id = ${expectedBillingAccountId}::uuid
+                    where session_id = ${sessionId}
+                `;
+            } catch {
+            }
+        }
+        emitAuthSessionEvent({
+            type: "session_scope_updated",
+            user_id: row.id,
+            session_id: sessionId,
+            reason: scopeMissing ? "initial_set" : "updated_after_change",
+            ip_address: ip || null,
+            user_agent: ua || null,
+            partner_id: computed.partner_id ?? null,
+            tenant_id: computed.tenant_id ?? null,
+            usage_account_id: expectedUsageAccountId,
+            billing_account_id: expectedBillingAccountId,
+        });
     }
 
     return {
-        id: row.id,
-        email: row.email,
-        name: row.name ?? undefined,
-        business_name: row.business_name ?? undefined,
-        role: row.role ?? "user",
-        minutes_remaining: 0,
+        me: {
+            id: row.id,
+            email: row.email,
+            name: row.name ?? undefined,
+            business_name: row.business_name ?? undefined,
+            role: computed.role,
+            minutes_remaining: 0,
+            partner_id: computed.partner_id,
+            tenant_id: computed.tenant_id,
+        },
+        sessionId,
+        setCookie: setCookie ?? undefined,
     };
 }
 
@@ -467,6 +1037,7 @@ export async function registerUser(input: { email: string; password: string; use
             returning id, email, username, password_hash, status, role, name, business_name
         `;
         const u = rows[0]!;
+        await ensureDefaultPartnerAndTenantForUser({ userId: u.id, email: u.email, businessName: u.business_name });
         return { ok: true as const, user: { id: u.id, email: u.email, username: u.username, status: u.status, role: u.role } };
     } catch (err) {
         const message = err instanceof Error ? err.message : "";
@@ -587,6 +1158,20 @@ export async function createSessionForUser(input: { userId: string; ipAddress: s
     await ensureAuthSchema();
 
     const sql = getSql();
+    const createUserLimit = parsePositiveInt(process.env.AUTH_SESSION_CREATE_LIMIT_PER_USER_PER_MINUTE, 20);
+    const createIpLimit = parsePositiveInt(process.env.AUTH_SESSION_CREATE_LIMIT_PER_IP_PER_MINUTE, 50);
+    const createUserBucket = `session:create:user:${input.userId}`;
+    const createIpBucket = `session:create:ip:${input.ipAddress || "unknown"}`;
+
+    const [userLimit, ipLimit] = await Promise.all([
+        consumeAuthRateLimit({ bucket: createUserBucket, limit: createUserLimit, windowSeconds: 60 }),
+        consumeAuthRateLimit({ bucket: createIpBucket, limit: createIpLimit, windowSeconds: 60 }),
+    ]);
+    if (!userLimit.allowed || !ipLimit.allowed) {
+        const retryAfterSeconds = Math.max(userLimit.retryAfterSeconds, ipLimit.retryAfterSeconds);
+        return { ok: false as const, code: "rate_limited" as const, retryAfterSeconds };
+    }
+
     const mfaRows = await sql<DbUserMfaRow[]>`
         select user_id, secret_encrypted, is_enabled
         from user_mfa
@@ -598,12 +1183,69 @@ export async function createSessionForUser(input: { userId: string; ipAddress: s
         return { ok: false as const, code: "mfa_required" as const };
     }
 
+    const authz = await getAuthzContextForUser(input.userId);
+    const computed = computeScopeFromAuthz(authz);
+    let usageAccountId: string | null = null;
+    let billingAccountId: string | null = null;
+    if (computed.tenant_id && computed.partner_id) {
+        await ensureTenantAccounts({ tenantId: computed.tenant_id, partnerId: computed.partner_id }).catch(() => undefined);
+        const accounts = await getTenantAccounts({ tenantId: computed.tenant_id }).catch(() => ({ ok: false as const, status: 503 as const }));
+        if (accounts.ok) {
+            usageAccountId = accounts.usageAccountId;
+            billingAccountId = accounts.billingAccountId;
+        }
+    } else if (computed.partner_id) {
+        const billingRows = await sql<{ id: string }[]>`
+            insert into billing_accounts (id, partner_id, created_at)
+            values (${crypto.randomUUID()}::uuid, ${computed.partner_id}, now())
+            on conflict (partner_id)
+            do update set partner_id = excluded.partner_id
+            returning id::text as id
+        `;
+        billingAccountId = billingRows[0]?.id ?? null;
+    }
+
     const sessionId = randomSessionId();
     const expiresAt = new Date(nowMs() + sessionTtlSeconds() * 1000);
     await sql`
-        insert into sessions (session_id, user_id, expires_at, ip_address, user_agent, revoked_at)
-        values (${sessionId}, ${input.userId}::uuid, ${expiresAt}, ${input.ipAddress || null}, ${input.userAgent || null}, null)
+        insert into sessions (session_id, user_id, expires_at, last_activity_at, ip_address, user_agent, revoked, revoked_at, rotated_from, replaced_by)
+        values (
+            ${sessionId},
+            ${input.userId}::uuid,
+            ${expiresAt},
+            now(),
+            ${input.ipAddress || null},
+            ${input.userAgent || null},
+            false,
+            null,
+            null,
+            null
+        )
     `;
+    try {
+        await sql`
+            update sessions
+            set scope_role = ${computed.role},
+                scope_partner_id = ${computed.partner_id ?? null},
+                scope_tenant_id = ${computed.tenant_id ?? null},
+                scope_usage_account_id = ${usageAccountId}::uuid,
+                scope_billing_account_id = ${billingAccountId}::uuid
+            where session_id = ${sessionId}
+        `;
+    } catch {
+    }
+    emitAuthSessionEvent({
+        type: "session_created",
+        user_id: input.userId,
+        session_id: sessionId,
+        reason: input.mfaVerified ? "mfa_verified" : "login",
+        ip_address: input.ipAddress || null,
+        user_agent: input.userAgent || null,
+        partner_id: computed.partner_id ?? null,
+        tenant_id: computed.tenant_id ?? null,
+        usage_account_id: usageAccountId,
+        billing_account_id: billingAccountId,
+    });
     return { ok: true as const, session: { sessionId, expiresAt } };
 }
 
@@ -614,9 +1256,99 @@ export async function logoutSession(sessionId: string) {
     const sql = getSql();
     await sql`
         update sessions
-        set revoked_at = now()
-        where session_id = ${sessionId} and revoked_at is null
+        set revoked = true, revoked_at = now()
+        where session_id = ${sessionId} and revoked = false and revoked_at is null
     `;
+}
+
+export async function logoutAllSessionsForUser(input: { userId: string }) {
+    if (!isDatabaseConfigured()) return;
+    await ensureAuthSchema();
+    const sql = getSql();
+    await sql`
+        update sessions
+        set revoked = true, revoked_at = now()
+        where user_id = ${input.userId}::uuid and revoked = false and revoked_at is null
+    `;
+    emitAuthSessionEvent({ type: "logout_all_sessions", user_id: input.userId });
+}
+
+export async function listUserSessions(input: { userId: string }) {
+    if (!isDatabaseConfigured()) return { ok: false as const, code: "db_unavailable" as const };
+    await ensureAuthSchema();
+    const sql = getSql();
+    const rows = await sql<
+        Array<{
+            session_id: string;
+            created_at: Date;
+            expires_at: Date;
+            last_activity_at: Date;
+            ip_address: string | null;
+            user_agent: string | null;
+            revoked: boolean;
+            revoked_at: Date | null;
+            scope_role: string | null;
+            scope_partner_id: string | null;
+            scope_tenant_id: string | null;
+            scope_usage_account_id: string | null;
+            scope_billing_account_id: string | null;
+        }>
+    >`
+        select
+            session_id,
+            created_at,
+            expires_at,
+            last_activity_at,
+            ip_address,
+            user_agent,
+            revoked,
+            revoked_at,
+            scope_role,
+            scope_partner_id,
+            scope_tenant_id,
+            scope_usage_account_id::text as scope_usage_account_id,
+            scope_billing_account_id::text as scope_billing_account_id
+        from sessions
+        where user_id = ${input.userId}::uuid
+        order by last_activity_at desc nulls last, created_at desc
+        limit 50
+    `;
+    return { ok: true as const, sessions: rows };
+}
+
+export async function revokeUserSessionByHandle(input: { userId: string; sessionHandle: string; reason: string }) {
+    if (!isDatabaseConfigured()) return { ok: false as const, code: "db_unavailable" as const };
+    await ensureAuthSchema();
+    const sql = getSql();
+    const res = await listUserSessions({ userId: input.userId });
+    if (!res.ok) return res;
+
+    const wanted = String(input.sessionHandle ?? "").trim();
+    if (!wanted) return { ok: false as const, code: "invalid_request" as const };
+
+    const match = res.sessions.find((s) => safeEqual(sessionHandleForSessionId(s.session_id), wanted)) ?? null;
+    if (!match) return { ok: false as const, code: "not_found" as const };
+
+    await sql`
+        update sessions
+        set revoked = true, revoked_at = now()
+        where session_id = ${match.session_id} and user_id = ${input.userId}::uuid and revoked = false and revoked_at is null
+    `;
+
+    emitAuthSessionEvent({
+        type: "session_revoked",
+        user_id: input.userId,
+        session_id: match.session_id,
+        reason: input.reason,
+        ip_address: match.ip_address ?? null,
+        user_agent: match.user_agent ?? null,
+        partner_id: match.scope_partner_id,
+        tenant_id: match.scope_tenant_id,
+        usage_account_id: match.scope_usage_account_id,
+        billing_account_id: match.scope_billing_account_id,
+    });
+
+    return { ok: true as const, sessionId: match.session_id };
 }
 
 export function buildSessionCookie(input: { sessionId: string; expiresAt: Date; secure: boolean }) {

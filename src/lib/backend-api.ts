@@ -36,7 +36,7 @@ let _httpClient: ReturnType<typeof createHttpClient> | undefined;
 
 function httpClient() {
     if (_httpClient) return _httpClient;
-    _httpClient = createHttpClient({ baseUrl: apiBaseUrl() });
+    _httpClient = createHttpClient({ baseUrl: apiBaseUrl(), getToken: () => null, setToken: () => {} });
     return _httpClient;
 }
 

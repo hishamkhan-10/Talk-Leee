@@ -83,15 +83,47 @@ export const MeResponseSchema = z
         business_name: z.string().optional().nullable(),
         role: z.string(),
         minutes_remaining: z.number(),
+        partner_id: z.string().optional().nullable(),
+        tenant_id: z.string().optional().nullable(),
     })
     .passthrough()
     .transform((v) => ({
         ...v,
         name: v.name ?? undefined,
         business_name: v.business_name ?? undefined,
+        partner_id: v.partner_id ?? undefined,
+        tenant_id: v.tenant_id ?? undefined,
     }));
 
 export type MeResponse = z.infer<typeof MeResponseSchema>;
+
+export const SessionListItemSchema = z
+    .object({
+        session_id: z.string(),
+        session_handle: z.string(),
+        ip_address: z.string().nullable().optional(),
+        user_agent: z.string().nullable().optional(),
+        created_at: z.string(),
+        last_activity_at: z.string(),
+        current: z.boolean().optional(),
+    })
+    .passthrough()
+    .transform((v) => ({
+        session_id: v.session_id,
+        session_handle: v.session_handle,
+        ip_address: v.ip_address ?? null,
+        user_agent: v.user_agent ?? null,
+        created_at: v.created_at,
+        last_activity_at: v.last_activity_at,
+        current: v.current ?? false,
+    }));
+
+export const SessionListResponseSchema = z
+    .object({ items: z.array(SessionListItemSchema) })
+    .passthrough()
+    .transform((v) => ({ items: v.items }));
+
+export type SessionListResponse = z.infer<typeof SessionListResponseSchema>;
 
 export const VerifyOtpResponseSchema = z
     .object({
@@ -111,7 +143,7 @@ class ApiClient {
 
     private client() {
         if (this._client) return this._client;
-        this._client = createHttpClient({ baseUrl: apiBaseUrl() });
+        this._client = createHttpClient({ baseUrl: apiBaseUrl(), getToken: () => null, setToken: () => {} });
         return this._client;
     }
 
@@ -224,6 +256,42 @@ class ApiClient {
             }
         } finally {
             this.clearToken();
+        }
+    }
+
+    async logoutAllSessions(): Promise<void> {
+        try {
+            await this.client().request({ path: "/auth/logout_all", method: "POST", timeoutMs: 12_000 });
+        } catch (err) {
+            if (err instanceof ApiClientError && (err.status === 404 || err.status === 405)) {
+            } else {
+                throw err;
+            }
+        } finally {
+            this.clearToken();
+        }
+    }
+
+    async listSessions(): Promise<SessionListResponse> {
+        const path = "/auth/sessions";
+        const method = "GET" as const;
+        const data = await this.client().request({ path, method, timeoutMs: 12_000 });
+        return this.parseOrThrow(SessionListResponseSchema, data, { url: `${apiBaseUrl()}${path}`, method });
+    }
+
+    async revokeSession(sessionHandle: string): Promise<void> {
+        const handle = sessionHandle.trim();
+        if (!handle) return;
+        try {
+            await this.client().request({
+                path: "/auth/sessions/revoke",
+                method: "POST",
+                body: { session_handle: handle },
+                timeoutMs: 12_000,
+            });
+        } catch (err) {
+            if (err instanceof ApiClientError && err.status === 404) return;
+            throw err;
         }
     }
 

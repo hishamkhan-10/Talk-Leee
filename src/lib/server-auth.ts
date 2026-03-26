@@ -40,7 +40,7 @@ export async function getServerMe(): Promise<ServerMe | null> {
             const res = await fetch(url, {
                 method: "GET",
                 headers: {
-                    authorization: `Bearer ${token}`,
+                    cookie: `${authTokenCookieName()}=${encodeURIComponent(token)}`,
                     accept: "application/json",
                     "x-talklee-mw-internal": "1",
                 },

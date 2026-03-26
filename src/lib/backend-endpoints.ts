@@ -1,6 +1,10 @@
 export const backendEndpoints = {
     health: { method: "GET", path: "/health", tags: ["System"], summary: "Health check" },
 
+    authLogoutAll: { method: "POST", path: "/auth/logout_all", tags: ["Auth"], summary: "Logout all sessions" },
+    authSessionsList: { method: "GET", path: "/auth/sessions", tags: ["Auth"], summary: "List active sessions" },
+    authSessionsRevoke: { method: "POST", path: "/auth/sessions/revoke", tags: ["Auth"], summary: "Revoke a session" },
+
     connectorsList: { method: "GET", path: "/connectors", tags: ["Connectors"], summary: "List connectors" },
     connectorsCreate: { method: "POST", path: "/connectors", tags: ["Connectors"], summary: "Create connector" },
     connectorsStatus: { method: "GET", path: "/connectors/status", tags: ["Connectors"], summary: "List connector statuses" },

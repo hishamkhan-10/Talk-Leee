@@ -198,6 +198,7 @@ export function createHttpClient(config: HttpClientConfig) {
             method,
             headers,
             body,
+            credentials: "include",
             signal: controller.signal,
         };
 

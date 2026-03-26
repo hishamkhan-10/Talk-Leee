@@ -3,20 +3,51 @@ import nodemailer from "nodemailer";
 import { z } from "zod";
 import { buildResponsiveHtmlDocument } from "@/lib/email-utils";
 import { getWhiteLabelBranding } from "@/lib/white-label/branding";
+import { captureMessage } from "@/lib/monitoring";
+import {
+    beginIdempotency,
+    completeIdempotency,
+    enforceMultiLevelRateLimit,
+    sanitizeHtmlEmailInput,
+    sanitizeUnknown,
+    sanitizeTextInput,
+    sha256Hex,
+    verifyStripeWebhookSignature,
+} from "@/server/api-security";
 import {
     authMeFromRequest,
     authTokenFromRequest,
     buildSessionCookie,
     clearSessionCookie,
     clientIpFromRequest,
+    consumeAuthRateLimit,
     createSessionForUser,
+    listUserSessions,
+    logoutAllSessionsForUser,
     logoutSession,
     registerUser,
+    revokeUserSessionByHandle,
+    sessionHandleForSessionId,
     userAgentFromRequest,
     verifyPasswordLoginAttempt,
 } from "@/server/auth-core";
+import { getSql, isDatabaseConfigured } from "@/server/db";
 import { disableTotpMfa, startTotpEnrollment, verifyMfaForLogin, verifyTotpEnrollment } from "@/server/mfa";
 import { getPasskeyAuthenticationOptions, getPasskeyRegistrationOptions, verifyPasskeyAuthentication, verifyPasskeyRegistration } from "@/server/passkeys";
+import {
+    assignPartnerAdmin,
+    assignTenantUserRole,
+    getAuthzContextForUser,
+    hasPermission,
+    hasPermissionInPartner,
+    hasPermissionInTenant,
+    listPartners,
+    listPartnerTenants,
+    requireTenantAccess,
+    upsertPartner,
+    upsertTenant,
+    type RoleName,
+} from "@/server/rbac";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 
@@ -42,8 +73,15 @@ function nowIso() {
 }
 
 async function readJsonBody(request: Request) {
+    const maxBytesRaw = Number(process.env.API_MAX_JSON_BODY_BYTES ?? 1_048_576);
+    const maxBytes = Number.isFinite(maxBytesRaw) && maxBytesRaw > 0 ? Math.floor(maxBytesRaw) : 1_048_576;
     try {
-        return await request.json();
+        const buf = new Uint8Array(await request.arrayBuffer());
+        if (buf.byteLength > maxBytes) return undefined;
+        const text = new TextDecoder().decode(buf);
+        if (!text.trim()) return {};
+        const parsed = JSON.parse(text) as unknown;
+        return sanitizeUnknown(parsed);
     } catch {
         return undefined;
     }
@@ -53,6 +91,151 @@ function isHttps(request: Request) {
     const forwarded = request.headers.get("x-forwarded-proto");
     if (forwarded) return forwarded.split(",")[0]!.trim().toLowerCase() === "https";
     return request.url.startsWith("https:");
+}
+
+function maskSessionId(sessionId: string) {
+    const s = String(sessionId ?? "");
+    if (s.length <= 12) return s.replace(/.(?=.{4})/g, "*");
+    return `${s.slice(0, 6)}…${s.slice(-4)}`;
+}
+
+function devSessionItemFromRequest(input: { request: Request; sessionId: string }) {
+    const now = new Date().toISOString();
+    return {
+        session_id: maskSessionId(input.sessionId),
+        session_handle: sessionHandleForSessionId(input.sessionId),
+        ip_address: clientIpFromRequest(input.request) || null,
+        user_agent: userAgentFromRequest(input.request) || null,
+        created_at: now,
+        last_activity_at: now,
+        current: true,
+    };
+}
+
+type CachedAuth = Awaited<ReturnType<typeof authMeFromRequest>>;
+
+async function requireAuthContext(request: Request, options?: { cachedAuth?: CachedAuth | null; rotate?: boolean }) {
+    const auth = options?.cachedAuth ?? (await authMeFromRequest(request, { rotate: options?.rotate }));
+    if (!auth) return { ok: false as const, res: json({ detail: "Unauthorized" }, { status: 401 }) };
+    const ctx = await getAuthzContextForUser(auth.me.id);
+    return { ok: true as const, me: auth.me, ctx, sessionId: auth.sessionId };
+}
+
+type RequestAuth = Awaited<ReturnType<typeof requireAuthContext>> & { ok: true };
+
+type TenantScope = {
+    tenantIdFromPath: string;
+    partnerIdFromPath?: string;
+};
+
+function extractTenantScope(path: string): TenantScope | null {
+    const wl = path.match(/^\/white-label\/partners\/([^/]+)\/tenants\/([^/]+)(?:\/|$)/);
+    if (wl) {
+        const partnerIdFromPath = normalizePartnerId(sanitizeTextInput(decodeURIComponent(wl[1] ?? ""), { maxLen: 120 }));
+        const tenantIdFromPath = sanitizeTextInput(decodeURIComponent(wl[2] ?? ""), { maxLen: 120 });
+        if (partnerIdFromPath && tenantIdFromPath) return { tenantIdFromPath, partnerIdFromPath };
+        return null;
+    }
+    const m = path.match(/^\/tenants\/([^/]+)(?:\/|$)/);
+    if (m) {
+        const tenantIdFromPath = sanitizeTextInput(decodeURIComponent(m[1] ?? ""), { maxLen: 120 });
+        if (tenantIdFromPath) return { tenantIdFromPath };
+        return null;
+    }
+    return null;
+}
+
+function extractPartnerFromPath(path: string) {
+    const m = path.match(/^\/partners\/([^/]+)(?:\/|$)/);
+    if (!m) return null;
+    const partnerId = normalizePartnerId(sanitizeTextInput(decodeURIComponent(m[1] ?? ""), { maxLen: 120 }));
+    return partnerId || null;
+}
+
+async function requireRoleOr403(input: { auth: RequestAuth; roles: RoleName[]; scope?: { partnerId?: string; tenantId?: string } }) {
+    const { me, ctx } = input.auth;
+    if (ctx.platformRole === "platform_admin" || me.role === "platform_admin") return null;
+
+    const want = new Set(input.roles);
+    if (want.has(me.role as RoleName)) {
+        if (input.scope?.partnerId && typeof me.partner_id === "string" && me.partner_id.trim()) {
+            if (me.partner_id.trim().toLowerCase() !== input.scope.partnerId.trim().toLowerCase()) {
+                captureMessage("role_scope_denied", { user_id: ctx.userId, role: me.role, partner_id: input.scope.partnerId });
+                return json({ detail: "Forbidden" }, { status: 403 });
+            }
+        }
+        if (input.scope?.tenantId && typeof me.tenant_id === "string" && me.tenant_id.trim()) {
+            if (me.tenant_id.trim() !== input.scope.tenantId.trim()) {
+                captureMessage("role_scope_denied", { user_id: ctx.userId, role: me.role, tenant_id: input.scope.tenantId });
+                return json({ detail: "Forbidden" }, { status: 403 });
+            }
+        }
+        return null;
+    }
+
+    if (input.scope?.tenantId) {
+        const tenantId = input.scope.tenantId;
+        const match = ctx.tenantRoles.find((t) => t.tenantId === tenantId && want.has(t.role));
+        if (match) return null;
+    }
+
+    if (input.scope?.partnerId) {
+        const partnerId = input.scope.partnerId;
+        const match = ctx.partnerRoles.find((p) => p.partnerId === partnerId && want.has(p.role));
+        if (match) return null;
+    }
+
+    captureMessage("role_denied", { user_id: ctx.userId, roles: input.roles.join(",") });
+    return json({ detail: "Forbidden" }, { status: 403 });
+}
+
+async function requirePermissionOr403(input: { auth: RequestAuth; permission: string; scope?: { partnerId?: string; tenantId?: string } }) {
+    const { ctx } = input.auth;
+    const permission = input.permission;
+    const tenantId = input.scope?.tenantId;
+    const partnerId = input.scope?.partnerId;
+
+    const allowed = tenantId
+        ? await hasPermissionInTenant({ ctx, tenantId, permission })
+        : partnerId
+          ? await hasPermissionInPartner({ ctx, partnerId, permission })
+          : hasPermission({ ctx, permission });
+
+    if (allowed) return null;
+    captureMessage("permission_denied", { user_id: ctx.userId, permission, partner_id: partnerId, tenant_id: tenantId });
+    return json({ detail: "Forbidden" }, { status: 403 });
+}
+
+async function enforceTenantIsolationIfScoped(input: { request: Request; path: string; cachedAuth?: CachedAuth | null }) {
+    const scope = extractTenantScope(input.path);
+    if (!scope) return { ok: true as const, auth: null, tenant: null, scope: null };
+
+    const auth = await requireAuthContext(input.request, { cachedAuth: input.cachedAuth });
+    if (!auth.ok) return { ok: false as const, res: auth.res };
+
+    if (!isDatabaseConfigured()) {
+        const partnerIdFromPath = scope.partnerIdFromPath ?? null;
+        if (auth.me.role === "platform_admin") return { ok: true as const, auth, tenant: null, scope };
+        if (auth.me.role === "partner_admin" && partnerIdFromPath && auth.me.partner_id?.toLowerCase() === partnerIdFromPath.toLowerCase()) {
+            return { ok: true as const, auth, tenant: null, scope };
+        }
+        return { ok: false as const, res: json({ detail: "Forbidden" }, { status: 403 }) };
+    }
+
+    const access = await requireTenantAccess({ ctx: auth.ctx, tenantId: scope.tenantIdFromPath });
+    if (!access.ok) {
+        const status = access.status;
+        if (status === 400) return { ok: false as const, res: json({ detail: "Invalid tenant_id" }, { status: 400 }) };
+        if (status === 404) return { ok: false as const, res: json({ detail: "Tenant not found" }, { status: 404 }) };
+        if (status === 403 && access.code === "tenant_suspended") return { ok: false as const, res: json({ detail: "Tenant suspended" }, { status: 403 }) };
+        return { ok: false as const, res: json({ detail: "Forbidden" }, { status: 403 }) };
+    }
+
+    if (scope.partnerIdFromPath && access.tenant.partner_id !== scope.partnerIdFromPath) {
+        return { ok: false as const, res: json({ detail: "Tenant not found" }, { status: 404 }) };
+    }
+
+    return { ok: true as const, auth, tenant: access.tenant, scope };
 }
 
 type PartnerRecord = {
@@ -358,6 +541,99 @@ const PasskeyLoginVerifySchema = z
     })
     .strict();
 
+const PartnerCreateSchema = z
+    .object({
+        partner_id: z.string().min(1).max(120),
+        display_name: z.string().min(1).max(160),
+        allow_transfer: z.boolean().optional(),
+        admin_email: z.string().email(),
+    })
+    .strict();
+
+const PartnerUpsertSchema = z
+    .object({
+        partner_id: z.string().min(1).max(120),
+        display_name: z.string().min(1).max(160),
+        allow_transfer: z.boolean().optional(),
+    })
+    .strict();
+
+const TenantUpsertSchema = z
+    .object({
+        id: z.string().min(1).max(120).optional(),
+        name: z.string().min(1).max(200),
+        status: z.enum(["active", "suspended"]).optional(),
+    })
+    .strict();
+
+const TenantAssignRoleSchema = z
+    .object({
+        user_id: z.string().min(1).max(120),
+        role: z.enum(["tenant_admin", "user", "readonly"]).optional(),
+    })
+    .strict();
+
+const EmailSendSchema = z
+    .object({
+        to: z.array(z.string().min(1)).optional(),
+        recipients: z.array(z.string().min(1)).optional(),
+        template_id: z.string().min(1).optional(),
+        templateId: z.string().min(1).optional(),
+        subject: z.string().min(1).max(240).optional(),
+        html: z.string().min(1).max(200_000).optional(),
+    })
+    .strict();
+
+const DevConnectorCreateSchema = z
+    .object({
+        name: z.string().min(1).max(160).optional(),
+        type: z.string().min(1).max(120).optional(),
+        config: z.record(z.unknown()).optional(),
+    })
+    .strict();
+
+const DevCalendarEventCreateSchema = z
+    .object({
+        lead_id: z.string().min(1).max(120).optional(),
+        lead_name: z.string().min(1).max(200).optional(),
+        title: z.string().min(1).max(240).optional(),
+        start_time: z.string().min(1).max(64).optional(),
+        end_time: z.string().min(1).max(64).optional(),
+        notes: z.string().max(10_000).optional(),
+    })
+    .strict();
+
+const DevCalendarEventPatchSchema = z
+    .object({
+        title: z.string().min(1).max(240).optional(),
+        start_time: z.string().min(1).max(64).optional(),
+        end_time: z.string().min(1).max(64).optional(),
+    })
+    .strict();
+
+const DevReminderCreateSchema = z
+    .object({
+        content: z.string().max(10_000).optional(),
+        channel: z.enum(["email", "sms"]).optional(),
+        scheduled_at: z.string().min(1).max(64).optional(),
+        meeting_id: z.string().min(1).max(120).optional(),
+        meeting_title: z.string().min(1).max(240).optional(),
+        contact_id: z.string().min(1).max(120).optional(),
+        contact_name: z.string().min(1).max(200).optional(),
+        to_email: z.string().email().optional(),
+        to_phone: z.string().min(1).max(40).optional(),
+    })
+    .strict();
+
+const DevReminderPatchSchema = z
+    .object({
+        content: z.string().max(10_000).optional(),
+        status: z.string().min(1).max(64).optional(),
+        channel: z.string().min(1).max(64).optional(),
+        scheduled_at: z.string().min(1).max(64).optional(),
+    })
+    .strict();
+
 function defaultAgentSettings(input: { partnerId: string; tenantId: string }): AgentSettings {
     const now = nowIso();
     const partnerKey = input.partnerId.trim().toLowerCase();
@@ -380,18 +656,263 @@ function defaultAgentSettings(input: { partnerId: string; tenantId: string }): A
     };
 }
 
+function isSessionMutationRequest(method: string, path: string) {
+    if (method === "POST" && path === "/auth/login") return true;
+    if (method === "POST" && path === "/auth/logout") return true;
+    if (method === "POST" && path === "/auth/logout_all") return true;
+    if (method === "POST" && path === "/auth/passkeys/login/verify") return true;
+    return false;
+}
+
+function isPublicApiPath(method: string, path: string) {
+    if (method === "GET" && path === "/health") return true;
+    if (method === "POST" && path === "/auth/register") return true;
+    if (method === "POST" && path === "/auth/login") return true;
+    if (method === "POST" && path === "/auth/passkeys/login/options") return true;
+    if (method === "POST" && path === "/auth/passkeys/login/verify") return true;
+    if (method === "POST" && path === "/billing/webhooks/stripe") return true;
+    return false;
+}
+
+function rateLimitTierForPath(method: string, path: string) {
+    if (method === "POST" && path === "/billing/webhooks/stripe") return "webhook" as const;
+    if (path.startsWith("/auth/")) return "sensitive" as const;
+    return "default" as const;
+}
+
+function shouldUseIdempotency(method: string, path: string) {
+    if (method !== "POST" && method !== "PATCH" && method !== "DELETE") return false;
+    if (path.startsWith("/auth/")) return false;
+    if (path === "/billing/webhooks/stripe") return false;
+    if (path === "/assistant/plan") return false;
+    return true;
+}
+
 async function handle(request: Request, segments: string[]) {
     const method = request.method.toUpperCase();
     const path = `/${segments.join("/")}`;
+    const token = authTokenFromRequest(request);
+    const cachedAuth = token && !isSessionMutationRequest(method, path) ? await authMeFromRequest(request) : null;
+    const useIdempotency = shouldUseIdempotency(method, path);
+    if (useIdempotency) {
+        let rawBytes = new Uint8Array();
+        try {
+            rawBytes = new Uint8Array(await request.clone().arrayBuffer());
+        } catch {
+            rawBytes = new Uint8Array();
+        }
+        const bodyHash = sha256Hex(rawBytes);
+        const headerKey = request.headers.get("idempotency-key") ?? request.headers.get("Idempotency-Key");
+        const userId = cachedAuth?.me?.id ?? null;
+        const tenantFromPath = extractTenantScope(path)?.tenantIdFromPath ?? null;
+        const tenantId = tenantFromPath ?? (typeof cachedAuth?.me?.tenant_id === "string" ? cachedAuth.me.tenant_id : "unknown");
+        const computedKey = headerKey && headerKey.trim().length > 0 ? sanitizeTextInput(headerKey, { maxLen: 200 }) : `auto:${sha256Hex(`${method}:${path}:${userId ?? "anon"}:${tenantId}:${bodyHash}`)}`;
+        const scope = tenantId !== "unknown" ? `tenant:${tenantId}` : userId ? `user:${userId}` : "global";
+
+        const ipAddress = clientIpFromRequest(request) || null;
+        const idem = await beginIdempotency({
+            scope,
+            idempotencyKey: computedKey,
+            requestHash: bodyHash,
+            method,
+            path,
+            userId,
+            tenantId: tenantId === "unknown" ? null : tenantId,
+            ipAddress,
+        });
+        if (!idem.ok) return json({ detail: "Conflict" }, { status: idem.status });
+        if (idem.state === "replay" && idem.row) {
+            const replayRes = (idem.row.response_status ?? 200) === 204
+                ? noContent({ status: 204, headers: { "x-idempotent-replay": "1" } })
+                : json(idem.row.response_body, { status: idem.row.response_status ?? 200, headers: { "x-idempotent-replay": "1" } });
+            if (cachedAuth?.setCookie) replayRes.headers.append("set-cookie", cachedAuth.setCookie);
+            return replayRes;
+        }
+
+        const res = await handleInner(request, segments, { cachedAuth });
+        if (cachedAuth?.setCookie) res.headers.append("set-cookie", cachedAuth.setCookie);
+
+        let responseBody: unknown = null;
+        if (res.status !== 204) {
+            try {
+                responseBody = await res.clone().json();
+            } catch {
+                responseBody = null;
+            }
+        }
+        await completeIdempotency({
+            scope,
+            idempotencyKey: computedKey,
+            requestHash: bodyHash,
+            responseStatus: res.status,
+            responseHeaders: { "content-type": res.headers.get("content-type") ?? "application/json" },
+            responseBody,
+        });
+        res.headers.set("x-idempotency-key", computedKey);
+        return res;
+    }
+
+    const res = await handleInner(request, segments, { cachedAuth });
+    if (cachedAuth?.setCookie) res.headers.append("set-cookie", cachedAuth.setCookie);
+    return res;
+}
+
+async function handleInner(request: Request, segments: string[], state: { cachedAuth: CachedAuth | null }) {
+    const method = request.method.toUpperCase();
+    const path = `/${segments.join("/")}`;
+
+    const publicPath = isPublicApiPath(method, path);
+    const token = authTokenFromRequest(request);
+    const shouldPreloadAuth = Boolean(token) && !isSessionMutationRequest(method, path);
+    const auth = state.cachedAuth ?? (shouldPreloadAuth ? await authMeFromRequest(request) : null);
+    if (!publicPath && !auth) return json({ detail: "Unauthorized" }, { status: 401 });
+
+    const tenantEnforcement = await enforceTenantIsolationIfScoped({ request, path, cachedAuth: auth });
+    if (!tenantEnforcement.ok) return tenantEnforcement.res;
+
+    const tenantId = tenantEnforcement.tenant?.id ?? (typeof auth?.me.tenant_id === "string" ? auth.me.tenant_id : "unknown");
+    const userId = auth?.me?.id ?? null;
+    const tier = rateLimitTierForPath(method, path);
+    const rate = await enforceMultiLevelRateLimit({
+        request,
+        tier,
+        path,
+        method,
+        userId,
+        tenantId,
+        layers: tier === "webhook" ? { ip: true, user: false, tenant: false } : undefined,
+    });
+    if (!rate.ok) return json({ detail: "Too many requests" }, { status: 429, headers: rate.headers });
+
+    const platformScoped = path === "/platform" || path.startsWith("/platform/");
+    const partnerIdFromPath = extractPartnerFromPath(path);
+    if (platformScoped || partnerIdFromPath) {
+        const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+        if (!auth.ok) return auth.res;
+
+        if (platformScoped) {
+            const roleDenied = await requireRoleOr403({ auth, roles: ["platform_admin"] });
+            if (roleDenied) return roleDenied;
+        }
+
+        if (partnerIdFromPath) {
+            const roleDenied = await requireRoleOr403({ auth, roles: ["partner_admin"], scope: { partnerId: partnerIdFromPath } });
+            if (roleDenied) return roleDenied;
+        }
+    }
 
     if (method === "GET" && path === "/health") {
         return json({ status: "ok" });
     }
 
+    if (method === "POST" && path === "/billing/webhooks/stripe") {
+        const secret = String(process.env.STRIPE_WEBHOOK_SECRET ?? "").trim();
+        if (!secret) return json({ detail: "Service unavailable" }, { status: 503 });
+
+        const sig = request.headers.get("stripe-signature") ?? "";
+        const maxBytesRaw = Number(process.env.API_MAX_WEBHOOK_BODY_BYTES ?? 262_144);
+        const maxBytes = Number.isFinite(maxBytesRaw) && maxBytesRaw > 0 ? Math.floor(maxBytesRaw) : 262_144;
+        let raw: Uint8Array;
+        try {
+            raw = new Uint8Array(await request.arrayBuffer());
+        } catch {
+            return json({ detail: "Invalid request" }, { status: 400 });
+        }
+        if (raw.byteLength > maxBytes) return json({ detail: "Invalid request" }, { status: 400 });
+
+        const verified = verifyStripeWebhookSignature({
+            rawBody: raw,
+            header: sig,
+            secret,
+            toleranceSeconds: Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SECONDS ?? 300),
+        });
+        if (!verified.ok) {
+            try {
+                captureMessage("webhook_signature_invalid", { provider: "stripe", code: verified.code });
+            } catch {
+            }
+            return json({ detail: "Unauthorized" }, { status: 401 });
+        }
+
+        let event: unknown;
+        try {
+            const text = new TextDecoder().decode(raw);
+            event = sanitizeUnknown(JSON.parse(text));
+        } catch {
+            return json({ detail: "Invalid request" }, { status: 400 });
+        }
+
+        const StripeEventSchema = z
+            .object({
+                id: z.string().min(1).max(255),
+                type: z.string().min(1).max(255),
+                created: z.number().int().nonnegative().optional(),
+                data: z
+                    .object({
+                        object: z.record(z.unknown()).optional(),
+                    })
+                    .optional(),
+            })
+            .strip();
+        const parsed = StripeEventSchema.safeParse(event);
+        if (!parsed.success) return json({ detail: "Invalid request" }, { status: 400 });
+
+        const metadata =
+            parsed.data.data?.object && typeof parsed.data.data.object === "object"
+                ? ((parsed.data.data.object as Record<string, unknown>).metadata as unknown)
+                : undefined;
+        const tenantId =
+            metadata && typeof metadata === "object" && metadata
+                ? (metadata as Record<string, unknown>).tenant_id
+                : undefined;
+        const tenantScope = typeof tenantId === "string" && tenantId.trim().length > 0 ? `tenant:${tenantId.trim()}` : "tenant:unknown";
+        const webhookTenantRate = await enforceMultiLevelRateLimit({
+            request,
+            tier: "webhook",
+            path,
+            method,
+            userId: null,
+            tenantId: typeof tenantId === "string" ? tenantId : null,
+            layers: { ip: false, user: false, tenant: true },
+        });
+        if (!webhookTenantRate.ok) return json({ detail: "Too many requests" }, { status: 429, headers: webhookTenantRate.headers });
+
+        const requestHash = sha256Hex(raw);
+        const ipAddress = clientIpFromRequest(request) || null;
+        const idem = await beginIdempotency({
+            scope: tenantScope,
+            idempotencyKey: `stripe_event:${parsed.data.id}`,
+            requestHash,
+            method,
+            path,
+            userId: null,
+            tenantId: typeof tenantId === "string" ? tenantId : null,
+            ipAddress,
+        });
+        if (!idem.ok) return json({ detail: "Conflict" }, { status: idem.status });
+        if (idem.state === "replay" && idem.row) {
+            return json(idem.row.response_body, {
+                status: idem.row.response_status ?? 200,
+                headers: { "x-idempotent-replay": "1" },
+            });
+        }
+
+        const responseBody = { received: true };
+        await completeIdempotency({
+            scope: tenantScope,
+            idempotencyKey: `stripe_event:${parsed.data.id}`,
+            requestHash,
+            responseStatus: 200,
+            responseHeaders: { "content-type": "application/json" },
+            responseBody,
+        });
+        return json(responseBody);
+    }
+
     if (method === "GET" && (path === "/auth/me" || path === "/me")) {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
-        return json(me);
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        return json(auth.me);
     }
 
     if (method === "POST" && path === "/auth/register") {
@@ -472,6 +993,12 @@ async function handle(request: Request, segments: string[]) {
             return json({ detail: "Invalid credentials" }, { status: 401 });
         }
 
+        const existingToken = authTokenFromRequest(request);
+        try {
+            await logoutSession(existingToken);
+        } catch {
+        }
+
         const session = await createSessionForUser({
             userId: result.user.id,
             ipAddress,
@@ -480,6 +1007,12 @@ async function handle(request: Request, segments: string[]) {
         });
         if (!session.ok && session.code === "mfa_required") {
             return json({ detail: "MFA required", mfa_required: true }, { status: 401 });
+        }
+        if (!session.ok && session.code === "rate_limited") {
+            return json(
+                { detail: "Too many sessions created" },
+                { status: 429, headers: { "retry-after": String(session.retryAfterSeconds) } }
+            );
         }
         if (!session.ok && session.code === "db_unavailable") {
             return json({ detail: "Service unavailable" }, { status: 503 });
@@ -496,8 +1029,9 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/auth/mfa/enroll/start") {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        const me = auth.me;
 
         const res = await startTotpEnrollment({ userId: me.id, email: me.email });
         if (!res.ok && res.code === "already_enabled") return json({ detail: "MFA already enabled" }, { status: 409 });
@@ -507,8 +1041,9 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/auth/mfa/enroll/verify") {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        const me = auth.me;
 
         const body = await readJsonBody(request);
         const parsed = MfaEnrollVerifySchema.safeParse(body);
@@ -529,8 +1064,9 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/auth/mfa/disable") {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request, { rotate: false }));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        const me = auth.me;
 
         const body = await readJsonBody(request);
         const parsed = MfaDisableSchema.safeParse(body);
@@ -565,9 +1101,109 @@ async function handle(request: Request, segments: string[]) {
         return noContent({ headers: { "set-cookie": cookie } });
     }
 
+    if (method === "POST" && path === "/auth/logout_all") {
+        const auth = await requireAuthContext(request, { rotate: false });
+        if (!auth.ok) return auth.res;
+
+        if (!isDatabaseConfigured()) {
+            const cookie = clearSessionCookie({ secure: isHttps(request) });
+            return noContent({ headers: { "set-cookie": cookie } });
+        }
+
+        const ipAddress = clientIpFromRequest(request);
+        const userLimit = Number(process.env.AUTH_LOGOUT_ALL_LIMIT_PER_USER_PER_MINUTE ?? 5);
+        const ipLimit = Number(process.env.AUTH_LOGOUT_ALL_LIMIT_PER_IP_PER_MINUTE ?? 20);
+        const perUser = await consumeAuthRateLimit({
+            bucket: `logout_all:user:${auth.me.id}`,
+            limit: Number.isFinite(userLimit) && userLimit > 0 ? Math.floor(userLimit) : 5,
+            windowSeconds: 60,
+        });
+        const perIp = await consumeAuthRateLimit({
+            bucket: `logout_all:ip:${ipAddress || "unknown"}`,
+            limit: Number.isFinite(ipLimit) && ipLimit > 0 ? Math.floor(ipLimit) : 20,
+            windowSeconds: 60,
+        });
+        if (!perUser.allowed || !perIp.allowed) {
+            const retryAfterSeconds = Math.max(perUser.retryAfterSeconds, perIp.retryAfterSeconds);
+            return json(
+                { detail: "Too many requests" },
+                { status: 429, headers: { "retry-after": String(retryAfterSeconds) } }
+            );
+        }
+
+        await logoutAllSessionsForUser({ userId: auth.me.id });
+        const cookie = clearSessionCookie({ secure: isHttps(request) });
+        return noContent({ headers: { "set-cookie": cookie } });
+    }
+
+    if (method === "GET" && path === "/auth/sessions") {
+        const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+        if (!auth.ok) return auth.res;
+
+        if (!isDatabaseConfigured()) {
+            return json({ items: [devSessionItemFromRequest({ request, sessionId: auth.sessionId })] });
+        }
+
+        const res = await listUserSessions({ userId: auth.me.id });
+        if (!res.ok && res.code === "db_unavailable") return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!res.ok) return json({ detail: "Service unavailable" }, { status: 503 });
+
+        const now = Date.now();
+        const idleSecondsRaw = Number(process.env.AUTH_SESSION_IDLE_TIMEOUT_SECONDS ?? 30 * 60);
+        const idleSeconds = Number.isFinite(idleSecondsRaw) && idleSecondsRaw > 0 ? Math.floor(idleSecondsRaw) : 30 * 60;
+        const idleCutoff = now - idleSeconds * 1000;
+
+        const active = res.sessions
+            .filter((s) => !s.revoked && !s.revoked_at)
+            .filter((s) => s.expires_at.getTime() > now)
+            .filter((s) => (s.last_activity_at?.getTime?.() ?? s.created_at.getTime()) > idleCutoff);
+
+        return json({
+            items: active.map((s) => ({
+                session_id: maskSessionId(s.session_id),
+                session_handle: sessionHandleForSessionId(s.session_id),
+                ip_address: s.ip_address ?? null,
+                user_agent: s.user_agent ?? null,
+                created_at: s.created_at.toISOString(),
+                last_activity_at: s.last_activity_at.toISOString(),
+                current: s.session_id === auth.sessionId,
+            })),
+        });
+    }
+
+    if (method === "POST" && path === "/auth/sessions/revoke") {
+        const auth = await requireAuthContext(request, { rotate: false });
+        if (!auth.ok) return auth.res;
+
+        const SessionRevokeSchema = z.object({ session_handle: z.string().min(1).max(255) }).strict();
+        const body = await readJsonBody(request);
+        const parsed = SessionRevokeSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+        const sessionHandle = parsed.data.session_handle.trim();
+
+        if (!isDatabaseConfigured()) {
+            if (sessionHandle !== sessionHandleForSessionId(auth.sessionId)) return json({ detail: "Not found" }, { status: 404 });
+            const cookie = clearSessionCookie({ secure: isHttps(request) });
+            return noContent({ headers: { "set-cookie": cookie } });
+        }
+
+        const out = await revokeUserSessionByHandle({ userId: auth.me.id, sessionHandle, reason: "manual_revocation" });
+        if (!out.ok && out.code === "db_unavailable") return json({ detail: "Service unavailable" }, { status: 503 });
+        if (!out.ok && out.code === "invalid_request") return json({ detail: "Invalid request" }, { status: 400 });
+        if (!out.ok && out.code === "not_found") return json({ detail: "Not found" }, { status: 404 });
+        if (!out.ok) return json({ detail: "Service unavailable" }, { status: 503 });
+
+        if (out.sessionId === auth.sessionId) {
+            const cookie = clearSessionCookie({ secure: isHttps(request) });
+            return noContent({ headers: { "set-cookie": cookie } });
+        }
+        return noContent();
+    }
+
     if (method === "POST" && path === "/auth/passkeys/registration/options") {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        const me = auth.me;
 
         const body = await readJsonBody(request);
         const parsed = PasskeyRegistrationOptionsSchema.safeParse(body);
@@ -595,8 +1231,9 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/auth/passkeys/registration/verify") {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        const me = auth.me;
 
         const body = await readJsonBody(request);
         const parsed = PasskeyRegistrationVerifySchema.safeParse(body);
@@ -677,6 +1314,12 @@ async function handle(request: Request, segments: string[]) {
             return json({ detail: "Invalid credentials" }, { status: 401 });
         }
 
+        const existingToken = authTokenFromRequest(request);
+        try {
+            await logoutSession(existingToken);
+        } catch {
+        }
+
         const session = await createSessionForUser({
             userId: res.user.id,
             ipAddress,
@@ -685,6 +1328,12 @@ async function handle(request: Request, segments: string[]) {
         });
         if (!session.ok && session.code === "mfa_required") {
             return json({ detail: "MFA required", mfa_required: true }, { status: 401 });
+        }
+        if (!session.ok && session.code === "rate_limited") {
+            return json(
+                { detail: "Too many sessions created" },
+                { status: 429, headers: { "retry-after": String(session.retryAfterSeconds) } }
+            );
         }
         if (!session.ok && session.code === "db_unavailable") {
             return json({ detail: "Service unavailable" }, { status: 503 });
@@ -701,66 +1350,176 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (path === "/white-label/partners") {
-        ensureSeedPartners();
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
-        if (me.role !== "white_label_admin") return json({ detail: "Forbidden" }, { status: 403 });
+        const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+        if (!auth.ok) return auth.res;
+        const { ctx } = auth;
+
+        const roleDenied = await requireRoleOr403({ auth, roles: ["platform_admin"] });
+        if (roleDenied) return roleDenied;
+
+        if (isDatabaseConfigured()) {
+            const forbidden = await requirePermissionOr403({ auth, permission: "manage_partners" });
+            if (forbidden) return forbidden;
+        }
 
         if (method === "GET") {
-            return json({ items: Array.from(partnersStore.values()).sort((a, b) => a.partner_id.localeCompare(b.partner_id)) });
+            if (!isDatabaseConfigured()) {
+                ensureSeedPartners();
+                return json({ items: Array.from(partnersStore.values()).sort((a, b) => a.partner_id.localeCompare(b.partner_id)) });
+            }
+            const out = await listPartners({ ctx });
+            if (!out.ok) return json({ detail: "Forbidden" }, { status: out.status });
+            return json({
+                items: out.partners.map((p) => ({
+                    partner_id: p.partner_id,
+                    display_name: p.display_name,
+                    allow_transfer: p.allow_transfer,
+                    created_at: p.created_at.toISOString(),
+                    updated_at: p.updated_at.toISOString(),
+                })),
+            });
         }
 
         if (method === "POST") {
-            const body = (await readJsonBody(request)) as
-                | { partner_id?: string; display_name?: string; allow_transfer?: boolean; admin_email?: string }
-                | undefined;
-            const partnerId = normalizePartnerId(String(body?.partner_id ?? ""));
-            const displayName = String(body?.display_name ?? "").trim();
-            const adminEmail = String(body?.admin_email ?? "").trim();
-            const allowTransfer = Boolean(body?.allow_transfer ?? true);
-            if (!partnerId) return json({ detail: "partner_id is required" }, { status: 400 });
-            if (!displayName) return json({ detail: "display_name is required" }, { status: 400 });
-            if (!adminEmail || !/@/.test(adminEmail)) return json({ detail: "admin_email must be a valid email" }, { status: 400 });
-            if (partnersStore.has(partnerId)) return json({ detail: "Partner already exists" }, { status: 409 });
+            const body = await readJsonBody(request);
+            const parsed = PartnerCreateSchema.safeParse(body);
+            if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+            const partnerId = normalizePartnerId(parsed.data.partner_id);
+            const displayName = parsed.data.display_name.trim();
+            const adminEmail = parsed.data.admin_email.trim().toLowerCase();
+            const allowTransfer = parsed.data.allow_transfer ?? true;
+            if (!partnerId) return json({ detail: "Invalid request body" }, { status: 400 });
 
-            const rec: PartnerRecord = {
-                partner_id: partnerId,
-                display_name: displayName,
-                allow_transfer: allowTransfer,
-                created_at: nowIso(),
-                admin_email: adminEmail,
-                admin_token: `partner-${partnerId}-token`,
-            };
-            partnersStore.set(partnerId, rec);
-            return json(rec, { status: 201 });
+            if (!isDatabaseConfigured()) {
+                ensureSeedPartners();
+                if (partnersStore.has(partnerId)) return json({ detail: "Partner already exists" }, { status: 409 });
+                const rec: PartnerRecord = {
+                    partner_id: partnerId,
+                    display_name: displayName,
+                    allow_transfer: allowTransfer,
+                    created_at: nowIso(),
+                    admin_email: adminEmail,
+                    admin_token: `partner-${partnerId}-token`,
+                };
+                partnersStore.set(partnerId, rec);
+                return json(rec, { status: 201 });
+            }
+
+            const created = await upsertPartner({ ctx, partnerId, displayName, allowTransfer });
+            if (!created.ok) return json({ detail: "Forbidden" }, { status: created.status });
+
+            const sql = getSql();
+            const email = adminEmail.trim().toLowerCase();
+            const userRows = await sql<{ id: string }[]>`
+                select id
+                from users
+                where email = ${email}
+                limit 1
+            `;
+            const userId = userRows[0]?.id ?? null;
+            if (userId) {
+                await assignPartnerAdmin({ platformCtx: ctx, userId, partnerId }).catch(() => undefined);
+            }
+
+            return json(
+                {
+                    partner_id: created.partner.partner_id,
+                    display_name: created.partner.display_name,
+                    allow_transfer: created.partner.allow_transfer,
+                    created_at: created.partner.created_at.toISOString(),
+                    updated_at: created.partner.updated_at.toISOString(),
+                },
+                { status: 201 }
+            );
         }
     }
 
     {
         const m = path.match(/^\/white-label\/partners\/([^/]+)\/tenants\/([^/]+)\/agent-settings$/);
         if (m) {
-            const partnerId = decodeURIComponent(m[1] ?? "");
-            const tenantId = decodeURIComponent(m[2] ?? "");
-            const branding = getWhiteLabelBranding(partnerId);
-            if (!branding) return json({ error: "Unknown partner" }, { status: 404 });
+            const partnerIdFromPath = normalizePartnerId(decodeURIComponent(m[1] ?? ""));
+            const tenantIdFromPath = decodeURIComponent(m[2] ?? "");
+            const branding = getWhiteLabelBranding(partnerIdFromPath);
 
-            const me = await authMeFromRequest(request);
-            if (me?.role === "partner_admin" && typeof me.partner_id === "string" && me.partner_id.trim().length > 0) {
-                if (me.partner_id.trim().toLowerCase() !== branding.partnerId.trim().toLowerCase()) {
-                    return json({ detail: "Forbidden" }, { status: 403 });
+            const auth = tenantEnforcement.auth ?? (await requireAuthContext(request, { cachedAuth: state.cachedAuth }));
+            if (!auth || !auth.ok) return auth ? auth.res : json({ detail: "Unauthorized" }, { status: 401 });
+
+            if (!isDatabaseConfigured()) {
+                ensureSeedPartners();
+                const allowTransfer = partnersStore.get(partnerIdFromPath)?.allow_transfer ?? branding?.features.callTransfer ?? true;
+                const key = `${partnerIdFromPath}:${tenantIdFromPath}`;
+                const existing = agentSettingsByTenant.get(key) ?? defaultAgentSettings({ partnerId: partnerIdFromPath, tenantId: tenantIdFromPath });
+                const config = allowTransfer ? existing : { ...existing, transferEnabled: false };
+
+                if (method === "GET") {
+                    return json({
+                        partner: { id: partnerIdFromPath, allowTransfer },
+                        tenant: { id: tenantIdFromPath },
+                        agentSettings: { transfer_enabled: allowTransfer },
+                        config: { systemPrompt: config.systemPrompt, greetingMessage: config.greetingMessage, transferEnabled: config.transferEnabled },
+                        updatedAt: config.updatedAt,
+                    });
                 }
+
+                if (method === "PATCH") {
+                    const roleDenied = await requireRoleOr403({ auth, roles: ["partner_admin"], scope: { partnerId: partnerIdFromPath } });
+                    if (roleDenied) return roleDenied;
+                    const body = await readJsonBody(request);
+                    const parsed = AgentSettingsInputSchema.safeParse(body);
+                    if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+                    const nextPrompt = parsed.data.systemPrompt.trim();
+                    const nextGreeting = parsed.data.greetingMessage.trim();
+                    if (nextPrompt.length === 0) return json({ detail: "System prompt cannot be empty" }, { status: 400 });
+                    if (nextGreeting.length === 0) return json({ detail: "Greeting message cannot be empty" }, { status: 400 });
+
+                    const nextTransfer = Boolean(parsed.data.transferEnabled);
+                    if (nextTransfer && !allowTransfer) return json({ detail: "This feature is disabled by partner policy" }, { status: 400 });
+
+                    const updated: AgentSettings = {
+                        systemPrompt: nextPrompt,
+                        greetingMessage: nextGreeting,
+                        transferEnabled: allowTransfer ? nextTransfer : false,
+                        updatedAt: nowIso(),
+                    };
+                    agentSettingsByTenant.set(key, updated);
+
+                    return json({
+                        partner: { id: partnerIdFromPath, allowTransfer },
+                        tenant: { id: tenantIdFromPath },
+                        agentSettings: { transfer_enabled: allowTransfer },
+                        config: { systemPrompt: updated.systemPrompt, greetingMessage: updated.greetingMessage, transferEnabled: updated.transferEnabled },
+                        updatedAt: updated.updatedAt,
+                    });
+                }
+
+                return json({ error: "Method not allowed" }, { status: 405 });
             }
 
-            ensureSeedPartners();
-            const allowTransfer = partnersStore.get(branding.partnerId)?.allow_transfer ?? branding.features.callTransfer;
-            const key = `${branding.partnerId}:${tenantId}`;
-            const existing = agentSettingsByTenant.get(key) ?? defaultAgentSettings({ partnerId: branding.partnerId, tenantId });
+            const tenant = tenantEnforcement.tenant;
+            if (!tenant) return json({ detail: "Tenant not found" }, { status: 404 });
+
+            let allowTransfer = branding?.features.callTransfer ?? true;
+            try {
+                const sql = getSql();
+                const partnerRows = await sql<{ allow_transfer: boolean }[]>`
+                    select allow_transfer
+                    from partners
+                    where partner_id = ${tenant.partner_id}
+                    limit 1
+                `;
+                if (typeof partnerRows[0]?.allow_transfer === "boolean") allowTransfer = partnerRows[0].allow_transfer;
+            } catch {
+            }
+
+            const key = `${tenant.partner_id}:${tenant.id}`;
+            const existing = agentSettingsByTenant.get(key) ?? defaultAgentSettings({ partnerId: tenant.partner_id, tenantId: tenant.id });
             const config = allowTransfer ? existing : { ...existing, transferEnabled: false };
 
             if (method === "GET") {
                 return json({
-                    partner: { id: branding.partnerId, allowTransfer },
-                    tenant: { id: tenantId },
+                    partner: { id: tenant.partner_id, allowTransfer },
+                    tenant: { id: tenant.id },
                     agentSettings: { transfer_enabled: allowTransfer },
                     config: { systemPrompt: config.systemPrompt, greetingMessage: config.greetingMessage, transferEnabled: config.transferEnabled },
                     updatedAt: config.updatedAt,
@@ -768,6 +1527,10 @@ async function handle(request: Request, segments: string[]) {
             }
 
             if (method === "PATCH") {
+                const roleDenied = await requireRoleOr403({ auth, roles: ["tenant_admin", "partner_admin"], scope: { tenantId: tenant.id, partnerId: tenant.partner_id } });
+                if (roleDenied) return roleDenied;
+                const forbidden = await requirePermissionOr403({ auth, permission: "manage_agent_settings", scope: { tenantId: tenant.id } });
+                if (forbidden) return forbidden;
                 const body = await readJsonBody(request);
                 const parsed = AgentSettingsInputSchema.safeParse(body);
                 if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
@@ -789,8 +1552,8 @@ async function handle(request: Request, segments: string[]) {
                 agentSettingsByTenant.set(key, updated);
 
                 return json({
-                    partner: { id: branding.partnerId, allowTransfer },
-                    tenant: { id: tenantId },
+                    partner: { id: tenant.partner_id, allowTransfer },
+                    tenant: { id: tenant.id },
                     agentSettings: { transfer_enabled: allowTransfer },
                     config: { systemPrompt: updated.systemPrompt, greetingMessage: updated.greetingMessage, transferEnabled: updated.transferEnabled },
                     updatedAt: updated.updatedAt,
@@ -801,40 +1564,170 @@ async function handle(request: Request, segments: string[]) {
         }
     }
 
+    if (path === "/platform/partners") {
+        const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+        if (!auth.ok) return auth.res;
+        const { ctx } = auth;
+
+        const roleDenied = await requireRoleOr403({ auth, roles: ["platform_admin"] });
+        if (roleDenied) return roleDenied;
+
+        const forbidden = await requirePermissionOr403({ auth, permission: "manage_partners" });
+        if (forbidden) return forbidden;
+
+        if (method === "GET") {
+            const out = await listPartners({ ctx });
+            if (!out.ok) return json({ detail: "Forbidden" }, { status: out.status });
+            return json({
+                items: out.partners.map((p) => ({
+                    partner_id: p.partner_id,
+                    display_name: p.display_name,
+                    allow_transfer: p.allow_transfer,
+                    created_at: p.created_at.toISOString(),
+                    updated_at: p.updated_at.toISOString(),
+                })),
+            });
+        }
+
+        if (method === "POST") {
+            const body = await readJsonBody(request);
+            const parsed = PartnerUpsertSchema.safeParse(body);
+            if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+            const partnerId = normalizePartnerId(parsed.data.partner_id);
+            const displayName = parsed.data.display_name.trim();
+            const allowTransfer = parsed.data.allow_transfer ?? true;
+            const created = await upsertPartner({ ctx, partnerId, displayName, allowTransfer });
+            if (!created.ok) return json({ detail: "Invalid request" }, { status: created.status });
+            return json(
+                {
+                    partner_id: created.partner.partner_id,
+                    display_name: created.partner.display_name,
+                    allow_transfer: created.partner.allow_transfer,
+                    created_at: created.partner.created_at.toISOString(),
+                    updated_at: created.partner.updated_at.toISOString(),
+                },
+                { status: 201 }
+            );
+        }
+
+        return json({ error: "Method not allowed" }, { status: 405 });
+    }
+
+    {
+        const m = path.match(/^\/partners\/([^/]+)\/tenants$/);
+        if (m) {
+            const partnerId = normalizePartnerId(decodeURIComponent(m[1] ?? ""));
+            const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+            if (!auth.ok) return auth.res;
+            const { ctx } = auth;
+
+            const roleDenied = await requireRoleOr403({ auth, roles: ["partner_admin"], scope: { partnerId } });
+            if (roleDenied) return roleDenied;
+
+            const forbidden = await requirePermissionOr403({ auth, permission: "manage_tenants", scope: { partnerId } });
+            if (forbidden) return forbidden;
+
+            if (method === "GET") {
+                const out = await listPartnerTenants({ ctx, partnerId });
+                if (!out.ok) return json({ detail: out.status === 403 ? "Forbidden" : "Invalid request" }, { status: out.status });
+                return json({
+                    items: out.tenants.map((t) => ({
+                        id: t.id,
+                        partner_id: t.partner_id,
+                        name: t.name,
+                        status: t.status,
+                        created_at: t.created_at.toISOString(),
+                        updated_at: t.updated_at.toISOString(),
+                    })),
+                });
+            }
+
+            if (method === "POST") {
+                const body = await readJsonBody(request);
+                const parsed = TenantUpsertSchema.safeParse(body);
+                if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+                const name = parsed.data.name.trim();
+                const tenantId = parsed.data.id?.trim() || undefined;
+                const status = parsed.data.status;
+                const out = await upsertTenant({ ctx, partnerId, tenantId, name, status });
+                if (!out.ok) return json({ detail: out.status === 403 ? "Forbidden" : "Invalid request" }, { status: out.status });
+                return json(
+                    {
+                        id: out.tenant.id,
+                        partner_id: out.tenant.partner_id,
+                        name: out.tenant.name,
+                        status: out.tenant.status,
+                        created_at: out.tenant.created_at.toISOString(),
+                        updated_at: out.tenant.updated_at.toISOString(),
+                    },
+                    { status: 201 }
+                );
+            }
+
+            return json({ error: "Method not allowed" }, { status: 405 });
+        }
+    }
+
+    {
+        const m = path.match(/^\/tenants\/([^/]+)\/users$/);
+        if (m) {
+            const tenantId = decodeURIComponent(m[1] ?? "");
+            const auth = tenantEnforcement.auth ?? (await requireAuthContext(request, { cachedAuth: state.cachedAuth }));
+            if (!auth || !auth.ok) return auth ? auth.res : json({ detail: "Unauthorized" }, { status: 401 });
+            const { ctx } = auth;
+
+            const partnerId = tenantEnforcement.tenant?.partner_id;
+            const roleDenied = await requireRoleOr403({ auth, roles: ["tenant_admin", "partner_admin"], scope: { tenantId, partnerId } });
+            if (roleDenied) return roleDenied;
+
+            const forbidden = await requirePermissionOr403({ auth, permission: "manage_users", scope: { tenantId } });
+            if (forbidden) return forbidden;
+
+            if (method === "POST") {
+                const body = await readJsonBody(request);
+                const parsed = TenantAssignRoleSchema.safeParse(body);
+                if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+                const userId = parsed.data.user_id.trim();
+                const role = (parsed.data.role ?? "user") as RoleName;
+                const out = await assignTenantUserRole({ ctx, tenantId, userId, role });
+                if (!out.ok) return json({ detail: out.status === 403 ? "Forbidden" : "Invalid request" }, { status: out.status });
+                return noContent({ status: 204 });
+            }
+
+            return json({ error: "Method not allowed" }, { status: 405 });
+        }
+    }
+
     if (method === "GET" && path === "/email/templates") {
         const url = new URL(request.url);
-        const partnerId = (url.searchParams.get("partner") ?? url.searchParams.get("partnerId") ?? "").trim();
+        const EmailTemplatesQuerySchema = z.object({ partner: z.string().max(120).optional() }).strict();
+        const qp = EmailTemplatesQuerySchema.safeParse({
+            partner: url.searchParams.get("partner") ?? url.searchParams.get("partnerId") ?? undefined,
+        });
+        if (!qp.success) return json({ detail: "Invalid request" }, { status: 400 });
+        const partnerId = qp.data.partner ? normalizePartnerId(sanitizeTextInput(qp.data.partner, { maxLen: 120 })) : "";
         const branding = partnerId.length > 0 ? getWhiteLabelBranding(partnerId) : null;
         return json({ items: emailTemplates({ branding }) });
     }
 
     if (method === "POST" && path === "/email/send") {
-        const body = (await readJsonBody(request)) as
-            | { to?: unknown; recipients?: unknown; template_id?: unknown; templateId?: unknown; subject?: unknown; html?: unknown }
-            | undefined;
+        const body = await readJsonBody(request);
+        const parsed = EmailSendSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
 
-        const to = Array.isArray(body?.to)
-            ? body?.to.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
-            : Array.isArray(body?.recipients)
-              ? body?.recipients.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
-              : [];
-        const templateId =
-            typeof body?.templateId === "string"
-                ? body.templateId
-                : typeof body?.template_id === "string"
-                  ? body.template_id
-                  : undefined;
-        const subject = typeof body?.subject === "string" ? body.subject : undefined;
-        const htmlOverride = typeof body?.html === "string" ? body.html : undefined;
+        const to = (parsed.data.to ?? parsed.data.recipients ?? []).map((v) => v.trim()).filter((v) => v.length > 0);
+        const templateId = parsed.data.templateId ?? parsed.data.template_id ?? undefined;
+        const subject = parsed.data.subject;
+        const htmlOverride = typeof parsed.data.html === "string" ? sanitizeHtmlEmailInput(parsed.data.html) : undefined;
 
-        if (to.length === 0) return json({ detail: "Missing recipients" }, { status: 400 });
-        if (!templateId && !htmlOverride) return json({ detail: "Missing template_id or html" }, { status: 400 });
+        if (to.length === 0) return json({ detail: "Invalid request body" }, { status: 400 });
+        if (!templateId && !htmlOverride) return json({ detail: "Invalid request body" }, { status: 400 });
 
         const templates = emailTemplates();
         const template = templateId ? templates.find((t) => t.id === templateId) : undefined;
 
         const html = htmlOverride ?? template?.html;
-        if (!html) return json({ detail: `Unknown template_id: ${templateId}` }, { status: 400 });
+        if (!html) return json({ detail: "Invalid request body" }, { status: 400 });
 
         try {
             const out = await sendEmail({ to, subject: subject ?? template?.name, html });
@@ -854,12 +1747,14 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/connectors") {
-        const body = (await readJsonBody(request)) as { name?: string; type?: string; config?: Record<string, unknown> } | undefined;
+        const body = await readJsonBody(request);
+        const parsed = DevConnectorCreateSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
         return json({
             id: `connector-${Math.random().toString(16).slice(2)}`,
-            name: body?.name ?? "Connector",
-            type: body?.type ?? "unknown",
-            config: body?.config ?? {},
+            name: parsed.data.name ?? "Connector",
+            type: parsed.data.type ?? "unknown",
+            config: parsed.data.config ?? {},
             createdAt: nowIso(),
         });
     }
@@ -908,18 +1803,18 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/calendar/events") {
-        const body = (await readJsonBody(request)) as
-            | { lead_id?: string; lead_name?: string; title?: string; start_time?: string; end_time?: string; notes?: string }
-            | undefined;
+        const body = await readJsonBody(request);
+        const parsed = DevCalendarEventCreateSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
         return json({
             id: `event-${Math.random().toString(16).slice(2)}`,
-            title: body?.title ?? "Meeting",
-            startTime: body?.start_time ?? nowIso(),
-            endTime: body?.end_time ?? undefined,
+            title: parsed.data.title ?? "Meeting",
+            startTime: parsed.data.start_time ?? nowIso(),
+            endTime: parsed.data.end_time ?? undefined,
             status: "scheduled",
-            leadId: body?.lead_id ?? undefined,
-            leadName: body?.lead_name ?? undefined,
-            notes: body?.notes ?? undefined,
+            leadId: parsed.data.lead_id ?? undefined,
+            leadName: parsed.data.lead_name ?? undefined,
+            notes: parsed.data.notes ?? undefined,
             participants: [],
         });
     }
@@ -927,10 +1822,12 @@ async function handle(request: Request, segments: string[]) {
     {
         const m = path.match(/^\/calendar\/events\/([^/]+)$/);
         if (method === "PATCH" && m) {
-            const body = (await readJsonBody(request)) as Record<string, unknown> | undefined;
-            const title = typeof body?.title === "string" ? body?.title : "Meeting";
-            const startTime = typeof body?.start_time === "string" ? body?.start_time : nowIso();
-            const endTime = typeof body?.end_time === "string" ? body?.end_time : undefined;
+            const body = await readJsonBody(request);
+            const parsed = DevCalendarEventPatchSchema.safeParse(body);
+            if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+            const title = parsed.data.title ?? "Meeting";
+            const startTime = parsed.data.start_time ?? nowIso();
+            const endTime = parsed.data.end_time ?? undefined;
             return json({ id: decodeURIComponent(m[1] ?? ""), title, startTime, endTime, status: "scheduled", participants: [] });
         }
         if (method === "DELETE" && m) {
@@ -943,44 +1840,36 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/reminders") {
-        const body = (await readJsonBody(request)) as
-            | {
-                  content?: string;
-                  channel?: "email" | "sms";
-                  scheduled_at?: string;
-                  meeting_id?: string;
-                  meeting_title?: string;
-                  contact_id?: string;
-                  contact_name?: string;
-                  to_email?: string;
-                  to_phone?: string;
-              }
-            | undefined;
+        const body = await readJsonBody(request);
+        const parsed = DevReminderCreateSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
         return json({
             id: `reminder-${Math.random().toString(16).slice(2)}`,
-            content: body?.content ?? "",
+            content: parsed.data.content ?? "",
             status: "scheduled",
-            channel: body?.channel ?? "email",
-            scheduledAt: body?.scheduled_at ?? nowIso(),
-            meetingId: body?.meeting_id ?? undefined,
-            meetingTitle: body?.meeting_title ?? undefined,
-            contactId: body?.contact_id ?? undefined,
-            contactName: body?.contact_name ?? undefined,
-            toEmail: body?.to_email ?? undefined,
-            toPhone: body?.to_phone ?? undefined,
+            channel: parsed.data.channel ?? "email",
+            scheduledAt: parsed.data.scheduled_at ?? nowIso(),
+            meetingId: parsed.data.meeting_id ?? undefined,
+            meetingTitle: parsed.data.meeting_title ?? undefined,
+            contactId: parsed.data.contact_id ?? undefined,
+            contactName: parsed.data.contact_name ?? undefined,
+            toEmail: parsed.data.to_email ?? undefined,
+            toPhone: parsed.data.to_phone ?? undefined,
         });
     }
 
     {
         const m = path.match(/^\/reminders\/([^/]+)$/);
         if (method === "PATCH" && m) {
-            const body = (await readJsonBody(request)) as Record<string, unknown> | undefined;
+            const body = await readJsonBody(request);
+            const parsed = DevReminderPatchSchema.safeParse(body);
+            if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
             return json({
                 id: decodeURIComponent(m[1] ?? ""),
-                content: typeof body?.content === "string" ? body.content : "",
-                status: typeof body?.status === "string" ? body.status : "scheduled",
-                channel: typeof body?.channel === "string" ? body.channel : "email",
-                scheduledAt: typeof body?.scheduled_at === "string" ? body.scheduled_at : nowIso(),
+                content: parsed.data.content ?? "",
+                status: parsed.data.status ?? "scheduled",
+                channel: parsed.data.channel ?? "email",
+                scheduledAt: parsed.data.scheduled_at ?? nowIso(),
             });
         }
     }
@@ -1012,8 +1901,9 @@ async function handle(request: Request, segments: string[]) {
     }
 
     if (method === "POST" && path === "/assistant/execute") {
-        const me = await authMeFromRequest(request);
-        if (!me) return json({ detail: "Unauthorized" }, { status: 401 });
+        const auth = state.cachedAuth ?? (await authMeFromRequest(request));
+        if (!auth) return json({ detail: "Unauthorized" }, { status: 401 });
+        const me = auth.me;
 
         const partnerId = typeof me.partner_id === "string" && me.partner_id.trim().length > 0 ? me.partner_id.trim().toLowerCase() : "default";
         const limit = partnerConcurrencyLimit(partnerId);

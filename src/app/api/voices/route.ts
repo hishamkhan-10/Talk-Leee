@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createHttpClient, isApiClientError } from "@/lib/http-client";
+import { enforceMultiLevelRateLimit } from "@/server/api-security";
 
 export type Voice = {
   id: string;
@@ -109,17 +110,20 @@ async function fetchVoices(baseUrl: string) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const rate = await enforceMultiLevelRateLimit({ request: req, tier: "default", path: "/api/voices", method: "GET" });
+  if (!rate.ok) return NextResponse.json({ detail: "Too many requests" }, { status: 429, headers: rate.headers });
+
   const baseUrlRaw = process.env.NEXT_PUBLIC_API_BASE_URL;
   const baseUrlParsed = z.string().url().safeParse(baseUrlRaw);
   if (!baseUrlParsed.success) {
-    return NextResponse.json(FallbackVoices, { headers: { "x-voices-source": "fallback" } });
+    return NextResponse.json(FallbackVoices, { headers: { "x-voices-source": "fallback", ...rate.headers } });
   }
 
   try {
     const voices = await fetchVoices(baseUrlParsed.data);
-    return NextResponse.json(voices.map(mapVoice));
+    return NextResponse.json(voices.map(mapVoice), { headers: rate.headers });
   } catch {
-    return NextResponse.json(FallbackVoices, { headers: { "x-voices-source": "fallback" } });
+    return NextResponse.json(FallbackVoices, { headers: { "x-voices-source": "fallback", ...rate.headers } });
   }
 }
