@@ -48,6 +48,7 @@ import {
     upsertTenant,
     type RoleName,
 } from "@/server/rbac";
+import { call_guard, startGuardedVoiceCallSession } from "@/server/voice-security";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 
@@ -70,6 +71,22 @@ function noContent(init?: { status?: number; headers?: Record<string, string> })
 
 function nowIso() {
     return new Date().toISOString();
+}
+
+function statusForCallGuardCode(code: string) {
+    if (code === "invalid_tenant_id" || code === "invalid_partner_id") return 400;
+    if (code === "tenant_not_found" || code === "partner_not_found") return 404;
+    if (
+        code === "tenant_rate_limited" ||
+        code === "partner_rate_limited" ||
+        code === "user_rate_limited" ||
+        code === "ip_rate_limited" ||
+        code === "temporary_block" ||
+        code === "rapid_attempts_detected" ||
+        code === "unusual_spike_detected"
+    ) return 429;
+    if (code === "tenant_concurrency_exceeded" || code === "partner_concurrency_exceeded") return 409;
+    return 403;
 }
 
 async function readJsonBody(request: Request) {
@@ -631,6 +648,30 @@ const DevReminderPatchSchema = z
         status: z.string().min(1).max(64).optional(),
         channel: z.string().min(1).max(64).optional(),
         scheduled_at: z.string().min(1).max(64).optional(),
+    })
+    .strict();
+
+const VoiceFeatureSchema = z.enum(["voice", "premium", "transfer"]);
+
+const VoiceCallGuardSchema = z
+    .object({
+        tenant_id: z.string().min(1).max(120).optional(),
+        partner_id: z.string().min(1).max(120).optional(),
+        requested_features: z.array(VoiceFeatureSchema).max(10).optional(),
+        call_id: z.string().min(1).max(120).optional(),
+        provider_call_id: z.string().min(1).max(120).optional(),
+        allow_overage: z.boolean().optional(),
+    })
+    .strict();
+
+const VoiceCallStartSchema = z
+    .object({
+        tenant_id: z.string().min(1).max(120).optional(),
+        partner_id: z.string().min(1).max(120).optional(),
+        requested_features: z.array(VoiceFeatureSchema).max(10).optional(),
+        call_id: z.string().min(1).max(120).optional(),
+        provider_call_id: z.string().min(1).max(120).optional(),
+        allow_overage: z.boolean().optional(),
     })
     .strict();
 
@@ -1198,6 +1239,121 @@ async function handleInner(request: Request, segments: string[], state: { cached
             return noContent({ headers: { "set-cookie": cookie } });
         }
         return noContent();
+    }
+
+    if (method === "POST" && path === "/voice/calls/guard") {
+        const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+        if (!auth.ok) return auth.res;
+
+        const body = await readJsonBody(request);
+        const parsed = VoiceCallGuardSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const tenantId = parsed.data.tenant_id?.trim() || auth.me.tenant_id?.trim() || "";
+        const partnerId = parsed.data.partner_id?.trim() || auth.me.partner_id?.trim() || null;
+        if (!tenantId) return json({ detail: "Missing tenant scope" }, { status: 400 });
+
+        const result = await call_guard({
+            tenantId,
+            partnerId,
+            userId: auth.me.id,
+            ipAddress: clientIpFromRequest(request) || null,
+            callId: parsed.data.call_id?.trim() || null,
+            providerCallId: parsed.data.provider_call_id?.trim() || null,
+            requestedFeatures: parsed.data.requested_features,
+            allowOverage: Boolean(parsed.data.allow_overage),
+            reserveConcurrency: true,
+        });
+
+        if (result.outcome === "REJECT") {
+            return json(
+                {
+                    outcome: result.outcome,
+                    tenant_id: result.tenantId,
+                    partner_id: result.partnerId,
+                    code: result.code,
+                    reason: result.reason,
+                    retry_after_seconds: result.retryAfterSeconds,
+                    block_expires_at: result.blockExpiresAt,
+                },
+                { status: statusForCallGuardCode(result.code) }
+            );
+        }
+
+        return json(
+            {
+                outcome: result.outcome,
+                tenant_id: result.tenantId,
+                partner_id: result.partnerId,
+                reservation_id: result.reservationId,
+                active_calls: result.activeCalls,
+                overage: result.overage,
+                allowed_features: result.allowedFeatures,
+                requested_features: result.requestedFeatures,
+                usage_account_id: result.usageAccountId,
+                billing_account_id: result.billingAccountId,
+            },
+            { status: 200 }
+        );
+    }
+
+    if (method === "POST" && path === "/voice/calls/start") {
+        const auth = await requireAuthContext(request, { cachedAuth: state.cachedAuth });
+        if (!auth.ok) return auth.res;
+
+        const body = await readJsonBody(request);
+        const parsed = VoiceCallStartSchema.safeParse(body);
+        if (!parsed.success) return json({ detail: "Invalid request body" }, { status: 400 });
+
+        const tenantId = parsed.data.tenant_id?.trim() || auth.me.tenant_id?.trim() || "";
+        const partnerId = parsed.data.partner_id?.trim() || auth.me.partner_id?.trim() || null;
+        if (!tenantId) return json({ detail: "Missing tenant scope" }, { status: 400 });
+
+        const result = await startGuardedVoiceCallSession({
+            tenantId,
+            partnerId,
+            userId: auth.me.id,
+            ipAddress: clientIpFromRequest(request) || null,
+            callId: parsed.data.call_id?.trim() || null,
+            providerCallId: parsed.data.provider_call_id?.trim() || null,
+            requestedFeatures: parsed.data.requested_features,
+            allowOverage: Boolean(parsed.data.allow_overage),
+        });
+
+        if (result.outcome === "REJECT") {
+            return json(
+                {
+                    outcome: result.outcome,
+                    tenant_id: result.tenantId,
+                    partner_id: result.partnerId,
+                    code: result.code,
+                    reason: result.reason,
+                    retry_after_seconds: result.retryAfterSeconds,
+                    block_expires_at: result.blockExpiresAt,
+                },
+                { status: statusForCallGuardCode(result.code) }
+            );
+        }
+
+        return json(
+            {
+                outcome: result.outcome,
+                tenant_id: result.tenantId,
+                partner_id: result.partnerId,
+                reservation_id: result.reservationId,
+                call_id: result.callId,
+                provider_call_id: result.providerCallId,
+                status: result.status,
+                started_at: result.startedAt,
+                active_calls: result.activeCalls,
+                overage: result.overage,
+                allowed_features: result.allowedFeatures,
+                requested_features: result.requestedFeatures,
+                usage_account_id: result.usageAccountId,
+                billing_account_id: result.billingAccountId,
+            },
+            { status: 201 }
+        );
     }
 
     if (method === "POST" && path === "/auth/passkeys/registration/options") {

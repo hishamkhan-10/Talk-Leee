@@ -32,6 +32,9 @@ export const backendEndpoints = {
     emailTemplatesList: { method: "GET", path: "/email/templates", tags: ["Email"], summary: "List email templates" },
     emailSend: { method: "POST", path: "/email/send", tags: ["Email"], summary: "Send email" },
 
+    voiceCallsGuard: { method: "POST", path: "/voice/calls/guard", tags: ["Voice"], summary: "Evaluate call_guard before call start" },
+    voiceCallsStart: { method: "POST", path: "/voice/calls/start", tags: ["Voice"], summary: "Start a guarded voice call session" },
+
     assistantActionsList: { method: "GET", path: "/assistant/actions", tags: ["Assistant"], summary: "List assistant actions" },
     assistantRunsList: { method: "GET", path: "/assistant/runs", tags: ["Assistant"], summary: "List assistant runs" },
     assistantPlan: { method: "POST", path: "/assistant/plan", tags: ["Assistant"], summary: "Plan assistant action" },

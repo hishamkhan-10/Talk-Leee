@@ -14,6 +14,8 @@ import {
     CalendarEventResponseSchema,
     MeetingResponseSchema,
     ReminderSchema,
+    VoiceCallGuardResponseSchema,
+    VoiceCallStartResponseSchema,
     type AssistantAction,
     type AssistantPlan,
     type AssistantRun,
@@ -28,6 +30,9 @@ import {
     type Reminder,
     type ReminderChannel,
     type ReminderStatus,
+    type VoiceCallGuardResponse,
+    type VoiceCallStartResponse,
+    type VoiceFeature,
 } from "@/lib/models";
 import { extractAuthorizationUrl } from "@/lib/connectors-utils";
 import { apiBaseUrl } from "@/lib/env";
@@ -267,6 +272,54 @@ export const backendApi = {
                 timeoutMs: 30_000,
             });
             return parseOrThrow(EmailSendResponseSchema, data);
+        },
+    },
+    voiceCalls: {
+        guard: async (input: {
+            tenantId?: string;
+            partnerId?: string;
+            requestedFeatures?: VoiceFeature[];
+            callId?: string;
+            providerCallId?: string;
+            allowOverage?: boolean;
+        }): Promise<VoiceCallGuardResponse> => {
+            const data = await httpClient().request({
+                path: backendEndpoints.voiceCallsGuard.path,
+                method: backendEndpoints.voiceCallsGuard.method,
+                body: {
+                    tenant_id: input.tenantId,
+                    partner_id: input.partnerId,
+                    requested_features: input.requestedFeatures,
+                    call_id: input.callId,
+                    provider_call_id: input.providerCallId,
+                    allow_overage: input.allowOverage,
+                },
+                timeoutMs: 12_000,
+            });
+            return parseOrThrow(VoiceCallGuardResponseSchema, data);
+        },
+        start: async (input: {
+            tenantId?: string;
+            partnerId?: string;
+            requestedFeatures?: VoiceFeature[];
+            callId?: string;
+            providerCallId?: string;
+            allowOverage?: boolean;
+        }): Promise<VoiceCallStartResponse> => {
+            const data = await httpClient().request({
+                path: backendEndpoints.voiceCallsStart.path,
+                method: backendEndpoints.voiceCallsStart.method,
+                body: {
+                    tenant_id: input.tenantId,
+                    partner_id: input.partnerId,
+                    requested_features: input.requestedFeatures,
+                    call_id: input.callId,
+                    provider_call_id: input.providerCallId,
+                    allow_overage: input.allowOverage,
+                },
+                timeoutMs: 12_000,
+            });
+            return parseOrThrow(VoiceCallStartResponseSchema, data);
         },
     },
     assistantActions: {

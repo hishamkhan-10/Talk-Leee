@@ -514,3 +514,145 @@ export const ListResponseSchema = <T extends z.ZodTypeAny>(item: T) =>
     });
 
 export type ListResponse<T> = { items: T[] };
+
+export const VoiceFeatureSchema = z.enum(["voice", "premium", "transfer"]);
+
+export type VoiceFeature = z.infer<typeof VoiceFeatureSchema>;
+
+const VoiceCallActiveCallsSchema = z.object({
+    tenant: z.number(),
+    partner: z.number(),
+});
+
+const VoiceCallOverageSchema = z.object({
+    tenant: z.boolean(),
+    partner: z.boolean(),
+});
+
+const VoiceCallGuardRejectedCamelSchema = z.object({
+    outcome: z.literal("REJECT"),
+    tenantId: z.string().nullable().optional(),
+    partnerId: z.string().nullable().optional(),
+    code: z.string(),
+    reason: z.string(),
+    retryAfterSeconds: z.number().nullable().optional(),
+    blockExpiresAt: z.string().nullable().optional(),
+});
+
+const VoiceCallGuardRejectedSnakeSchema = z
+    .object({
+        outcome: z.literal("REJECT"),
+        tenant_id: z.string().nullable().optional(),
+        partner_id: z.string().nullable().optional(),
+        code: z.string(),
+        reason: z.string(),
+        retry_after_seconds: z.number().nullable().optional(),
+        block_expires_at: z.string().nullable().optional(),
+    })
+    .transform((v) => ({
+        outcome: v.outcome,
+        tenantId: v.tenant_id ?? null,
+        partnerId: v.partner_id ?? null,
+        code: v.code,
+        reason: v.reason,
+        retryAfterSeconds: v.retry_after_seconds ?? null,
+        blockExpiresAt: v.block_expires_at ?? null,
+    }));
+
+const VoiceCallGuardAllowedCamelSchema = z.object({
+    outcome: z.literal("ALLOW"),
+    tenantId: z.string(),
+    partnerId: z.string(),
+    reservationId: z.string().nullable(),
+    activeCalls: VoiceCallActiveCallsSchema,
+    overage: VoiceCallOverageSchema,
+    allowedFeatures: z.array(VoiceFeatureSchema),
+    requestedFeatures: z.array(VoiceFeatureSchema),
+    usageAccountId: z.string().nullable(),
+    billingAccountId: z.string().nullable(),
+});
+
+const VoiceCallGuardAllowedSnakeSchema = z
+    .object({
+        outcome: z.literal("ALLOW"),
+        tenant_id: z.string(),
+        partner_id: z.string(),
+        reservation_id: z.string().nullable(),
+        active_calls: VoiceCallActiveCallsSchema,
+        overage: VoiceCallOverageSchema,
+        allowed_features: z.array(VoiceFeatureSchema),
+        requested_features: z.array(VoiceFeatureSchema),
+        usage_account_id: z.string().nullable(),
+        billing_account_id: z.string().nullable(),
+    })
+    .transform((v) => ({
+        outcome: v.outcome,
+        tenantId: v.tenant_id,
+        partnerId: v.partner_id,
+        reservationId: v.reservation_id,
+        activeCalls: v.active_calls,
+        overage: v.overage,
+        allowedFeatures: v.allowed_features,
+        requestedFeatures: v.requested_features,
+        usageAccountId: v.usage_account_id,
+        billingAccountId: v.billing_account_id,
+    }));
+
+export const VoiceCallGuardResponseSchema = z.union([
+    VoiceCallGuardRejectedCamelSchema,
+    VoiceCallGuardRejectedSnakeSchema,
+    VoiceCallGuardAllowedCamelSchema,
+    VoiceCallGuardAllowedSnakeSchema,
+]);
+
+export type VoiceCallGuardResponse = z.infer<typeof VoiceCallGuardResponseSchema>;
+
+const VoiceCallStartAllowedCamelSchema = VoiceCallGuardAllowedCamelSchema.extend({
+    callId: z.string(),
+    providerCallId: z.string().nullable(),
+    status: z.literal("active"),
+    startedAt: z.string(),
+});
+
+const VoiceCallStartAllowedSnakeSchema = z
+    .object({
+        outcome: z.literal("ALLOW"),
+        tenant_id: z.string(),
+        partner_id: z.string(),
+        reservation_id: z.string().nullable(),
+        call_id: z.string(),
+        provider_call_id: z.string().nullable(),
+        status: z.literal("active"),
+        started_at: z.string(),
+        active_calls: VoiceCallActiveCallsSchema,
+        overage: VoiceCallOverageSchema,
+        allowed_features: z.array(VoiceFeatureSchema),
+        requested_features: z.array(VoiceFeatureSchema),
+        usage_account_id: z.string().nullable(),
+        billing_account_id: z.string().nullable(),
+    })
+    .transform((v) => ({
+        outcome: v.outcome,
+        tenantId: v.tenant_id,
+        partnerId: v.partner_id,
+        reservationId: v.reservation_id,
+        callId: v.call_id,
+        providerCallId: v.provider_call_id,
+        status: v.status,
+        startedAt: v.started_at,
+        activeCalls: v.active_calls,
+        overage: v.overage,
+        allowedFeatures: v.allowed_features,
+        requestedFeatures: v.requested_features,
+        usageAccountId: v.usage_account_id,
+        billingAccountId: v.billing_account_id,
+    }));
+
+export const VoiceCallStartResponseSchema = z.union([
+    VoiceCallGuardRejectedCamelSchema,
+    VoiceCallGuardRejectedSnakeSchema,
+    VoiceCallStartAllowedCamelSchema,
+    VoiceCallStartAllowedSnakeSchema,
+]);
+
+export type VoiceCallStartResponse = z.infer<typeof VoiceCallStartResponseSchema>;

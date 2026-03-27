@@ -13,11 +13,14 @@ export type PermissionName =
     | "view_calls"
     | "manage_agent_settings";
 
-export type TenantStatus = "active" | "suspended";
+export type PartnerStatus = "active" | "suspended" | "inactive" | "disabled";
+
+export type TenantStatus = "active" | "suspended" | "inactive" | "disabled";
 
 export type PartnerRow = {
     partner_id: string;
     display_name: string;
+    status: PartnerStatus;
     allow_transfer: boolean;
     created_at: Date;
     updated_at: Date;
@@ -126,23 +129,36 @@ export async function ensureRbacSchema() {
             create table if not exists partners (
                 partner_id text primary key,
                 display_name text not null,
+                status text not null default 'active',
                 allow_transfer boolean not null default true,
                 created_at timestamptz not null default now(),
                 updated_at timestamptz not null default now()
             )
         `);
+        await sql.unsafe(`alter table partners add column if not exists status text`);
+        await sql.unsafe(`update partners set status = 'active' where status is null or status not in ('active','suspended','inactive','disabled')`);
+        await sql.unsafe(`alter table partners alter column status set default 'active'`);
+        await sql.unsafe(`alter table partners alter column status set not null`);
+        await sql.unsafe(`alter table partners drop constraint if exists partners_status_check`);
+        await sql.unsafe(`alter table partners add constraint partners_status_check check (status in ('active','suspended','inactive','disabled'))`);
         await sql.unsafe(`create index if not exists partners_display_name_idx on partners (display_name)`);
+        await sql.unsafe(`create index if not exists partners_status_idx on partners (status)`);
 
         await sql.unsafe(`
             create table if not exists tenants (
                 id text primary key,
                 partner_id text not null references partners(partner_id) on delete restrict,
                 name text not null,
-                status text not null check (status in ('active','suspended')) default 'active',
+                status text not null check (status in ('active','suspended','inactive','disabled')) default 'active',
                 created_at timestamptz not null default now(),
                 updated_at timestamptz not null default now()
             )
         `);
+        await sql.unsafe(`update tenants set status = 'active' where status is null or status not in ('active','suspended','inactive','disabled')`);
+        await sql.unsafe(`alter table tenants alter column status set default 'active'`);
+        await sql.unsafe(`alter table tenants alter column status set not null`);
+        await sql.unsafe(`alter table tenants drop constraint if exists tenants_status_check`);
+        await sql.unsafe(`alter table tenants add constraint tenants_status_check check (status in ('active','suspended','inactive','disabled'))`);
         await sql.unsafe(`create index if not exists tenants_partner_id_idx on tenants (partner_id)`);
         await sql.unsafe(`create index if not exists tenants_status_idx on tenants (status)`);
 
@@ -347,10 +363,10 @@ export async function ensureDefaultPartnerAndTenantForUser(input: { userId: stri
 
     const partnerId = "default";
     await sql`
-        insert into partners (partner_id, display_name, allow_transfer, created_at, updated_at)
-        values (${partnerId}, 'Default', true, now(), now())
+        insert into partners (partner_id, display_name, status, allow_transfer, created_at, updated_at)
+        values (${partnerId}, 'Default', 'active', true, now(), now())
         on conflict (partner_id)
-        do update set updated_at = now()
+        do update set status = 'active', updated_at = now()
     `;
 
     const tenantBase = input.businessName?.trim() ? input.businessName.trim() : input.email.split("@")[0] ?? "tenant";
@@ -380,7 +396,7 @@ export async function findPartnerById(partnerIdRaw: string): Promise<PartnerRow 
     const partnerId = normalizePartnerId(partnerIdRaw);
     if (!partnerId) return null;
     const rows = await sql<PartnerRow[]>`
-        select partner_id, display_name, allow_transfer, created_at, updated_at
+        select partner_id, display_name, status, allow_transfer, created_at, updated_at
         from partners
         where partner_id = ${partnerId}
         limit 1
@@ -629,11 +645,11 @@ export async function upsertPartner(input: { ctx: AuthzContext; partnerId: strin
     if (!displayName) return { ok: false as const, status: 400 as const };
 
     const rows = await sql<PartnerRow[]>`
-        insert into partners (partner_id, display_name, allow_transfer, created_at, updated_at)
-        values (${partnerId}, ${displayName}, ${input.allowTransfer}, now(), now())
+        insert into partners (partner_id, display_name, status, allow_transfer, created_at, updated_at)
+        values (${partnerId}, ${displayName}, 'active', ${input.allowTransfer}, now(), now())
         on conflict (partner_id)
         do update set display_name = excluded.display_name, allow_transfer = excluded.allow_transfer, updated_at = now()
-        returning partner_id, display_name, allow_transfer, created_at, updated_at
+        returning partner_id, display_name, status, allow_transfer, created_at, updated_at
     `;
     return { ok: true as const, partner: rows[0]! };
 }
@@ -646,7 +662,7 @@ export async function listPartners(input: { ctx: AuthzContext }) {
     await ensureRbacSeed();
     const sql = getSql();
     const rows = await sql<PartnerRow[]>`
-        select partner_id, display_name, allow_transfer, created_at, updated_at
+        select partner_id, display_name, status, allow_transfer, created_at, updated_at
         from partners
         order by partner_id asc
     `;
