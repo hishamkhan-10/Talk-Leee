@@ -4,6 +4,7 @@ import {
     AssistantActionSchema,
     AssistantPlanSchema,
     AssistantRunSchema,
+    AuditLogEventSchema,
     ConnectorResponseSchema,
     ConnectorAccountSchema,
     ConnectorProviderStatusSchema,
@@ -14,11 +15,15 @@ import {
     CalendarEventResponseSchema,
     MeetingResponseSchema,
     ReminderSchema,
+    SecurityEventSchema,
+    PartnerSummarySchema,
+    TenantSummarySchema,
     VoiceCallGuardResponseSchema,
     VoiceCallStartResponseSchema,
     type AssistantAction,
     type AssistantPlan,
     type AssistantRun,
+    type AuditLogEvent,
     type CalendarEvent,
     type Connector,
     type ConnectorAccount,
@@ -27,9 +32,12 @@ import {
     type EmailTemplate,
     type ListResponse,
     type Meeting,
+    type PartnerSummary,
     type Reminder,
     type ReminderChannel,
     type ReminderStatus,
+    type SecurityEvent,
+    type TenantSummary,
     type VoiceCallGuardResponse,
     type VoiceCallStartResponse,
     type VoiceFeature,
@@ -48,6 +56,37 @@ function httpClient() {
 function parseOrThrow<T>(schema: { parse: (v: unknown) => T }, data: unknown) {
     return schema.parse(data);
 }
+
+export type AuditLogsListInput = {
+    page?: number;
+    pageSize?: number;
+    eventType?: string;
+    from?: string;
+    to?: string;
+    userQuery?: string;
+    tenantId?: string;
+    partnerId?: string;
+};
+
+export type SecurityEventsListInput = {
+    page?: number;
+    pageSize?: number;
+    eventType?: string;
+    severity?: "low" | "medium" | "high";
+    from?: string;
+    to?: string;
+    userQuery?: string;
+    tenantId?: string;
+    partnerId?: string;
+};
+
+export type AdminResourceListInput = {
+    page?: number;
+    pageSize?: number;
+    query?: string;
+    status?: "active" | "suspended";
+    partnerId?: string;
+};
 
 export const backendApi = {
     health: async (signal?: AbortSignal) => {
@@ -399,6 +438,122 @@ export const backendApi = {
                 timeoutMs: 12_000,
             });
             return parseOrThrow(AssistantRunSchema, data);
+        },
+    },
+    admin: {
+        auditLogs: {
+            list: async (input: AuditLogsListInput, signal?: AbortSignal): Promise<{ items: AuditLogEvent[]; total?: number; page?: number; page_size?: number }> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.auditLogsList.path,
+                    method: backendEndpoints.auditLogsList.method,
+                    query: {
+                        page: input.page,
+                        page_size: input.pageSize,
+                        event_type: input.eventType,
+                        from: input.from,
+                        to: input.to,
+                        user: input.userQuery,
+                        tenant_id: input.tenantId,
+                        partner_id: input.partnerId,
+                    },
+                    timeoutMs: 12_000,
+                    signal,
+                });
+                return parseOrThrow(PaginatedResponseSchema(AuditLogEventSchema), data);
+            },
+        },
+        securityEvents: {
+            list: async (input: SecurityEventsListInput, signal?: AbortSignal): Promise<{ items: SecurityEvent[]; total?: number; page?: number; page_size?: number }> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.securityEventsList.path,
+                    method: backendEndpoints.securityEventsList.method,
+                    query: {
+                        page: input.page,
+                        page_size: input.pageSize,
+                        event_type: input.eventType,
+                        severity: input.severity,
+                        from: input.from,
+                        to: input.to,
+                        user: input.userQuery,
+                        tenant_id: input.tenantId,
+                        partner_id: input.partnerId,
+                    },
+                    timeoutMs: 12_000,
+                    signal,
+                });
+                return parseOrThrow(PaginatedResponseSchema(SecurityEventSchema), data);
+            },
+        },
+        partners: {
+            list: async (input: AdminResourceListInput, signal?: AbortSignal): Promise<{ items: PartnerSummary[]; total?: number; page?: number; page_size?: number }> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.partnersList.path,
+                    method: backendEndpoints.partnersList.method,
+                    query: {
+                        page: input.page,
+                        page_size: input.pageSize,
+                        q: input.query,
+                        status: input.status,
+                    },
+                    timeoutMs: 12_000,
+                    signal,
+                });
+                return parseOrThrow(PaginatedResponseSchema(PartnerSummarySchema), data);
+            },
+            suspend: async (input: { partnerId: string; reason?: string }): Promise<PartnerSummary> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.partnerSuspend.path.replace("{id}", encodeURIComponent(input.partnerId)),
+                    method: backendEndpoints.partnerSuspend.method,
+                    body: input.reason ? { reason: input.reason } : {},
+                    timeoutMs: 12_000,
+                });
+                return parseOrThrow(PartnerSummarySchema, data);
+            },
+            reactivate: async (input: { partnerId: string; reason?: string }): Promise<PartnerSummary> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.partnerReactivate.path.replace("{id}", encodeURIComponent(input.partnerId)),
+                    method: backendEndpoints.partnerReactivate.method,
+                    body: input.reason ? { reason: input.reason } : {},
+                    timeoutMs: 12_000,
+                });
+                return parseOrThrow(PartnerSummarySchema, data);
+            },
+        },
+        tenants: {
+            list: async (input: AdminResourceListInput, signal?: AbortSignal): Promise<{ items: TenantSummary[]; total?: number; page?: number; page_size?: number }> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.tenantsList.path,
+                    method: backendEndpoints.tenantsList.method,
+                    query: {
+                        page: input.page,
+                        page_size: input.pageSize,
+                        q: input.query,
+                        status: input.status,
+                        partner_id: input.partnerId,
+                    },
+                    timeoutMs: 12_000,
+                    signal,
+                });
+                return parseOrThrow(PaginatedResponseSchema(TenantSummarySchema), data);
+            },
+            suspend: async (input: { tenantId: string; reason?: string }): Promise<TenantSummary> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.tenantSuspend.path.replace("{id}", encodeURIComponent(input.tenantId)),
+                    method: backendEndpoints.tenantSuspend.method,
+                    body: input.reason ? { reason: input.reason } : {},
+                    timeoutMs: 12_000,
+                });
+                return parseOrThrow(TenantSummarySchema, data);
+            },
+            reactivate: async (input: { tenantId: string; reason?: string }): Promise<TenantSummary> => {
+                const data = await httpClient().request({
+                    path: backendEndpoints.tenantReactivate.path.replace("{id}", encodeURIComponent(input.tenantId)),
+                    method: backendEndpoints.tenantReactivate.method,
+                    body: input.reason ? { reason: input.reason } : {},
+                    timeoutMs: 12_000,
+                });
+                return parseOrThrow(TenantSummarySchema, data);
+            },
         },
     },
 };

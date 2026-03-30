@@ -1,10 +1,10 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { backendApi } from "@/lib/backend-api";
+import { backendApi, type AdminResourceListInput, type AuditLogsListInput, type SecurityEventsListInput } from "@/lib/backend-api";
 import { dashboardApi, type Call } from "@/lib/dashboard-api";
 import { extendedApi } from "@/lib/extended-api";
-import type { AssistantRun, CalendarEvent, Connector, Reminder } from "@/lib/models";
+import type { AssistantRun, CalendarEvent, Connector, PartnerSummary, Reminder, TenantSummary } from "@/lib/models";
 import { emailAuditStore } from "@/lib/email-audit";
 import { notificationsStore } from "@/lib/notifications";
 import { captureException } from "@/lib/monitoring";
@@ -25,6 +25,10 @@ export const queryKeys = {
     emailTemplates: () => ["emailTemplates"] as const,
     assistantActions: () => ["assistantActions"] as const,
     assistantRuns: (key: string) => ["assistantRuns", key] as const,
+    auditLogs: (key: string) => ["auditLogs", key] as const,
+    securityEvents: (key: string) => ["securityEvents", key] as const,
+    adminPartners: (key: string) => ["adminPartners", key] as const,
+    adminTenants: (key: string) => ["adminTenants", key] as const,
     dashboardSummary: () => ["dashboardSummary"] as const,
     campaigns: () => ["campaigns"] as const,
     campaign: (id: string) => ["campaign", id] as const,
@@ -372,6 +376,10 @@ function assistantRunsKey(q: AssistantRunsQuery) {
     return JSON.stringify(stable);
 }
 
+function stableListKey<T extends object>(input: T) {
+    return JSON.stringify(input);
+}
+
 export function useAssistantRuns(q: AssistantRunsQuery) {
     return useQuery({
         queryKey: queryKeys.assistantRuns(assistantRunsKey(q)),
@@ -455,6 +463,126 @@ export function useAssistantRunRetry() {
         },
         onSettled: () => {
             void qc.invalidateQueries({ queryKey: ["assistantRuns"] });
+        },
+    });
+}
+
+export function useAuditLogs(q: AuditLogsListInput, options?: { enabled?: boolean }) {
+    return useQuery({
+        queryKey: queryKeys.auditLogs(stableListKey(q)),
+        queryFn: ({ signal }) => backendApi.admin.auditLogs.list(q, signal),
+        placeholderData: keepPreviousData,
+        enabled: options?.enabled ?? true,
+    });
+}
+
+export function useSecurityEvents(q: SecurityEventsListInput, options?: { enabled?: boolean }) {
+    return useQuery({
+        queryKey: queryKeys.securityEvents(stableListKey(q)),
+        queryFn: ({ signal }) => backendApi.admin.securityEvents.list(q, signal),
+        placeholderData: keepPreviousData,
+        enabled: options?.enabled ?? true,
+    });
+}
+
+export function useAdminPartners(q: AdminResourceListInput, options?: { enabled?: boolean }) {
+    return useQuery({
+        queryKey: queryKeys.adminPartners(stableListKey(q)),
+        queryFn: ({ signal }) => backendApi.admin.partners.list(q, signal),
+        placeholderData: keepPreviousData,
+        enabled: options?.enabled ?? true,
+    });
+}
+
+export function useAdminTenants(q: AdminResourceListInput, options?: { enabled?: boolean }) {
+    return useQuery({
+        queryKey: queryKeys.adminTenants(stableListKey(q)),
+        queryFn: ({ signal }) => backendApi.admin.tenants.list(q, signal),
+        placeholderData: keepPreviousData,
+        enabled: options?.enabled ?? true,
+    });
+}
+
+export function useSuspendPartner() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: backendApi.admin.partners.suspend,
+        onSuccess: (updated) => {
+            qc.setQueriesData<{ items: PartnerSummary[]; total?: number; page?: number; page_size?: number }>({ queryKey: ["adminPartners"] }, (cur) => {
+                if (!cur) return cur;
+                return { ...cur, items: cur.items.map((item) => (item.id === updated.id ? updated : item)) };
+            });
+            notificationsStore.create({ type: "success", title: "Partner suspended", message: `${updated.name} is now suspended.` });
+        },
+        onError: () => {
+            notificationsStore.create({ type: "error", title: "Suspension failed", message: "Could not suspend this partner." });
+        },
+        onSettled: () => {
+            void qc.invalidateQueries({ queryKey: ["adminPartners"] });
+            void qc.invalidateQueries({ queryKey: ["auditLogs"] });
+        },
+    });
+}
+
+export function useReactivatePartner() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: backendApi.admin.partners.reactivate,
+        onSuccess: (updated) => {
+            qc.setQueriesData<{ items: PartnerSummary[]; total?: number; page?: number; page_size?: number }>({ queryKey: ["adminPartners"] }, (cur) => {
+                if (!cur) return cur;
+                return { ...cur, items: cur.items.map((item) => (item.id === updated.id ? updated : item)) };
+            });
+            notificationsStore.create({ type: "success", title: "Partner reactivated", message: `${updated.name} has been restored.` });
+        },
+        onError: () => {
+            notificationsStore.create({ type: "error", title: "Reactivation failed", message: "Could not reactivate this partner." });
+        },
+        onSettled: () => {
+            void qc.invalidateQueries({ queryKey: ["adminPartners"] });
+            void qc.invalidateQueries({ queryKey: ["auditLogs"] });
+        },
+    });
+}
+
+export function useSuspendTenant() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: backendApi.admin.tenants.suspend,
+        onSuccess: (updated) => {
+            qc.setQueriesData<{ items: TenantSummary[]; total?: number; page?: number; page_size?: number }>({ queryKey: ["adminTenants"] }, (cur) => {
+                if (!cur) return cur;
+                return { ...cur, items: cur.items.map((item) => (item.id === updated.id ? updated : item)) };
+            });
+            notificationsStore.create({ type: "success", title: "Tenant suspended", message: `${updated.name} is now suspended.` });
+        },
+        onError: () => {
+            notificationsStore.create({ type: "error", title: "Suspension failed", message: "Could not suspend this tenant." });
+        },
+        onSettled: () => {
+            void qc.invalidateQueries({ queryKey: ["adminTenants"] });
+            void qc.invalidateQueries({ queryKey: ["auditLogs"] });
+        },
+    });
+}
+
+export function useReactivateTenant() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: backendApi.admin.tenants.reactivate,
+        onSuccess: (updated) => {
+            qc.setQueriesData<{ items: TenantSummary[]; total?: number; page?: number; page_size?: number }>({ queryKey: ["adminTenants"] }, (cur) => {
+                if (!cur) return cur;
+                return { ...cur, items: cur.items.map((item) => (item.id === updated.id ? updated : item)) };
+            });
+            notificationsStore.create({ type: "success", title: "Tenant reactivated", message: `${updated.name} has been restored.` });
+        },
+        onError: () => {
+            notificationsStore.create({ type: "error", title: "Reactivation failed", message: "Could not reactivate this tenant." });
+        },
+        onSettled: () => {
+            void qc.invalidateQueries({ queryKey: ["adminTenants"] });
+            void qc.invalidateQueries({ queryKey: ["auditLogs"] });
         },
     });
 }

@@ -20,6 +20,7 @@ import {
     Bot,
     PanelLeftClose,
     PanelLeftOpen,
+    Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ViewportDrawer } from "@/components/ui/viewport-drawer";
@@ -28,13 +29,8 @@ import { useSidebarActions, useSidebarState } from "@/lib/sidebar-client";
 import { Button } from "@/components/ui/button";
 import { useWhiteLabelBranding } from "@/components/white-label/white-label-branding-provider";
 import { useTheme } from "@/components/providers/theme-provider";
-
-const DUMMY_USER = {
-    id: "user-001",
-    email: "demo@talk-lee.ai",
-    name: "Demo User",
-    business_name: "Talk-Lee Demo Inc.",
-};
+import { useAuth } from "@/lib/auth-context";
+import { getAdminUiCapabilities, roleLabel } from "@/lib/admin-access";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -48,6 +44,7 @@ const navigation = [
     { name: "Meetings", href: "/meetings", icon: CalendarDays },
     { name: "Reminders", href: "/reminders", icon: Bell },
     { name: "Assistant", href: "/assistant", icon: Bot },
+    { name: "Audit & Access", href: "/admin", icon: Shield, adminOnly: true },
 ];
 
 const bottomNavigation = [
@@ -56,6 +53,7 @@ const bottomNavigation = [
 
 export function Sidebar({ className }: { className?: string }) {
     const pathname = usePathname();
+    const { user, logout } = useAuth();
     const whiteLabel = useWhiteLabelBranding();
     const brandName = whiteLabel?.branding.displayName ?? "Talk-Lee";
     const brandLogoSrc = whiteLabel?.branding.logo.src ?? "/favicon.svg";
@@ -75,10 +73,22 @@ export function Sidebar({ className }: { className?: string }) {
     const desktopWidth = collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-expanded-width)";
     const desktopNavItemClass = collapsed ? "justify-center px-2" : "justify-start px-2";
     const desktopTextClass = collapsed ? "hidden" : "block";
+    const capabilities = useMemo(() => getAdminUiCapabilities(user), [user]);
+    const visibleNavigation = useMemo(
+        () => navigation.filter((item) => !item.adminOnly || capabilities.canViewAuditLogs),
+        [capabilities.canViewAuditLogs]
+    );
+    const profileUser = user ?? {
+        id: "guest",
+        email: "guest@talk-lee.ai",
+        name: "Guest",
+        business_name: brandName,
+        role: "user",
+    };
 
     const measurementLabels = useMemo(
-        () => [...navigation.map((x) => x.name), ...bottomNavigation.map((x) => x.name), "Logout", brandName],
-        [brandName]
+        () => [...visibleNavigation.map((x) => x.name), ...bottomNavigation.map((x) => x.name), "Logout", brandName],
+        [brandName, visibleNavigation]
     );
 
     useEffect(() => {
@@ -117,7 +127,9 @@ export function Sidebar({ className }: { className?: string }) {
     }, [collapsed]);
 
     const handleLogout = () => {
-        window.location.href = "/";
+        void logout().finally(() => {
+            window.location.href = "/";
+        });
     };
 
     const onClose = () => {
@@ -203,7 +215,7 @@ export function Sidebar({ className }: { className?: string }) {
             </div>
 
             <nav className={cn("flex-1 px-2 space-y-1.5", isShortViewport ? "py-2" : "py-3")}>
-                {navigation.map((item) => {
+                {visibleNavigation.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                     return (
                         <Link
@@ -284,11 +296,11 @@ export function Sidebar({ className }: { className?: string }) {
                 <div className="rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/60 px-3 py-4 backdrop-blur-sm shadow-sm transition-colors duration-300">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-sidebar-primary/15 border border-sidebar-border/60 flex items-center justify-center shadow-sm">
-                            <span className="text-sm font-black text-sidebar-foreground">{DUMMY_USER.email?.charAt(0).toUpperCase()}</span>
+                            <span className="text-sm font-black text-sidebar-foreground">{profileUser.email?.charAt(0).toUpperCase()}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sidebar-foreground truncate">{DUMMY_USER.name}</p>
-                            <p className="text-xs text-sidebar-foreground/60 font-semibold truncate">{DUMMY_USER.business_name}</p>
+                            <p className="font-bold text-sidebar-foreground truncate">{profileUser.name ?? profileUser.email}</p>
+                            <p className="text-xs text-sidebar-foreground/60 font-semibold truncate">{roleLabel(profileUser.role)}</p>
                         </div>
                     </div>
                 </div>

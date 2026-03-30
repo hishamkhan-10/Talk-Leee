@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, Orbitron } from "next/font/google";
 import "./globals.css";
+import { SuspensionStateProvider } from "@/components/admin/suspension-state-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { NotificationToaster } from "@/components/notifications/notification-toaster";
 import { AppProviders } from "@/components/providers/app-providers";
@@ -43,8 +44,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${manrope.variable} ${orbitron.variable} font-sans antialiased`}>
         <AppProviders>
           <AuthProvider>
-            {children}
-            <NotificationToaster />
+            <SuspensionStateProvider>
+              {children}
+              <NotificationToaster />
+            </SuspensionStateProvider>
           </AuthProvider>
         </AppProviders>
       </body>

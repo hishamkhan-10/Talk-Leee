@@ -12,6 +12,11 @@ interface MeResponse {
     minutes_remaining: number;
     partner_id?: string;
     tenant_id?: string;
+    partner_status?: "active" | "suspended";
+    tenant_status?: "active" | "suspended";
+    suspension_reason?: string;
+    suspended_at?: string;
+    suspended_scope?: "partner" | "tenant";
 }
 
 interface AuthContextType {

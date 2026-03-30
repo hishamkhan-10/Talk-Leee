@@ -85,6 +85,11 @@ export const MeResponseSchema = z
         minutes_remaining: z.number(),
         partner_id: z.string().optional().nullable(),
         tenant_id: z.string().optional().nullable(),
+        partner_status: z.enum(["active", "suspended"]).optional().nullable(),
+        tenant_status: z.enum(["active", "suspended"]).optional().nullable(),
+        suspension_reason: z.string().optional().nullable(),
+        suspended_at: z.string().optional().nullable(),
+        suspended_scope: z.enum(["partner", "tenant"]).optional().nullable(),
     })
     .passthrough()
     .transform((v) => ({
@@ -93,6 +98,11 @@ export const MeResponseSchema = z
         business_name: v.business_name ?? undefined,
         partner_id: v.partner_id ?? undefined,
         tenant_id: v.tenant_id ?? undefined,
+        partner_status: v.partner_status ?? undefined,
+        tenant_status: v.tenant_status ?? undefined,
+        suspension_reason: v.suspension_reason ?? undefined,
+        suspended_at: v.suspended_at ?? undefined,
+        suspended_scope: v.suspended_scope ?? undefined,
     }));
 
 export type MeResponse = z.infer<typeof MeResponseSchema>;

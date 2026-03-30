@@ -40,4 +40,13 @@ export const backendEndpoints = {
     assistantPlan: { method: "POST", path: "/assistant/plan", tags: ["Assistant"], summary: "Plan assistant action" },
     assistantExecute: { method: "POST", path: "/assistant/execute", tags: ["Assistant"], summary: "Execute assistant action" },
     assistantRunsRetry: { method: "POST", path: "/assistant/runs/{id}/retry", tags: ["Assistant"], summary: "Retry assistant run" },
+
+    auditLogsList: { method: "GET", path: "/admin/audit-logs", tags: ["Admin"], summary: "List audit logs" },
+    securityEventsList: { method: "GET", path: "/admin/security-events", tags: ["Admin"], summary: "List security events" },
+    partnersList: { method: "GET", path: "/admin/partners", tags: ["Admin"], summary: "List partners" },
+    tenantsList: { method: "GET", path: "/admin/tenants", tags: ["Admin"], summary: "List tenants" },
+    partnerSuspend: { method: "POST", path: "/admin/partners/{id}/suspend", tags: ["Admin"], summary: "Suspend partner" },
+    partnerReactivate: { method: "POST", path: "/admin/partners/{id}/reactivate", tags: ["Admin"], summary: "Reactivate partner" },
+    tenantSuspend: { method: "POST", path: "/admin/tenants/{id}/suspend", tags: ["Admin"], summary: "Suspend tenant" },
+    tenantReactivate: { method: "POST", path: "/admin/tenants/{id}/reactivate", tags: ["Admin"], summary: "Reactivate tenant" },
 } as const;
