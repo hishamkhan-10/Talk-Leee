@@ -47,34 +47,25 @@ const nextConfig: NextConfig = {
     },
     webpack: (config, { dev }) => {
         if (dev) {
-            const systemRootIgnored = /^[A-Z]:\\(?:DumpStack\.log\.tmp|hiberfil\.sys|pagefile\.sys|swapfile\.sys|System Volume Information)(?:\\.*)?$/i;
-            const artifactsIgnored = /[\\/](?:test-results|test-artifacts|playwright-report)[\\/]/i;
-            const extraIgnoredGlobs = [
+            // Only include valid glob patterns that Webpack accepts
+            // Webpack schema requires watchOptions.ignored to be an array of non-empty strings
+            const ignoredPatterns = [
+                "**/node_modules/**",
+                "**/.next/**",
                 "**/DumpStack.log.tmp",
                 "**/hiberfil.sys",
                 "**/pagefile.sys",
                 "**/swapfile.sys",
                 "**/System Volume Information",
-                "**/System Volume Information/**",
                 "**/test-results/**",
                 "**/test-artifacts/**",
                 "**/playwright-report/**",
             ];
 
-            const existingIgnored = config.watchOptions?.ignored;
-            const mergedIgnored =
-                existingIgnored instanceof RegExp
-                    ? new RegExp(
-                          `${existingIgnored.source}|${systemRootIgnored.source}|${artifactsIgnored.source}`,
-                          Array.from(new Set(`${existingIgnored.flags}${systemRootIgnored.flags}${artifactsIgnored.flags}`.split(""))).join("")
-                      )
-                    : Array.isArray(existingIgnored)
-                      ? [...existingIgnored, ...extraIgnoredGlobs]
-                      : typeof existingIgnored === "string"
-                        ? [existingIgnored, ...extraIgnoredGlobs]
-                        : systemRootIgnored;
-
-            config.watchOptions = { ...(config.watchOptions ?? {}), ignored: mergedIgnored };
+            config.watchOptions = {
+                ...(config.watchOptions ?? {}),
+                ignored: ignoredPatterns,
+            };
         }
         return config;
     },
