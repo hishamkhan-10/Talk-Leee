@@ -406,6 +406,10 @@
 .home-services-card {
   position: relative;
   overflow: hidden;
+  /* Use the same card gradient as other home cards */
+  background-image: var(--home-card-gradient);
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .home-services-card > * {
