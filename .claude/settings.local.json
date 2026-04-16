@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(npm run:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(curl:*)",
+      "Bash(grep -r \"useMemo\\\\|useCallback\\\\|React.memo\" /c/Users/User/Desktop/Talk-Leee/src/components/home/*.tsx)",
+      "Bash(ls -lhS public/images/*.mp4 public/images/*.png public/images/*.jpg)",
+      "Bash(find public/images -type f -name \"*.png\" -exec ls -lhS {} +)",
+      "Bash(du -sh public/images/*.mp4 public/images/*.jpg public/images/*.png)",
+      "Bash(wc:*)",
+      "Bash(ls -la src/lib/*.ts)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(rm:*)"
     ]
   }
 }

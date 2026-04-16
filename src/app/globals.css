@@ -212,7 +212,6 @@
 
   * {
     @apply border-border outline-ring/50;
-    transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out, box-shadow 300ms ease-in-out;
   }
 
   body {
@@ -249,7 +248,7 @@
 }
 
 .home-navbar-fixed {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -670,6 +669,13 @@ details > summary.home-menu-toggle {
   opacity: 0.3;
   z-index: 0;
   pointer-events: none;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shape-1, .shape-2, .live-pulse {
+    animation: none !important;
+  }
 }
 
 .shape-1 {

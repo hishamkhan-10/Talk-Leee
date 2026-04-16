@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { useNotificationsActions, useNotificationsState } from "@/lib/notifications-client";
 import type { NotificationPriority, NotificationRouting, NotificationType } from "@/lib/notifications";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2, Key, Lock } from "lucide-react";
 import Link from "next/link";
+import MFASetup from "@/components/auth/mfa-setup";
+import PasskeyRegistration from "@/components/auth/passkey-registration";
+import DeviceList from "@/components/auth/device-list";
+import LogoutButton from "@/components/auth/logout-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function clampNumber(n: number, min: number, max: number) {
     return Math.min(max, Math.max(min, n));
@@ -36,6 +41,16 @@ const routings: NotificationRouting[] = ["inApp", "webhook", "both", "none"];
 export default function SettingsPage() {
     const { settings } = useNotificationsState();
     const { setSettings, setCategory, setPrivacy, exportHistoryJson, clearAll } = useNotificationsActions();
+    const [token, setToken] = useState("");
+    const [showMfaSetup, setShowMfaSetup] = useState(false);
+    const [showPasskeySetup, setShowPasskeySetup] = useState(false);
+    const [mfaEnabled, setMfaEnabled] = useState(false);
+
+    // Get token from localStorage
+    useEffect(() => {
+        const savedToken = localStorage.getItem("access_token") || "";
+        setToken(savedToken);
+    }, []);
 
     const retentionDaysLabel = useMemo(() => {
         const v = settings.historyRetentionDays;
@@ -278,104 +293,138 @@ export default function SettingsPage() {
 
                 <Card className="dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <CardHeader>
-                        <CardTitle className="dark:text-white">Account</CardTitle>
-                        <CardDescription>Profile, authentication, and account linking.</CardDescription>
+                        <CardTitle className="dark:text-white">Account & Security</CardTitle>
+                        <CardDescription>Profile, authentication, security, and device management.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-5">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
-                                <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Profile</div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="profileName">Name</Label>
-                                    <Input
-                                        id="profileName"
-                                        value={settings.account.profile.name}
-                                        onChange={(e) =>
-                                            setSettings({
-                                                account: {
-                                                    ...settings.account,
-                                                    profile: { ...settings.account.profile, name: e.target.value },
-                                                },
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="profileEmail">Email</Label>
-                                    <Input
-                                        id="profileEmail"
-                                        type="email"
-                                        value={settings.account.profile.email}
-                                        onChange={(e) =>
-                                            setSettings({
-                                                account: {
-                                                    ...settings.account,
-                                                    profile: { ...settings.account.profile, email: e.target.value },
-                                                },
-                                            })
-                                        }
-                                    />
-                                </div>
-                            </div>
+                    <CardContent>
+                        <Tabs defaultValue="profile" className="w-full">
+                            <TabsList className="grid w-full grid-cols-4">
+                                <TabsTrigger value="profile">Profile</TabsTrigger>
+                                <TabsTrigger value="security">Security</TabsTrigger>
+                                <TabsTrigger value="devices">Devices</TabsTrigger>
+                                <TabsTrigger value="logout">Logout</TabsTrigger>
+                            </TabsList>
 
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
-                                <div>
-                                    <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Authentication</div>
-                                    <div className="mt-1 text-sm text-muted-foreground">Security options.</div>
-                                </div>
-                                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
-                                    <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Two-factor authentication</div>
-                                    <Switch
-                                        checked={settings.account.auth.twoFactorEnabled}
-                                        onCheckedChange={(v) =>
-                                            setSettings({
-                                                account: {
-                                                    ...settings.account,
-                                                    auth: { ...settings.account.auth, twoFactorEnabled: v },
-                                                },
-                                            })
-                                        }
-                                        ariaLabel="Enable two-factor authentication"
-                                    />
-                                </div>
-
-                                <div>
-                                    <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Account linking</div>
-                                    <div className="mt-2 space-y-2">
-                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
-                                            <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Google</div>
-                                            <Switch
-                                                checked={settings.account.linking.google}
-                                                onCheckedChange={(v) =>
+                            {/* Profile Tab */}
+                            <TabsContent value="profile" className="space-y-4">
+                                <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
+                                    <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Profile Information</div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="profileName">Name</Label>
+                                            <Input
+                                                id="profileName"
+                                                value={settings.account.profile.name}
+                                                onChange={(e) =>
                                                     setSettings({
                                                         account: {
                                                             ...settings.account,
-                                                            linking: { ...settings.account.linking, google: v },
+                                                            profile: { ...settings.account.profile, name: e.target.value },
                                                         },
                                                     })
                                                 }
-                                                ariaLabel="Link Google account"
                                             />
                                         </div>
-                                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
-                                            <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">GitHub</div>
-                                            <Switch
-                                                checked={settings.account.linking.github}
-                                                onCheckedChange={(v) =>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="profileEmail">Email</Label>
+                                            <Input
+                                                id="profileEmail"
+                                                type="email"
+                                                value={settings.account.profile.email}
+                                                onChange={(e) =>
                                                     setSettings({
                                                         account: {
                                                             ...settings.account,
-                                                            linking: { ...settings.account.linking, github: v },
+                                                            profile: { ...settings.account.profile, email: e.target.value },
                                                         },
                                                     })
                                                 }
-                                                ariaLabel="Link GitHub account"
                                             />
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                            </TabsContent>
+
+                            {/* Security Tab */}
+                            <TabsContent value="security" className="space-y-4">
+                                {/* Two-Factor Authentication */}
+                                <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Two-Factor Authentication</div>
+                                            <div className="mt-1 text-sm text-muted-foreground">Add an extra layer of security to your account</div>
+                                        </div>
+                                        <Lock className="h-5 w-5 text-muted-foreground" aria-hidden />
+                                    </div>
+                                    {!showMfaSetup && !mfaEnabled ? (
+                                        <Button onClick={() => setShowMfaSetup(true)} variant="outline" className="w-full">
+                                            Enable Two-Factor Authentication
+                                        </Button>
+                                    ) : null}
+                                    {showMfaSetup && !mfaEnabled && token && (
+                                        <MFASetup
+                                            token={token}
+                                            onSuccess={() => {
+                                                setMfaEnabled(true);
+                                                setShowMfaSetup(false);
+                                            }}
+                                            onCancel={() => setShowMfaSetup(false)}
+                                        />
+                                    )}
+                                    {mfaEnabled && (
+                                        <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md">
+                                            <p className="text-sm text-green-700 dark:text-green-300">✓ Two-factor authentication is enabled</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Passkeys */}
+                                <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Passkeys</div>
+                                            <div className="mt-1 text-sm text-muted-foreground">Sign in with biometric or security keys</div>
+                                        </div>
+                                        <Key className="h-5 w-5 text-muted-foreground" aria-hidden />
+                                    </div>
+                                    {!showPasskeySetup && (
+                                        <Button onClick={() => setShowPasskeySetup(true)} variant="outline" className="w-full">
+                                            Add a Passkey
+                                        </Button>
+                                    )}
+                                    {showPasskeySetup && token && (
+                                        <PasskeyRegistration
+                                            token={token}
+                                            onSuccess={() => setShowPasskeySetup(false)}
+                                            onCancel={() => setShowPasskeySetup(false)}
+                                        />
+                                    )}
+                                </div>
+                            </TabsContent>
+
+                            {/* Devices Tab */}
+                            <TabsContent value="devices" className="space-y-4">
+                                {token && <DeviceList token={token} />}
+                            </TabsContent>
+
+                            {/* Logout Tab */}
+                            <TabsContent value="logout" className="space-y-4">
+                                <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-sm transition-[transform,background-color,box-shadow,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
+                                    <div>
+                                        <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Sign out</div>
+                                        <div className="mt-1 text-sm text-muted-foreground">End your current session and return to the login page</div>
+                                    </div>
+                                    {token && (
+                                        <LogoutButton
+                                            token={token}
+                                            variant="destructive"
+                                            size="default"
+                                            showLabel={true}
+                                        />
+                                    )}
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </CardContent>
                 </Card>
             </div>

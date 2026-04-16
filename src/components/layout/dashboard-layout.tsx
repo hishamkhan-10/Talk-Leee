@@ -7,7 +7,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useSidebarActions, useSidebarState } from "@/lib/sidebar-client";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { HealthIndicator } from "@/components/ui/health-indicator";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/useAuth";
 import { SuspensionBanner, useSuspensionState } from "@/components/admin/suspension-state-provider";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
@@ -23,30 +23,24 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, title, description, requireAuth = true }: DashboardLayoutProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, loading: authLoading, refreshUser } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const { state: suspensionState } = useSuspensionState();
     const { collapsed, mobileOpen } = useSidebarState();
     const { setMobileOpen } = useSidebarActions();
     const [isDesktop, setIsDesktop] = useState(false);
-    const [attemptedRefresh, setAttemptedRefresh] = useState(false);
     const mainContentRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         if (!requireAuth) return;
         if (authLoading) return;
         if (user) return;
-        if (!attemptedRefresh) {
-            setAttemptedRefresh(true);
-            void refreshUser();
-            return;
-        }
         const next = pathname ?? "/dashboard";
         try {
             router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
         } catch {
             window.location.href = `/auth/login?next=${encodeURIComponent(next)}`;
         }
-    }, [attemptedRefresh, authLoading, pathname, refreshUser, requireAuth, router, user]);
+    }, [authLoading, pathname, requireAuth, router, user]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -91,7 +85,7 @@ export function DashboardLayout({ children, title, description, requireAuth = tr
             return (
                 <div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status" aria-live="polite" aria-busy="true">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground/60" aria-hidden />
-                    <span className="sr-only">{attemptedRefresh ? "Redirecting to sign in…" : "Loading…"}</span>
+                    <span className="sr-only">Loading…</span>
                 </div>
             );
         }

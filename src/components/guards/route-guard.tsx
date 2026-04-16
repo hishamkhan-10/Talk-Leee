@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useConnectorStatuses } from "@/lib/api-hooks";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/useAuth";
 import type { ConnectorProviderStatus } from "@/lib/models";
 
 export type RequiredConnectorType = "calendar" | "email" | "crm" | "drive";
@@ -69,7 +69,7 @@ export function RouteGuard({
     requiredConnectors?: RequiredConnectorType[];
     children: React.ReactNode;
 }) {
-    const { user, loading } = useAuth();
+    const { user, isLoading } = useAuth();
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const pathname = usePathname();
@@ -111,7 +111,7 @@ export function RouteGuard({
         }
     }, [router, shouldBlockOnRole, unauthorizedHref]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="mx-auto w-full max-w-5xl px-4 py-10">
                 <Card>

@@ -1,21 +1,21 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Bot, Cpu, Mic, PlayCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bot, Cpu, Mic, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
-  const [src, setSrc] = useState<string | null>(null);
+  const src = "/images/ai-voice-section..mp4";
   const playerRef = useRef<HTMLDivElement | null>(null);
   const videoARef = useRef<HTMLVideoElement | null>(null);
   const videoBRef = useRef<HTMLVideoElement | null>(null);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [isInView, setIsInView] = useState(false);
 
-  const resolvedSrc = useMemo(() => src, [src]);
+  const resolvedSrc = src;
   const [activeVideo, setActiveVideo] = useState<0 | 1>(0);
   const activeVideoRef = useRef<0 | 1>(0);
   const isCrossfadingRef = useRef(false);
@@ -35,32 +35,6 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
     io.observe(el);
     return () => io.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (!shouldLoadVideo || resolvedSrc) return;
-    let cancelled = false;
-    const ac = new AbortController();
-    const candidates = ["/images/ai-voice-section.mp4", "/images/ai-voice-section..mp4"];
-
-    (async () => {
-      for (const candidate of candidates) {
-        try {
-          const res = await fetch(candidate, { method: "HEAD", cache: "force-cache", signal: ac.signal });
-          if (res.ok) {
-            if (!cancelled) setSrc(candidate);
-            return;
-          }
-        } catch {}
-      }
-
-      if (!cancelled) setSrc("/images/ai-voice-section..mp4");
-    })();
-
-    return () => {
-      cancelled = true;
-      ac.abort();
-    };
-  }, [resolvedSrc, shouldLoadVideo]);
 
   useEffect(() => {
     if (!shouldLoadVideo || !resolvedSrc) return;
@@ -334,7 +308,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           e.stopPropagation();
         }}
         onError={() => {
-          setSrc((prev) => (prev?.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
+          // Fallback handled by known good URL
         }}
       >
         Your browser does not support the video tag.
@@ -358,7 +332,7 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           e.stopPropagation();
         }}
         onError={() => {
-          setSrc((prev) => (prev?.endsWith("ai-voice-section..mp4") ? prev : "/images/ai-voice-section..mp4"));
+          // Fallback handled by known good URL
         }}
       >
         Your browser does not support the video tag.
@@ -907,42 +881,6 @@ export function SecondaryHero() {
           }
         }
       `}</style>
-      </section>
-
-      <section className="bg-cyan-100 dark:bg-background px-4 md:px-6 lg:px-8 pb-12">
-        <div className="mx-auto w-full max-w-7xl">
-          <div
-            className="rounded-2xl border border-border/70 bg-transparent backdrop-blur-sm p-6 sm:p-7 shadow-sm transition-[transform,filter,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:border-border hover:shadow-md"
-            style={{
-              backgroundImage: "var(--home-card-gradient)",
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-            }}
-          >
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-5">
-              <div className="mx-auto md:mx-0 mt-0.5 flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-white shadow-sm">
-                <PlayCircle className="h-5 w-5 text-black" aria-hidden />
-              </div>
-              <div className="min-w-0 text-center md:text-left">
-                <div className="text-lg font-semibold text-primary dark:text-foreground">Experience Our AI Voice Agent Live</div>
-                <div className="mt-2 text-sm sm:text-base text-gray-700 dark:text-muted-foreground leading-relaxed">
-                  See how natural conversations, call automation, and real-time routing work end-to-end.
-                </div>
-                <div className="mt-5 flex justify-center md:justify-start">
-                  <Link href="#contact">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="rounded-full px-7 h-11 text-sm font-semibold border-border transition-transform hover:scale-105 hover:bg-background hover:text-foreground hover:border-border"
-                    >
-                      Talk to our team
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
     </>
   );

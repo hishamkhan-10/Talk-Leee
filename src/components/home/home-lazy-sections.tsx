@@ -10,32 +10,32 @@ const SecondaryHero = dynamic(() => import("@/components/home/secondary-hero").t
 });
 
 const StatsSection = dynamic(() => import("@/components/home/stats-section").then((m) => m.StatsSection), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[260px]" />,
 });
 
 const FeaturesSection = dynamic(() => import("@/components/home/features-section").then((m) => m.FeaturesSection), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[420px]" />,
 });
 
 const PackagesSection = dynamic(() => import("@/components/home/packages-section").then((m) => m.PackagesSection), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[520px]" />,
 });
 
 const CTASection = dynamic(() => import("@/components/home/cta-section").then((m) => m.CTASection), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[320px]" />,
 });
 
 const ContactSection = dynamic(() => import("@/components/home/contact-section").then((m) => m.ContactSection), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[420px]" />,
 });
 
 const Footer = dynamic(() => import("@/components/home/footer").then((m) => m.Footer), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[240px]" />,
 });
 
@@ -360,7 +360,7 @@ function NavbarHeroBackgroundVideo() {
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
         poster={fallbackPoster}
         disablePictureInPicture
         disableRemotePlayback
@@ -380,7 +380,7 @@ function NavbarHeroBackgroundVideo() {
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
         poster={fallbackPoster}
         disablePictureInPicture
         disableRemotePlayback
@@ -397,48 +397,6 @@ function NavbarHeroBackgroundVideo() {
 }
 
 export function HomeLazySections() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number; cancelIdleCallback?: (id: number) => void };
-    if (typeof w.requestIdleCallback === "function") {
-      const id = w.requestIdleCallback(() => setEnabled(true), { timeout: 1200 });
-      return () => w.cancelIdleCallback?.(id);
-    }
-    const id = window.setTimeout(() => setEnabled(true), 350);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  if (!enabled) {
-    return (
-      <>
-        <NavbarHeroBackgroundVideo />
-        <div className="relative z-10">
-          <Hero
-            title="AI Voice Agent Platform for Seamless Call Automation"
-            description={[
-              "Automate inbound and outbound calls with intelligent AI voice agents that deliver end-to-end customer support, appointment scheduling, and enterprise-grade engagement — 24/7.",
-            ]}
-            adjustForNavbar
-            stats={[
-              { label: "Response Time", value: "<500ms" },
-              { label: "Concurrent Calls", value: "1000+" },
-              { label: "Completion Rate", value: "94%" },
-            ]}
-          />
-          <SectionPlaceholder minHeightClassName="min-h-[70vh]" />
-          <SectionPlaceholder minHeightClassName="min-h-[260px]" />
-          <SectionPlaceholder minHeightClassName="min-h-[420px]" />
-          <SectionPlaceholder minHeightClassName="min-h-[520px]" />
-          <SectionPlaceholder minHeightClassName="min-h-[320px]" />
-          <SectionPlaceholder minHeightClassName="min-h-[520px]" />
-          <SectionPlaceholder minHeightClassName="min-h-[420px]" />
-          <SectionPlaceholder minHeightClassName="min-h-[240px]" />
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <NavbarHeroBackgroundVideo />

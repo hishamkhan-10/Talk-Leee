@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldAlert } from "lucide-react";
 import { api, type MeResponse } from "@/lib/api";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 type SuspensionScope = "partner" | "tenant" | null;
@@ -97,7 +97,7 @@ function mergeSuspensionState(serverState: SuspensionState, override: ScopedSusp
 }
 
 export function SuspensionStateProvider({ children }: { children: React.ReactNode }) {
-    const { user, refreshUser } = useAuth();
+    const { user } = useAuth();
     const [override, setOverride] = useState<ScopedSuspensionOverride | null>(null);
 
     const statusQuery = useQuery({
@@ -142,18 +142,17 @@ export function SuspensionStateProvider({ children }: { children: React.ReactNod
         if (typeof BroadcastChannel === "undefined") return;
         const channel = new BroadcastChannel("account-suspension");
         channel.onmessage = () => {
-            void refreshUser();
             void statusQuery.refetch();
         };
         return () => channel.close();
-    }, [refreshUser, statusQuery]);
+    }, [statusQuery]);
 
     const value = useMemo<SuspensionContextValue>(
         () => ({
             state,
             loading: Boolean(user) && (statusQuery.isLoading || statusQuery.isFetching),
             refresh: async () => {
-                await Promise.all([refreshUser(), statusQuery.refetch()]);
+                await statusQuery.refetch();
             },
             applyScopedUpdate: (input) => {
                 setOverride(input);
@@ -165,7 +164,7 @@ export function SuspensionStateProvider({ children }: { children: React.ReactNod
                 }
             },
         }),
-        [refreshUser, state, statusQuery, user]
+        [state, statusQuery, user]
     );
 
     return <SuspensionStateContext.Provider value={value}>{children}</SuspensionStateContext.Provider>;

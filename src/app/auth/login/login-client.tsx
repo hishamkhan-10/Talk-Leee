@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, KeyRound, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, KeyRound, Loader2, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import MFAVerification from "@/components/auth/mfa-verification";
+import PasskeyLogin from "@/components/auth/passkey-login";
 
-type Step = "email" | "otp";
+type Step = "email" | "otp" | "password" | "mfa" | "passkey";
 
 export default function LoginClientPage() {
     const router = useRouter();
@@ -18,9 +20,12 @@ export default function LoginClientPage() {
     const [step, setStep] = useState<Step>("email");
     const [email, setEmail] = useState("");
     const [otpCode, setOtpCode] = useState("");
+    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [showPasskey, setShowPasskey] = useState(false);
+    const [usePasswordLogin, setUsePasswordLogin] = useState(false);
     const emailInputRef = useRef<HTMLInputElement | null>(null);
     const otpInputRef = useRef<HTMLInputElement | null>(null);
     const errorId = useId();
@@ -94,11 +99,98 @@ export default function LoginClientPage() {
         }
     }
 
+    async function handlePasswordSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+
+        try {
+            // Password login — calls backend POST /api/v1/auth/login/password
+            const res = await fetch("/api/v1/auth/login/password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => null);
+                throw new Error(body?.detail || body?.message || "Invalid email or password");
+            }
+            const response = (await res.json()) as { access_token: string; refresh_token: string; mfa_required?: boolean };
+
+            if (response.mfa_required) {
+                setStep("mfa");
+                return;
+            }
+
+            api.setToken(response.access_token);
+            localStorage.setItem("refresh_token", response.refresh_token);
+
+            const rawNext = searchParams.get("next");
+            const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
+            let role: string | null = null;
+            try {
+                const me = await api.getMe();
+                role = me.role;
+            } catch {
+                role = null;
+            }
+
+            router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Login failed. Please check your credentials.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
     function handleBack() {
         setStep("email");
         setOtpCode("");
+        setPassword("");
         setError("");
         setMessage("");
+        setShowPasskey(false);
+    }
+
+    async function handleMfaSuccess(tokens: { access_token: string; refresh_token: string }) {
+        api.setToken(tokens.access_token);
+        localStorage.setItem("refresh_token", tokens.refresh_token);
+
+        const rawNext = searchParams.get("next");
+        const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
+        let role: string | null = null;
+        try {
+            const me = await api.getMe();
+            role = me.role;
+        } catch {
+            role = null;
+        }
+
+        router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
+    }
+
+    async function handlePasskeySuccess(tokens: { access_token: string; refresh_token: string }) {
+        api.setToken(tokens.access_token);
+        localStorage.setItem("refresh_token", tokens.refresh_token);
+
+        const rawNext = searchParams.get("next");
+        const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
+        let role: string | null = null;
+        try {
+            const me = await api.getMe();
+            role = me.role;
+        } catch {
+            role = null;
+        }
+
+        router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
     }
 
     async function handleResend() {
@@ -141,12 +233,26 @@ export default function LoginClientPage() {
                             <h1>Welcome back</h1>
                         </CardTitle>
                         <CardDescription>
-                            {step === "email" ? "Enter your email to receive a verification code" : `Enter the verification code sent to ${email}`}
+                            {step === "email" && !usePasswordLogin
+                                ? "Enter your email to receive a verification code"
+                                : step === "email" && usePasswordLogin
+                                ? "Sign in with your email and password"
+                                : step === "otp"
+                                ? `Enter the verification code sent to ${email}`
+                                : step === "password"
+                                ? "Enter your password to continue"
+                                : step === "mfa"
+                                ? "Verify with two-factor authentication"
+                                : "Sign in with a passkey"}
                         </CardDescription>
                     </CardHeader>
 
                     {step === "email" ? (
-                        <form onSubmit={handleEmailSubmit} aria-busy={loading} aria-describedby={error ? errorId : undefined}>
+                        <form
+                            onSubmit={usePasswordLogin ? (e) => { e.preventDefault(); if (email) setStep("password"); } : handleEmailSubmit}
+                            aria-busy={loading}
+                            aria-describedby={error ? errorId : undefined}
+                        >
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
@@ -169,7 +275,7 @@ export default function LoginClientPage() {
                                 </div>
 
                                 {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
                                         {error}
                                     </div>
                                 ) : null}
@@ -180,15 +286,41 @@ export default function LoginClientPage() {
                                     {loading ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                                            Sending code...
+                                            {usePasswordLogin ? "Continuing..." : "Sending code..."}
                                         </>
                                     ) : (
                                         <>
-                                            Send Verification Code
+                                            {usePasswordLogin ? "Continue with Password" : "Send Verification Code"}
                                             <ArrowRight className="h-4 w-4" aria-hidden />
                                         </>
                                     )}
                                 </Button>
+
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <span className="w-full border-t border-border" />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-background px-2 text-muted-foreground">Or</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col items-center gap-2 w-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setUsePasswordLogin(!usePasswordLogin); setError(""); }}
+                                        className="text-sm text-foreground font-medium hover:underline"
+                                    >
+                                        {usePasswordLogin ? "Sign in with Email Code" : "Sign in with Password"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasskey(true)}
+                                        className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                                    >
+                                        Sign in with Passkey
+                                    </button>
+                                </div>
 
                                 <p className="text-sm text-muted-foreground text-center">
                                     New to Talk-Lee?{" "}
@@ -198,7 +330,58 @@ export default function LoginClientPage() {
                                 </p>
                             </CardFooter>
                         </form>
-                    ) : (
+                    ) : step === "password" ? (
+                        <form onSubmit={handlePasswordSubmit} aria-busy={loading} aria-describedby={error ? errorId : undefined}>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="login-password">Password</Label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
+                                        <Input
+                                            id="login-password"
+                                            type="password"
+                                            placeholder="Enter your password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="pl-10"
+                                            required
+                                            disabled={loading}
+                                            autoComplete="current-password"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Signing in as {email}</p>
+                                </div>
+
+                                {error ? (
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
+                                        {error}
+                                    </div>
+                                ) : null}
+                            </CardContent>
+
+                            <CardFooter className="flex flex-col gap-4">
+                                <Button type="submit" className="w-full" disabled={loading || !password}>
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                                            Signing in...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Sign In
+                                            <ArrowRight className="h-4 w-4" aria-hidden />
+                                        </>
+                                    )}
+                                </Button>
+                                <div className="flex items-center justify-between w-full">
+                                    <button type="button" onClick={handleBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1" disabled={loading}>
+                                        <ArrowLeft className="h-3 w-3" aria-hidden /> Change email
+                                    </button>
+                                </div>
+                            </CardFooter>
+                        </form>
+                    ) : step === "otp" ? (
                         <form
                             onSubmit={handleOtpSubmit}
                             aria-busy={loading}
@@ -233,13 +416,13 @@ export default function LoginClientPage() {
                                 </div>
 
                                 {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
                                         {error}
                                     </div>
                                 ) : null}
 
                                 {message ? (
-                                    <div id={messageId} role="status" aria-live="polite" className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
+                                    <div id={messageId} role="status" aria-live="polite" className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3">
                                         {message}
                                     </div>
                                 ) : null}
@@ -281,7 +464,35 @@ export default function LoginClientPage() {
                                 </div>
                             </CardFooter>
                         </form>
-                    )}
+                    ) : step === "mfa" ? (
+                        <MFAVerification
+                            email={email}
+                            onSuccess={handleMfaSuccess}
+                            onBackClick={handleBack}
+                            onError={(err) => setError(err)}
+                        />
+                    ) : step === "passkey" || showPasskey ? (
+                        <div className="space-y-4">
+                            <CardContent className="space-y-4">
+                                <PasskeyLogin
+                                    onSuccess={handlePasskeySuccess}
+                                    onError={(err) => setError(err)}
+                                    disabled={loading}
+                                />
+                            </CardContent>
+                            <CardFooter>
+                                <button
+                                    type="button"
+                                    onClick={handleBack}
+                                    className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 w-full py-2"
+                                    disabled={loading}
+                                >
+                                    <ArrowLeft className="h-3 w-3" aria-hidden />
+                                    Back to email
+                                </button>
+                            </CardFooter>
+                        </div>
+                    ) : null}
                 </Card>
 
                 <p className="text-xs text-muted-foreground text-center mt-8">By continuing, you agree to our Terms of Service and Privacy Policy.</p>

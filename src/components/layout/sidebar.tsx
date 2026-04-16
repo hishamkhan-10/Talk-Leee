@@ -21,6 +21,15 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     Shield,
+    CreditCard,
+    ScrollText,
+    Key,
+    Webhook,
+    Gauge,
+    ShieldCheck,
+    ShieldAlert,
+    Lock,
+    ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ViewportDrawer } from "@/components/ui/viewport-drawer";
@@ -29,10 +38,25 @@ import { useSidebarActions, useSidebarState } from "@/lib/sidebar-client";
 import { Button } from "@/components/ui/button";
 import { useWhiteLabelBranding } from "@/components/white-label/white-label-branding-provider";
 import { useTheme } from "@/components/providers/theme-provider";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/useAuth";
 import { getAdminUiCapabilities, roleLabel } from "@/lib/admin-access";
 
-const navigation = [
+type NavChild = {
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    adminOnly?: boolean;
+};
+
+type NavItem = {
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    adminOnly?: boolean;
+    children?: NavChild[];
+};
+
+const navigation: NavItem[] = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Campaigns", href: "/campaigns", icon: Megaphone },
     { name: "Call History", href: "/calls", icon: Phone },
@@ -40,11 +64,44 @@ const navigation = [
     { name: "Email", href: "/email", icon: Mail },
     { name: "Analytics", href: "/analytics", icon: BarChart2 },
     { name: "Recordings", href: "/recordings", icon: Volume2 },
-    { name: "AI Options", href: "/ai-options", icon: Cpu },
-    { name: "Meetings", href: "/meetings", icon: CalendarDays },
-    { name: "Reminders", href: "/reminders", icon: Bell },
-    { name: "Assistant", href: "/assistant", icon: Bot },
-    { name: "Audit & Access", href: "/admin", icon: Shield, adminOnly: true },
+    {
+        name: "AI Options", href: "/ai-options", icon: Cpu,
+        children: [
+            { name: "AI Options", href: "/ai-options", icon: Cpu },
+            { name: "Assistant", href: "/assistant", icon: Bot },
+        ],
+    },
+    {
+        name: "Meetings", href: "/meetings", icon: CalendarDays,
+        children: [
+            { name: "Meetings", href: "/meetings", icon: CalendarDays },
+            { name: "Reminders", href: "/reminders", icon: Bell },
+        ],
+    },
+    {
+        name: "Billing & Logs", href: "/billing", icon: CreditCard,
+        children: [
+            { name: "Billing", href: "/billing", icon: CreditCard },
+            { name: "Audit Logs", href: "/admin/audit-logs", icon: ScrollText, adminOnly: true },
+        ],
+    },
+    {
+        name: "Security Center", href: "/admin", icon: Shield, adminOnly: true,
+        children: [
+            { name: "Audit & Access", href: "/admin", icon: Shield },
+            { name: "Voice Security", href: "/admin/voice-security", icon: ShieldCheck },
+            { name: "Abuse Detection", href: "/admin/abuse-detection", icon: ShieldAlert },
+        ],
+    },
+    {
+        name: "Developer Hub", href: "/admin/api-keys", icon: Key, adminOnly: true,
+        children: [
+            { name: "API Keys", href: "/admin/api-keys", icon: Key },
+            { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
+            { name: "Rate Limiting", href: "/admin/rate-limiting", icon: Gauge },
+            { name: "Secrets", href: "/admin/secrets", icon: Lock },
+        ],
+    },
 ];
 
 const bottomNavigation = [
@@ -69,15 +126,37 @@ export function Sidebar({ className }: { className?: string }) {
 
     const measureRef = useRef<HTMLDivElement | null>(null);
     const [isShortViewport, setIsShortViewport] = useState(false);
+    const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+
+    const toggleDropdown = (name: string) => {
+        setOpenDropdowns(prev => {
+            const next = new Set(prev);
+            if (next.has(name)) next.delete(name);
+            else next.add(name);
+            return next;
+        });
+    };
 
     const desktopWidth = collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-expanded-width)";
     const desktopNavItemClass = collapsed ? "justify-center px-2" : "justify-start px-2";
     const desktopTextClass = collapsed ? "hidden" : "block";
     const capabilities = useMemo(() => getAdminUiCapabilities(user), [user]);
+    const isAdmin = capabilities.canViewAuditLogs;
     const visibleNavigation = useMemo(
-        () => navigation.filter((item) => !item.adminOnly || capabilities.canViewAuditLogs),
-        [capabilities.canViewAuditLogs]
+        () => {
+            return navigation
+                .filter((item) => !item.adminOnly || isAdmin)
+                .map((item) => {
+                    if (!item.children) return item;
+                    const visibleChildren = item.children.filter((child) => !child.adminOnly || isAdmin);
+                    if (visibleChildren.length === 0) return item;
+                    if (visibleChildren.length === 1) return { ...item, children: undefined };
+                    return { ...item, children: visibleChildren };
+                });
+        },
+        [isAdmin]
     );
+
     const profileUser = user ?? {
         id: "guest",
         email: "guest@talk-lee.ai",
@@ -145,7 +224,7 @@ export function Sidebar({ className }: { className?: string }) {
     };
 
     const NavContent = (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-auto">
             <div
                 className={cn(
                     "relative flex items-center border-b border-sidebar-border/60",
@@ -217,6 +296,76 @@ export function Sidebar({ className }: { className?: string }) {
             <nav className={cn("flex-1 px-2 space-y-1.5", isShortViewport ? "py-2" : "py-3")}>
                 {visibleNavigation.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+
+                    // Dropdown item
+                    if (item.children && !collapsed) {
+                        const isOpen = openDropdowns.has(item.name);
+                        const hasActiveChild = item.children.some(
+                            (child) => pathname === child.href || pathname.startsWith(child.href + "/")
+                        );
+                        return (
+                            <div key={item.name}>
+                                <button
+                                    type="button"
+                                    onClick={() => toggleDropdown(item.name)}
+                                    onMouseEnter={(e) => maybeShowTooltip(e, item.name)}
+                                    onMouseMove={(e) => maybeShowTooltip(e, item.name)}
+                                    onMouseLeave={() => tooltip.hide()}
+                                    className={cn(
+                                        "w-full group flex min-w-0 items-center gap-2 rounded-xl text-sm font-semibold transition-colors border",
+                                        desktopNavItemClass,
+                                        isShortViewport ? "py-1.5" : "py-2",
+                                        hasActiveChild
+                                            ? "bg-sidebar-accent border-sidebar-border/60 text-sidebar-accent-foreground"
+                                            : "bg-transparent border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:border-sidebar-border/60 hover:text-sidebar-foreground"
+                                    )}
+                                >
+                                    <item.icon className={cn("w-5 h-5 shrink-0", hasActiveChild ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground")} />
+                                    <span className={cn("min-w-0 whitespace-nowrap leading-tight flex-1 text-left", desktopTextClass)}>{item.name}</span>
+                                    <ChevronDown
+                                        className={cn(
+                                            "w-4 h-4 shrink-0 transition-[transform,opacity] duration-200 opacity-0 group-hover/sidebar:opacity-100",
+                                            desktopTextClass,
+                                            isOpen ? "rotate-0" : "-rotate-90"
+                                        )}
+                                    />
+                                </button>
+                                <div
+                                    className={cn(
+                                        "grid transition-[grid-template-rows] duration-200 ease-in-out",
+                                        isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                                    )}
+                                >
+                                    <div className="overflow-hidden">
+                                        <div className="pl-4 mt-1 space-y-0.5">
+                                            {item.children.map((child) => {
+                                                const isChildActive = pathname === child.href || pathname.startsWith(child.href + "/");
+                                                return (
+                                                    <Link
+                                                        key={child.name}
+                                                        href={child.href}
+                                                        onClick={onClose}
+                                                        className={cn(
+                                                            "group flex min-w-0 items-center gap-2 rounded-lg text-[13px] font-medium transition-colors border px-2",
+                                                            isShortViewport ? "py-1" : "py-1.5",
+                                                            isChildActive
+                                                                ? "bg-sidebar-accent/70 border-sidebar-border/40 text-sidebar-accent-foreground"
+                                                                : "bg-transparent border-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                                        )}
+                                                    >
+                                                        <child.icon className={cn("w-4 h-4 shrink-0", isChildActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground")} />
+                                                        <span className="min-w-0 whitespace-nowrap leading-tight">{child.name}</span>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    // Regular link (or collapsed dropdown acting as direct link)
                     return (
                         <Link
                             key={item.name}
@@ -311,7 +460,7 @@ export function Sidebar({ className }: { className?: string }) {
     return (
         <>
             <aside
-                className={cn("talklee-sidebar hidden lg:block fixed left-0 top-0 bottom-0 z-20 transition-[width] ease-in-out", className)}
+                className={cn("talklee-sidebar group/sidebar hidden lg:block fixed left-0 top-0 bottom-0 z-20 transition-[width] ease-in-out", className)}
                 style={{
                     width: desktopWidth,
                     transitionDuration: "var(--sidebar-transition-ms)",
@@ -339,7 +488,7 @@ export function Sidebar({ className }: { className?: string }) {
                 hideScrollbar
                 ariaLabel="Sidebar"
                 className="lg:hidden"
-                panelClassName={cn(isDark ? "dark" : undefined, "border-sidebar-border/60 bg-sidebar/85 overflow-hidden")}
+                panelClassName={cn(isDark ? "dark" : undefined, "group/sidebar border-sidebar-border/60 bg-sidebar/85 overflow-hidden")}
             >
                 {NavContent}
             </ViewportDrawer>

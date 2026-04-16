@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, CreditCard, Filter, LogIn, LockKeyhole, RefreshCw, Shield, ShieldAlert, UserCog, UserRound } from "lucide-react";
+import { Activity, ChevronLeft, ChevronRight, CreditCard, Filter, LogIn, LockKeyhole, RefreshCw, Shield, ShieldAlert, UserCog, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states/page-states";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/useAuth";
 import { getAdminUiCapabilities } from "@/lib/admin-access";
 import { useAdminPartners, useAdminTenants, useAuditLogs, useReactivatePartner, useReactivateTenant, useSecurityEvents, useSuspendPartner, useSuspendTenant } from "@/lib/api-hooks";
 import { publicAppConfig } from "@/lib/env";

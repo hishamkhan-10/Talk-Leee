@@ -220,7 +220,7 @@ export default function RegisterClientPage() {
                                 </div>
 
                                 {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
                                         {error}
                                     </div>
                                 ) : null}
@@ -284,13 +284,13 @@ export default function RegisterClientPage() {
                                 </div>
 
                                 {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
                                         {error}
                                     </div>
                                 ) : null}
 
                                 {message ? (
-                                    <div id={messageId} role="status" aria-live="polite" className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
+                                    <div id={messageId} role="status" aria-live="polite" className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3">
                                         {message}
                                     </div>
                                 ) : null}
