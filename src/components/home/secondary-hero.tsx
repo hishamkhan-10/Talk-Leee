@@ -10,10 +10,21 @@ import { useEffect, useRef, useState } from "react";
 function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   const src = "/images/ai-voice-section..mp4";
   const playerRef = useRef<HTMLDivElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoARef = useRef<HTMLVideoElement | null>(null);
+  const videoBRef = useRef<HTMLVideoElement | null>(null);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [isInView, setIsInView] = useState(false);
-  const [opacity, setOpacity] = useState(1);
+  const [opacityA, setOpacityA] = useState(1);
+  const [opacityB, setOpacityB] = useState(0);
+  const activeRef = useRef<"A" | "B">("A");
+  const crossfading = useRef(false);
+  const CROSSFADE_START = 0.6;
+  const CROSSFADE_MS = 500;
+
+  const safePlay = (v: HTMLVideoElement) => {
+    const p = v.play();
+    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+  };
 
   useEffect(() => {
     const el = playerRef.current;
@@ -32,42 +43,87 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
 
   useEffect(() => {
     if (!shouldLoadVideo) return;
-    const v = videoRef.current;
-    if (!v) return;
-    const targetRate = 0.8;
     const applyRate = (el: HTMLVideoElement) => {
+      const targetRate = 0.8;
       try { el.playbackRate = targetRate; el.defaultPlaybackRate = targetRate; } catch {}
     };
-    applyRate(v);
-    const onCanPlay = () => applyRate(v);
-    const onRateChange = () => { if (Math.abs(v.playbackRate - targetRate) > 0.01) applyRate(v); };
-    v.addEventListener("canplay", onCanPlay);
-    v.addEventListener("ratechange", onRateChange);
-    return () => { v.removeEventListener("canplay", onCanPlay); v.removeEventListener("ratechange", onRateChange); };
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (a) {
+      applyRate(a);
+      const onCanPlay = () => applyRate(a);
+      const onRateChange = () => { if (Math.abs(a.playbackRate - 0.8) > 0.01) applyRate(a); };
+      a.addEventListener("canplay", onCanPlay);
+      a.addEventListener("ratechange", onRateChange);
+    }
+    if (b) {
+      applyRate(b);
+      const onCanPlay = () => applyRate(b);
+      const onRateChange = () => { if (Math.abs(b.playbackRate - 0.8) > 0.01) applyRate(b); };
+      b.addEventListener("canplay", onCanPlay);
+      b.addEventListener("ratechange", onRateChange);
+    }
   }, [shouldLoadVideo]);
 
   useEffect(() => {
     if (!shouldLoadVideo) return;
-    const v = videoRef.current;
-    if (!v) return;
-    if (!isInView) { try { v.pause(); } catch {} return; }
-    const p = v.play();
-    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+    if (!isInView) {
+      try { a.pause(); } catch {}
+      try { b.pause(); } catch {}
+      return;
+    }
+    if (activeRef.current === "A") safePlay(a);
+    else safePlay(b);
   }, [isInView, shouldLoadVideo]);
 
   useEffect(() => {
     if (!shouldLoadVideo) return;
-    const v = videoRef.current;
-    if (!v) return;
-    const onTimeUpdate = () => {
-      const d = v.duration;
-      if (!Number.isFinite(d) || d <= 0) return;
-      const remaining = d - v.currentTime;
-      setOpacity(remaining <= 0.3 ? 0.85 : v.currentTime < 0.3 ? 0.85 + (v.currentTime / 0.3) * 0.15 : 1);
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+    let rafId = 0;
+
+    const startCrossfade = (from: HTMLVideoElement, to: HTMLVideoElement, fromId: "A" | "B") => {
+      if (crossfading.current) return;
+      crossfading.current = true;
+      to.currentTime = 0;
+      safePlay(to);
+      const toId = fromId === "A" ? "B" : "A";
+      const setFrom = fromId === "A" ? setOpacityA : setOpacityB;
+      const setTo = toId === "A" ? setOpacityA : setOpacityB;
+      setTo(1);
+      setFrom(0);
+      activeRef.current = toId;
+      setTimeout(() => {
+        try { from.pause(); } catch {}
+        crossfading.current = false;
+      }, CROSSFADE_MS + 100);
     };
-    v.addEventListener("timeupdate", onTimeUpdate);
-    return () => v.removeEventListener("timeupdate", onTimeUpdate);
+
+    const poll = () => {
+      if (activeRef.current === "A") {
+        const d = a.duration;
+        if (Number.isFinite(d) && d > 0 && d - a.currentTime <= CROSSFADE_START) {
+          startCrossfade(a, b, "A");
+        }
+      } else {
+        const d = b.duration;
+        if (Number.isFinite(d) && d > 0 && d - b.currentTime <= CROSSFADE_START) {
+          startCrossfade(b, a, "B");
+        }
+      }
+      rafId = requestAnimationFrame(poll);
+    };
+
+    rafId = requestAnimationFrame(poll);
+    return () => cancelAnimationFrame(rafId);
   }, [shouldLoadVideo]);
+
+  const blockContext = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
+  const transitionStyle = `opacity ${CROSSFADE_MS}ms ease-in-out`;
 
   if (!shouldLoadVideo) {
     return (
@@ -87,15 +143,14 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
     <div
       ref={playerRef}
       className={`secondaryHeroPlayer ${className ?? ""}`}
-      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onContextMenu={blockContext}
     >
       <video
-        ref={videoRef}
+        ref={videoARef}
         className="secondaryHeroVideo"
-        style={{ opacity, transition: "opacity 300ms ease-in-out" }}
+        style={{ opacity: opacityA, transition: transitionStyle }}
         src={src}
         autoPlay
-        loop
         muted
         playsInline
         preload="metadata"
@@ -104,7 +159,21 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture
         disableRemotePlayback
-        onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onContextMenu={blockContext}
+      />
+      <video
+        ref={videoBRef}
+        className="secondaryHeroVideo"
+        style={{ opacity: opacityB, transition: transitionStyle }}
+        src={src}
+        muted
+        playsInline
+        preload="metadata"
+        controls={false}
+        controlsList="nodownload noremoteplayback noplaybackrate"
+        disablePictureInPicture
+        disableRemotePlayback
+        onContextMenu={blockContext}
       />
     </div>
   );

@@ -117,9 +117,15 @@ function FAQSection() {
 
 function NavbarHeroBackgroundVideo() {
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoARef = useRef<HTMLVideoElement | null>(null);
+  const videoBRef = useRef<HTMLVideoElement | null>(null);
   const [isInView, setIsInView] = useState(true);
-  const [opacity, setOpacity] = useState(1);
+  const [opacityA, setOpacityA] = useState(1);
+  const [opacityB, setOpacityB] = useState(0);
+  const activeRef = useRef<"A" | "B">("A");
+  const crossfading = useRef(false);
+  const CROSSFADE_START = 0.6;
+  const CROSSFADE_MS = 500;
 
   const fallbackPoster = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
@@ -141,6 +147,11 @@ function NavbarHeroBackgroundVideo() {
 </svg>`
   )}`;
 
+  const safePlay = (v: HTMLVideoElement) => {
+    const p = v.play();
+    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+  };
+
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -153,25 +164,62 @@ function NavbarHeroBackgroundVideo() {
   }, []);
 
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (!isInView) { try { v.pause(); } catch {} return; }
-    const p = v.play();
-    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+    if (!isInView) {
+      try { a.pause(); } catch {}
+      try { b.pause(); } catch {}
+      return;
+    }
+    if (activeRef.current === "A") safePlay(a);
+    else safePlay(b);
   }, [isInView]);
 
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const onTimeUpdate = () => {
-      const d = v.duration;
-      if (!Number.isFinite(d) || d <= 0) return;
-      const remaining = d - v.currentTime;
-      setOpacity(remaining <= 0.3 ? 0.85 : v.currentTime < 0.3 ? 0.85 + (v.currentTime / 0.3) * 0.15 : 1);
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+    let rafId = 0;
+
+    const startCrossfade = (from: HTMLVideoElement, to: HTMLVideoElement, fromId: "A" | "B") => {
+      if (crossfading.current) return;
+      crossfading.current = true;
+      to.currentTime = 0;
+      safePlay(to);
+      const toId = fromId === "A" ? "B" : "A";
+      const setFrom = fromId === "A" ? setOpacityA : setOpacityB;
+      const setTo = toId === "A" ? setOpacityA : setOpacityB;
+      setTo(1);
+      setFrom(0);
+      activeRef.current = toId;
+      setTimeout(() => {
+        try { from.pause(); } catch {}
+        crossfading.current = false;
+      }, CROSSFADE_MS + 100);
     };
-    v.addEventListener("timeupdate", onTimeUpdate);
-    return () => v.removeEventListener("timeupdate", onTimeUpdate);
+
+    const poll = () => {
+      if (activeRef.current === "A") {
+        const d = a.duration;
+        if (Number.isFinite(d) && d > 0 && d - a.currentTime <= CROSSFADE_START) {
+          startCrossfade(a, b, "A");
+        }
+      } else {
+        const d = b.duration;
+        if (Number.isFinite(d) && d > 0 && d - b.currentTime <= CROSSFADE_START) {
+          startCrossfade(b, a, "B");
+        }
+      }
+      rafId = requestAnimationFrame(poll);
+    };
+
+    rafId = requestAnimationFrame(poll);
+    return () => cancelAnimationFrame(rafId);
   }, []);
+
+  const videoClass = "absolute inset-0 h-full w-full object-cover";
+  const transitionStyle = `opacity ${CROSSFADE_MS}ms ease-in-out`;
 
   return (
     <div
@@ -187,16 +235,26 @@ function NavbarHeroBackgroundVideo() {
       }}
     >
       <video
-        ref={videoRef}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ opacity, transition: "opacity 300ms ease-in-out" }}
+        ref={videoARef}
+        className={videoClass}
+        style={{ opacity: opacityA, transition: transitionStyle }}
         src="/images/hero-navbar-video.mp4"
         autoPlay
-        loop
         muted
         playsInline
         preload="metadata"
         poster={fallbackPoster}
+        disablePictureInPicture
+        disableRemotePlayback
+      />
+      <video
+        ref={videoBRef}
+        className={videoClass}
+        style={{ opacity: opacityB, transition: transitionStyle }}
+        src="/images/hero-navbar-video.mp4"
+        muted
+        playsInline
+        preload="metadata"
         disablePictureInPicture
         disableRemotePlayback
       />
