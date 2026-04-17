@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { MagneticText } from "./morphing-cursor";
 import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
@@ -17,6 +17,123 @@ interface HeroProps {
     description: string | string[];
     stats?: Array<{ label: string; value: string }>;
     adjustForNavbar?: boolean;
+}
+
+function DescriptionSlideshow({ paragraphs }: { paragraphs: string[]; intervalMs?: number }) {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [phase, setPhase] = useState<"entering" | "typing" | "holding" | "exiting">("typing");
+    const [visibleWords, setVisibleWords] = useState(0);
+    const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+    const measureRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+    const TRANSITION_MS = 400;
+    const WORD_INTERVAL_MS = 80;
+    const HOLD_MS = 1800;
+
+    const wordsForIndex = useMemo(
+        () => paragraphs.map((text) => text.split(/\s+/).filter(Boolean)),
+        [paragraphs]
+    );
+    const activeWords = wordsForIndex[activeIndex] ?? [];
+
+    const measureHeight = useCallback(() => {
+        let max = 0;
+        for (const el of measureRefs.current) {
+            if (el) max = Math.max(max, el.getBoundingClientRect().height);
+        }
+        if (max > 0) setContainerHeight(max);
+    }, []);
+
+    useEffect(() => {
+        measureHeight();
+        window.addEventListener("resize", measureHeight);
+        return () => window.removeEventListener("resize", measureHeight);
+    }, [measureHeight]);
+
+    // Enter → typing
+    useEffect(() => {
+        if (phase !== "entering") return;
+        const id = setTimeout(() => {
+            setVisibleWords(0);
+            setPhase("typing");
+        }, TRANSITION_MS);
+        return () => clearTimeout(id);
+    }, [phase]);
+
+    // Typing — reveal words one by one
+    useEffect(() => {
+        if (phase !== "typing") return;
+        if (visibleWords >= activeWords.length) {
+            setPhase("holding");
+            return;
+        }
+        const id = setTimeout(() => setVisibleWords((prev) => prev + 1), WORD_INTERVAL_MS);
+        return () => clearTimeout(id);
+    }, [phase, visibleWords, activeWords.length]);
+
+    // Hold — pause after typing completes
+    useEffect(() => {
+        if (phase !== "holding") return;
+        if (paragraphs.length <= 1) return;
+        const id = setTimeout(() => setPhase("exiting"), HOLD_MS);
+        return () => clearTimeout(id);
+    }, [phase, paragraphs.length]);
+
+    // Exit → advance to next paragraph
+    useEffect(() => {
+        if (phase !== "exiting") return;
+        const id = setTimeout(() => {
+            setActiveIndex((prev) => (prev + 1) % paragraphs.length);
+            setVisibleWords(0);
+            setPhase("entering");
+        }, TRANSITION_MS);
+        return () => clearTimeout(id);
+    }, [phase, paragraphs.length]);
+
+    const pClass = "text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full";
+    const pStyle: React.CSSProperties = { fontFamily: "var(--font-manrope)" };
+
+    const isSlideVisible = phase === "typing" || phase === "holding";
+
+    return (
+        <div className="relative" style={{ minHeight: containerHeight }}>
+            {/* Hidden measurement elements */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 opacity-0">
+                {paragraphs.map((text, i) => (
+                    <p
+                        key={i}
+                        ref={(el) => { measureRefs.current[i] = el; }}
+                        className={pClass}
+                        style={pStyle}
+                    >
+                        {text}
+                    </p>
+                ))}
+            </div>
+            {/* Active paragraph with word-by-word reveal */}
+            <p
+                className={pClass}
+                style={{
+                    ...pStyle,
+                    transition: `opacity ${TRANSITION_MS}ms ease-in-out, transform ${TRANSITION_MS}ms ease-in-out`,
+                    opacity: isSlideVisible ? 1 : 0,
+                    transform: isSlideVisible ? "translateX(0)" : "translateX(30px)",
+                }}
+            >
+                {activeWords.map((word, i) => (
+                    <span
+                        key={`${activeIndex}-${i}`}
+                        style={{
+                            opacity: i < visibleWords ? 1 : 0,
+                            transition: "opacity 150ms ease-in",
+                            display: "inline",
+                        }}
+                    >
+                        {i > 0 ? " " : ""}{word}
+                    </span>
+                ))}
+            </p>
+        </div>
+    );
 }
 
 export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustForNavbar = false }) => {
@@ -193,17 +310,17 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         <motion.div
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut", delay: 0.05 } }}
-                            className="space-y-3"
                         >
-                            {descriptionParagraphs.map((paragraph) => (
+                            {descriptionParagraphs.length <= 1 ? (
                                 <p
-                                    key={paragraph}
                                     className="text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full"
                                     style={{ fontFamily: "var(--font-manrope)" }}
                                 >
-                                    {paragraph}
+                                    {descriptionParagraphs[0] ?? ""}
                                 </p>
-                            ))}
+                            ) : (
+                                <DescriptionSlideshow paragraphs={descriptionParagraphs} />
+                            )}
                         </motion.div>
                     </div>
                     {stats && stats.length > 0 && (
