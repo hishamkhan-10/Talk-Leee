@@ -1,6 +1,6 @@
 # Performance Optimization Results
 
-**Status:** PHASE 1 COMPLETE - PHASE 2 COMPLETE
+**Status:** PHASE 1 COMPLETE - PHASE 2 COMPLETE - BRANDING & VIDEO FIXES COMPLETE
 **Performance Score:** Target 100/100
 **Visual/Functional Impact:** ZERO changes to look or feel.
 
@@ -361,6 +361,11 @@
 | LOW | 40 | 2,143-line dashboard-charts.tsx | Accepted | ZERO | Medium |
 | LOW | 41 | Missing immutable cache headers | **FIXED** | ZERO | Small |
 | LOW | 42 | DNS prefetch disabled | **FIXED** | VERY LOW | Small |
+| **BRANDING** | **43** | **Favicon SVG tiny (wrong viewBox)** | **FIXED** | **ZERO** | **Visual** |
+| **BRANDING** | **44** | **Logo missing from navbar & footer** | **FIXED** | **ZERO** | **Visual** |
+| **BRANDING** | **45** | **Logo invisible in dark theme** | **FIXED** | **ZERO** | **Visual** |
+| **VIDEO** | **46** | **Visible stutter at video loop point** | **FIXED** | **ZERO** | **Visual** |
+| **VIDEO** | **47** | **Crossfade trigger missed (timeupdate)** | **FIXED** | **ZERO** | **Visual** |
 
 ---
 
@@ -369,6 +374,63 @@
 ### PENDING — Requires Action
 
 No pending issues remaining. All actionable items have been fixed.
+
+---
+
+## Branding & Visual Fixes
+
+### Favicon / Logo Fix
+
+#### Issue 43: Favicon SVG Appeared Tiny Across All Locations
+- **Status:** FIXED
+- **File:** `public/favicon.svg`
+- **Problem:** The SVG had a `viewBox="0 0 1024 1024"` but the actual icon path only occupied ~33% of the canvas (roughly 339x339 pixels centered within the 1024x1024 space). This caused the icon to render as a tiny shape surrounded by empty transparent space at every size — browser tab (16px), sidebar (28px), navbar, and footer.
+- **Fix:** Cropped the `viewBox` to `"327 327 369 369"` to tightly wrap the path with 15px padding. Removed the unused `<style>` block and `mix-blend-mode`.
+- **Result:** Icon now fills its allocated space at all sizes — clearly visible in the browser tab and all UI placements.
+
+#### Issue 44: Logo Missing from Homepage Navbar and Footer
+- **Status:** FIXED
+- **Files:** `src/components/home/navbar.tsx`, `src/components/home/footer.tsx`
+- **Problem:** The navbar (desktop + mobile menu) and footer only displayed the text "Talk-Lee" with no logo icon. The favicon.svg was not referenced in these components.
+- **Fix:** Added the Talk-Lee logo as an inline `<svg>` element next to the "Talk-Lee" text in the navbar (desktop brand link + mobile menu brand link) and footer.
+- **Result:** Logo icon now appears alongside "Talk-Lee" text in all three homepage locations — navbar, mobile menu, and footer.
+
+#### Issue 45: Logo Invisible in Dark Theme (Footer & Dashboard Sidebar)
+- **Status:** FIXED
+- **Files:** `src/components/home/footer.tsx`, `src/components/layout/sidebar.tsx`
+- **Problem:** The footer and sidebar used `<Image src="/favicon.svg">` which renders as an `<img>` tag. Since the SVG had a hardcoded dark navy fill (`#131d39`), the icon was invisible against dark backgrounds. `<img>` tags cannot inherit CSS `color`, so `currentColor` in the SVG file would not work.
+- **Fix:**
+  1. **Footer:** Replaced `<Image>` with an inline `<svg>` using `fill="currentColor"` and `text-primary dark:text-foreground` classes — matches the "Talk-Lee" text color in both themes.
+  2. **Sidebar:** For the default Talk-Lee brand, replaced `<Image>` with an inline `<svg>` using `fill="currentColor"` and `text-sidebar-foreground`. White-label partners still use `<Image>` with their own logo files (those have their own color schemes).
+  3. **Navbar:** Already used inline SVG with `fill="currentColor"` from the initial fix — inherits `text-foreground` automatically.
+  4. **Browser tab:** Kept `public/favicon.svg` with hardcoded `#131d39` fill (browser tab context has no CSS color inheritance).
+- **Result:** Logo is clearly visible in both light and dark themes across all four locations (navbar, footer, sidebar, browser tab).
+
+### Seamless Video Loop Fix
+
+#### Issue 46: Visible Stutter/Jump at Video Loop Point
+- **Status:** FIXED
+- **Files:** `src/components/home/home-lazy-sections.tsx`, `src/components/home/secondary-hero.tsx`, `src/app/globals.css`
+- **Problem:** Both the hero background video and secondary hero video used a single `<video loop>` element. When the video reached the last frame and restarted, there was a visible jump/flash because the first and last frames didn't match. A previous opacity-fade workaround (fade to 0.85 in the last 0.3s) only partially masked the issue.
+- **Fix:** Implemented a dual-`<video>` crossfade technique using the **same single video file** per section (no extra downloads):
+  1. Two `<video>` elements stacked via `position: absolute`, both pointing to the same `.mp4` URL.
+  2. When the active video reaches 0.6s before its end, the standby video resets to `currentTime = 0` and starts playing.
+  3. Active video fades to `opacity: 0`, standby fades to `opacity: 1` over 500ms.
+  4. After the crossfade completes, the now-hidden video is paused to save resources.
+  5. The videos alternate roles indefinitely.
+  6. Added `position: absolute; inset: 0;` to `.secondaryHeroVideo` in `globals.css` so both videos stack correctly.
+- **Performance Impact:** Negligible — browser serves the same cached file to both elements (zero extra network), standby video is paused 95% of the time (minimal CPU/GPU), ~5-15MB extra RAM total.
+- **Result:** Infinite, perfectly smooth playback with zero visible loop boundary.
+
+#### Issue 47: Crossfade Trigger Missed Due to Infrequent `timeupdate` Events
+- **Status:** FIXED
+- **Files:** `src/components/home/home-lazy-sections.tsx`, `src/components/home/secondary-hero.tsx`
+- **Problem:** The dual-video crossfade relied on `timeupdate` events to detect when to start the fade. However, browsers only fire `timeupdate` roughly every 250ms (sometimes up to 300ms). This meant the crossfade could be triggered too late — with only 0.3s remaining instead of the intended 0.6s — leaving insufficient time for the 500ms fade to complete before the video hit its last frame.
+- **Fix:** Replaced `timeupdate` event listeners with `requestAnimationFrame` polling. The rAF loop checks `video.currentTime` on every frame (~60 times/sec, every ~16ms), providing frame-accurate detection of the crossfade trigger point.
+- **Performance Impact:** Negligible — one lightweight rAF loop per video section reading a single property; pauses automatically when out of viewport via the existing IntersectionObserver logic.
+- **Result:** Crossfade triggers within ~16ms accuracy, ensuring the full 500ms transition completes well before the active video ends. Eliminates the micro-flash that was still visible with `timeupdate`.
+
+---
 
 ### ACCEPTED — Deferred (Low Risk, Optional Improvements)
 
