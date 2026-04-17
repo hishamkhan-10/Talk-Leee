@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import React from "react";
 
@@ -24,6 +25,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
+            <Image src="/favicon.svg" alt="" width={32} height={32} className="w-8 h-8" aria-hidden="true" />
             <span className="text-2xl font-bold text-primary dark:text-foreground tracking-tight transition-colors">
               Talk-Lee
             </span>
