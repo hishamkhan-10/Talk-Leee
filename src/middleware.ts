@@ -13,7 +13,7 @@ function setSecurityHeaders(res: NextResponse, input: { csp: string; inProd: boo
     res.headers.set("X-Frame-Options", "DENY");
     res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
     res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
-    res.headers.set("X-DNS-Prefetch-Control", "off");
+    res.headers.set("X-DNS-Prefetch-Control", "on");
     res.headers.set("X-Permitted-Cross-Domain-Policies", "none");
     if (input.inProd && input.https) res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
 }
@@ -130,7 +130,7 @@ async function fetchUserContextFromBackend(input: { req: NextRequest; token: str
                     accept: "application/json",
                     [INTERNAL_BYPASS_HEADER]: "1",
                 },
-                cache: "no-store",
+                next: { revalidate: 30 },
             });
             if (!res.ok) continue;
             const data = (await res.json().catch(() => null)) as unknown;

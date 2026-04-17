@@ -13,7 +13,9 @@
       "Bash(ls:*)",
       "Bash(npx tsc:*)",
       "Bash(npx next:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(sort -k5 -h -r)"
     ]
   }
 }

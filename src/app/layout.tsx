@@ -1,23 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope, Orbitron } from "next/font/google";
 import "./globals.css";
 import { SuspensionStateProvider } from "@/components/admin/suspension-state-provider";
 import { AppProviders } from "@/components/providers/app-providers";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-});
-
-const orbitron = Orbitron({
-  subsets: ["latin"],
-  variable: "--font-orbitron",
-});
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const metadata: Metadata = {
   title: "Talk-Lee",
@@ -45,9 +31,10 @@ export default function RootLayout({
             __html: `try { document.documentElement.classList.add(localStorage.getItem('talklee.theme') || 'light') } catch(e) {}`,
           }}
         />
-        <link rel="preload" as="video" href="/images/ai-voice-section..mp4" />
+        {apiBaseUrl && <link rel="preconnect" href={apiBaseUrl} />}
+        {apiBaseUrl && <link rel="dns-prefetch" href={apiBaseUrl} />}
       </head>
-      <body className={`${inter.variable} ${manrope.variable} ${orbitron.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <AppProviders>
           <SuspensionStateProvider>
             {children}

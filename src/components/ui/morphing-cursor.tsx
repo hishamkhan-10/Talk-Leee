@@ -51,6 +51,13 @@ export function MagneticText({
         const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
 
         const animate = () => {
+            const dx = mousePos.current.x - currentPos.current.x
+            const dy = mousePos.current.y - currentPos.current.y
+            if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+                animationFrameRef.current = requestAnimationFrame(animate)
+                return
+            }
+
             currentPos.current.x = lerp(currentPos.current.x, mousePos.current.x, 0.15)
             currentPos.current.y = lerp(currentPos.current.y, mousePos.current.y, 0.15)
 
@@ -122,7 +129,6 @@ export function MagneticText({
                     height: 180,
                     transform: `translate(${currentPos.current.x}px, ${currentPos.current.y}px) translate(-50%, -50%) scale(${isHovered ? 1 : 0})`,
                     transition: "transform 0.5s cubic-bezier(0.33, 1, 0.68, 1)",
-                    willChange: "transform",
                 }}
             >
                 <div
@@ -131,7 +137,6 @@ export function MagneticText({
                     style={{
                         top: "50%",
                         left: "50%",
-                        willChange: "transform",
                     }}
                 >
                     <span

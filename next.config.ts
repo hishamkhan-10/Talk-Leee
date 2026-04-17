@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
                 source: "/site.webmanifest",
                 headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
             },
+            {
+                source: "/_next/static/:path*",
+                headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+            },
         ];
     },
     webpack: (config, { dev }) => {

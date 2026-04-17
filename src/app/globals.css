@@ -120,7 +120,8 @@
   --ring: rgba(0, 255, 255, 0.25);
   background-color: #001022;
   background-image: linear-gradient(180deg, #001022 0%, #004d5e 100%);
-  background-attachment: fixed;
+  background-size: 100% 100vh;
+  background-repeat: no-repeat;
   color: var(--foreground);
   position: relative;
   isolation: isolate;
@@ -206,8 +207,6 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
-    overflow-x: hidden;
   }
 
   * {
@@ -222,14 +221,11 @@
 
 .light body {
   background: #ecfeff;
-  background-attachment: fixed;
 }
 
-/* Glassmorphism Sidebar Styles */
+/* Sidebar Styles */
 .glass-sidebar {
-  background: rgba(17, 24, 39, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(17, 24, 39, 0.95);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -313,7 +309,6 @@
   text-decoration: none;
   -webkit-transition: background-color 250ms ease-in-out, color 250ms ease-in-out, -webkit-transform 250ms ease-in-out, box-shadow 250ms ease-in-out;
   transition: background-color 250ms ease-in-out, color 250ms ease-in-out, transform 250ms ease-in-out, box-shadow 250ms ease-in-out;
-  will-change: transform;
 }
 
 .home-nav-link:hover {
@@ -383,7 +378,6 @@
   transform: scale(0.68);
   background: radial-gradient(circle at 50% 50%, rgba(8,145,178,0.45) 0%, rgba(8,145,178,0.35) 35%, rgba(8,145,178,0.25) 60%, transparent 80%);
   transition: transform 420ms ease-out, opacity 420ms ease-out;
-  will-change: transform, opacity;
 }
 
 .stats-card:hover::before {
@@ -426,7 +420,6 @@
   transform: translate3d(-30%, 30%, 0);
   background: linear-gradient(45deg, rgba(21,94,117,0.0) 0%, rgba(21,94,117,0.45) 35%, rgba(21,94,117,0.38) 60%, rgba(21,94,117,0.28) 80%, transparent 100%);
   transition: transform 400ms ease, opacity 400ms ease;
-  will-change: transform, opacity;
 }
 
 .home-services-card:hover::before {
@@ -456,7 +449,6 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   transition: transform 340ms ease-out, opacity 340ms ease-out;
-  will-change: transform, opacity;
 }
 
 .home-packages-card:hover::after {
@@ -476,7 +468,6 @@
   -webkit-transition: color 250ms ease-in-out, opacity 250ms ease-in-out, -webkit-transform 250ms ease-in-out;
   transition: color 250ms ease-in-out, opacity 250ms ease-in-out, transform 250ms ease-in-out;
   cursor: pointer;
-  will-change: transform, opacity, color;
   user-select: none;
 }
 
@@ -545,9 +536,7 @@ details > .home-mobile-panel {
   left: 0;
   width: min(88vw, 360px);
   padding: calc(0.75rem + env(safe-area-inset-top)) 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) 0.75rem;
-  background: color-mix(in oklab, var(--background) 88%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: color-mix(in oklab, var(--background) 96%, transparent);
   border-right: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
   box-shadow: 0 0.75rem 2rem rgba(17, 24, 39, 0.14);
   z-index: 70;
@@ -750,7 +739,6 @@ details > summary.home-menu-toggle {
   border-radius: 1rem;
   padding: 1.5rem;
   transition: transform 0.18s ease-out, background-color 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out;
-  will-change: transform;
 }
 
 .content-card:hover {
@@ -804,4 +792,552 @@ details > summary.home-menu-toggle {
 
 .scrollbar-gutter-stable {
   scrollbar-gutter: stable;
+}
+
+/* ── Navbar tablet/phone media queries (moved from style jsx) ── */
+@media (width: 768px) and (height: 1024px) and (orientation: portrait),
+       (width: 820px) and (height: 1180px) and (orientation: portrait),
+       (width: 1024px) and (height: 1366px) and (orientation: portrait),
+       (width: 912px) and (height: 1368px) and (orientation: portrait),
+       (width: 853px) and (height: 1280px) and (orientation: portrait),
+       (width: 1024px) and (height: 600px) and (orientation: landscape) {
+  .navbarMobileMenu {
+    display: block !important;
+  }
+  .navbarDesktopNav {
+    display: none !important;
+  }
+  .navbarDesktopAction {
+    display: none !important;
+  }
+}
+
+@media (width: 375px) and (height: 667px) {
+  .navbarThemeWrap {
+    position: absolute !important;
+    right: 4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+}
+
+@media (width: 414px) and (height: 896px),
+       (width: 390px) and (height: 844px),
+       (width: 430px) and (height: 932px),
+       (width: 412px) and (height: 915px) {
+  .navbarThemeWrap {
+    position: absolute !important;
+    right: 6px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+}
+
+@media (width: 360px) and (height: 740px) {
+  .navbarThemeWrap {
+    position: absolute !important;
+    right: 4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+}
+
+/* ── TrustedByMarquee styles (moved from style jsx) ── */
+.heroMarqueeGradientBase {
+  background: var(--home-gradient-base);
+  background-size: 200% 200%;
+  animation: heroMarqueeGradientShift 14s ease-in-out infinite;
+  filter: saturate(1.1);
+}
+
+.heroMarqueeGradientBlobs {
+  background: var(--home-gradient-blobs);
+  filter: blur(28px) saturate(1.15);
+  animation: heroMarqueeBlobFloat 10s ease-in-out infinite;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.heroMarqueeGradientVignette {
+  background: var(--home-gradient-vignette);
+  pointer-events: none;
+}
+
+.trustedByMarqueeTrack {
+  animation: trustedByMarquee 18s linear infinite;
+  will-change: transform;
+}
+
+@keyframes trustedByMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes heroMarqueeGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes heroMarqueeBlobFloat {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-2.5%, 2.5%, 0) scale(1.05); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trustedByMarqueeTrack {
+    animation: none;
+    transform: translateX(0);
+  }
+  .heroMarqueeGradientBase,
+  .heroMarqueeGradientBlobs {
+    animation: none;
+  }
+}
+
+/* ── SecondaryHero styles (moved from style jsx) ── */
+.secondaryHeroPlayer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.secondaryHeroPoster {
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.secondaryHeroVideoLayer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 320ms ease-in-out;
+}
+
+.secondaryHeroVideoLayer.active {
+  opacity: 1;
+}
+
+.secondaryHeroVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  background: transparent;
+}
+
+.secondaryHeroSection {
+  box-sizing: border-box;
+}
+
+@media (max-height: 700px) {
+  .secondaryHeroSection {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+@media (width: 768px) and (height: 1024px) and (orientation: portrait),
+       (width: 820px) and (height: 1180px) and (orientation: portrait),
+       (width: 834px) and (height: 1194px) and (orientation: portrait),
+       (width: 1024px) and (height: 1366px) and (orientation: portrait),
+       (width: 912px) and (height: 1368px) and (orientation: portrait),
+       (width: 853px) and (height: 1280px) and (orientation: portrait),
+       (width: 1024px) and (height: 600px) and (orientation: landscape) {
+  .secondaryHeroGrid {
+    grid-template-columns: 1fr !important;
+  }
+  .secondaryHeroPlayer {
+    max-width: 100% !important;
+  }
+  .secondaryHeroImageWrap {
+    max-width: 100% !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    background-color: #ffffff !important;
+  }
+  .dark .secondaryHeroImageWrap {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .secondaryHeroContent {
+    text-align: center !important;
+  }
+  .secondaryHeroFeatures {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .secondaryHeroCtas {
+    justify-content: center !important;
+    align-items: center !important;
+  }
+}
+
+@media (width: 768px) and (height: 1024px) and (orientation: portrait) {
+  .secondaryHeroImageWrap { min-height: 380px !important; }
+  .secondaryHeroContent { padding-left: 20px !important; padding-right: 20px !important; }
+  .secondaryHeroFeatures { max-width: 42rem !important; }
+}
+
+@media (width: 820px) and (height: 1180px) and (orientation: portrait),
+       (width: 834px) and (height: 1194px) and (orientation: portrait) {
+  .secondaryHeroImageWrap { min-height: 420px !important; }
+  .secondaryHeroContent { padding-left: 24px !important; padding-right: 24px !important; }
+  .secondaryHeroFeatures { max-width: 46rem !important; }
+}
+
+@media (width: 1024px) and (height: 1366px) and (orientation: portrait) {
+  .secondaryHeroImageWrap { min-height: 520px !important; }
+  .secondaryHeroContent { padding-left: 28px !important; padding-right: 28px !important; }
+  .secondaryHeroFeatures { max-width: 50rem !important; }
+}
+
+@media (width: 912px) and (height: 1368px) and (orientation: portrait) {
+  .secondaryHeroImageWrap { min-height: 500px !important; }
+  .secondaryHeroContent { padding-left: 26px !important; padding-right: 26px !important; }
+  .secondaryHeroFeatures { max-width: 48rem !important; }
+}
+
+@media (width: 853px) and (height: 1280px) and (orientation: portrait) {
+  .secondaryHeroImageWrap { min-height: 520px !important; }
+  .secondaryHeroContent { padding-left: 28px !important; padding-right: 28px !important; }
+  .secondaryHeroFeatures { max-width: 50rem !important; }
+}
+
+@media (width: 1024px) and (height: 600px) and (orientation: landscape) {
+  .secondaryHeroImageWrap { min-height: 300px !important; }
+  .secondaryHeroContent { padding-left: 24px !important; padding-right: 24px !important; }
+  .secondaryHeroFeatures { max-width: 46rem !important; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .secondaryHeroSection:hover .secondaryHeroCard {
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+  .dark .secondaryHeroSection:hover .secondaryHeroCard {
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.secondaryHeroImageWrap {
+  z-index: 0;
+  transform-style: preserve-3d;
+  transition: box-shadow 300ms ease-in-out, transform 300ms ease-in-out;
+  transform-origin: center;
+}
+
+@media (min-width: 768px) {
+  .secondaryHeroImageWrap {
+    transform-origin: right center;
+  }
+}
+
+.secondaryHeroImage {
+  z-index: 0;
+  backface-visibility: hidden;
+  transform-origin: 35% 50%;
+  transform: perspective(1000px) rotateY(-10deg) scale(1);
+  transition: transform 300ms ease-in-out, filter 300ms ease-in-out;
+  filter: saturate(1.06) contrast(1.03);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .secondaryHeroImageWrap:hover {
+    z-index: 2;
+    box-shadow: 0 18px 56px rgba(0, 0, 0, 0.14);
+    transform: scale(1.06);
+  }
+  .secondaryHeroImageWrap:hover .secondaryHeroImage {
+    transform: perspective(1000px) rotateY(0deg) scale(1.06);
+    filter: saturate(1.12) contrast(1.06);
+  }
+}
+
+.secondaryHeroImageWrap:focus-visible .secondaryHeroImage {
+  transform: perspective(1000px) rotateY(0deg) scale(1.06);
+  filter: saturate(1.12) contrast(1.06);
+}
+
+.secondaryHeroContent {
+  transition: transform 300ms ease-in-out;
+  transform-origin: center;
+}
+
+@media (min-width: 768px) {
+  .secondaryHeroContent {
+    transform-origin: left center;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .secondaryHeroContent:hover {
+    transform: none;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .secondaryHeroImageWrap:active .secondaryHeroImage {
+    transform: perspective(1000px) rotateY(0deg) scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondaryHeroImage {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ── HelixHero styles (moved from style jsx) ── */
+@keyframes ping {
+  75%, 100% { transform: scale(1.15); opacity: 0; }
+}
+
+@media (width: 768px) and (height: 1024px) and (orientation: portrait),
+       (width: 820px) and (height: 1180px) and (orientation: portrait),
+       (width: 834px) and (height: 1194px) and (orientation: portrait),
+       (width: 1024px) and (height: 1366px) and (orientation: portrait),
+       (width: 912px) and (height: 1368px) and (orientation: portrait),
+       (width: 853px) and (height: 1280px) and (orientation: portrait),
+       (width: 1280px) and (height: 800px) and (orientation: landscape) {
+  .heroTrustedBadgeTop {
+    display: none !important;
+  }
+  .heroTrustedBadgeInlineWrap {
+    display: block !important;
+    margin-bottom: 10px !important;
+  }
+  .heroTrustedBadgeInline {
+    display: inline-flex !important;
+    flex-wrap: wrap !important;
+    max-width: calc(100vw - 2rem) !important;
+    padding: 6px 16px !important;
+    gap: 8px !important;
+    font-size: 14px !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+  .heroHeadlineContainer {
+    gap: 8px !important;
+  }
+  .heroDesktopTitle {
+    margin-top: 0 !important;
+  }
+}
+
+.heroAskAiPing {
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.heroTitleGlow,
+.heroTitleGlow span {
+  text-shadow:
+    0 0 18px rgba(34, 211, 238, 0.28),
+    0 0 42px rgba(56, 189, 248, 0.18),
+    0 12px 48px rgba(0, 0, 0, 0.55);
+}
+
+@media (width: 360px) and (height: 740px) {
+  .heroMobileTitle {
+    font-size: 18px !important;
+    line-height: 1.08 !important;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .heroMobileTitle .heroTitleGlow {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+    margin-top: 0.4rem !important;
+  }
+}
+
+@media (width: 344px) and (height: 882px) {
+  .heroMobileTitle {
+    font-size: 16px !important;
+    line-height: 1.08 !important;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .heroMobileTitle .heroTitleGlow {
+    white-space: nowrap !important;
+  }
+  .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+    margin-top: 0.45rem !important;
+  }
+}
+
+@media (width: 540px) and (height: 720px) {
+  .heroMobileTitle {
+    font-size: 22px !important;
+    line-height: 1.06 !important;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .heroMobileTitle .heroTitleGlow {
+    white-space: nowrap !important;
+  }
+  .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+    margin-top: 0.5rem !important;
+  }
+}
+
+.heroStatBox.stats-card::before {
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  background: radial-gradient(circle at 50% 50%, rgba(8,145,178,0.45) 0%, rgba(8,145,178,0.35) 35%, rgba(8,145,178,0.25) 60%, transparent 80%);
+  transition: transform 420ms ease-out, opacity 420ms ease-out;
+}
+
+.heroStatBox.stats-card:hover::before {
+  opacity: 1;
+  transform: scale(1.18);
+}
+
+/* ── AskAI Card styles (moved from style jsx) ── */
+.ask-ai-card {
+  position: relative;
+  width: 280px;
+  height: 320px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border-radius: 24px;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 60px rgba(234, 179, 8, 0.15), 0 0 100px rgba(234, 88, 12, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.ask-ai-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(100, 116, 139, 0.5);
+  box-shadow: 0 0 80px rgba(234, 179, 8, 0.2), 0 0 120px rgba(234, 88, 12, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.ask-ai-orb-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.ask-ai-orb {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ea580c 0%, #eab308 30%, #84cc16 60%, #22c55e 100%);
+  box-shadow: 0 0 60px rgba(234, 88, 12, 0.5), 0 0 100px rgba(234, 179, 8, 0.3), inset 0 0 30px rgba(0, 0, 0, 0.3);
+  animation: orbPulse 4s ease-in-out infinite;
+}
+
+.ask-ai-orb-glow {
+  position: absolute;
+  inset: -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(234, 179, 8, 0.4) 0%, rgba(234, 88, 12, 0.2) 40%, transparent 70%);
+  animation: glowPulse 4s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes orbPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.ask-ai-text {
+  text-align: center;
+  z-index: 1;
+}
+
+.ask-ai-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.ask-ai-subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 8px 0 0 0;
+  font-weight: 400;
+}
+
+/* ── Auth page gradient styles (moved from style jsx) ── */
+.authHeroGradientBase {
+  background: var(--home-gradient-base);
+  background-size: 200% 200%;
+  animation: authHeroGradientShift 14s ease-in-out infinite;
+  filter: saturate(1.1);
+}
+
+.authHeroGradientBlobs {
+  background: var(--home-gradient-blobs);
+  filter: blur(28px) saturate(1.15);
+  animation: authHeroBlobFloat 10s ease-in-out infinite;
+  transform: translate3d(0, 0, 0);
+}
+
+.authHeroGradientVignette {
+  background: var(--home-gradient-vignette);
+  pointer-events: none;
+}
+
+.authServicesGrid {
+  background-image: none;
+  opacity: 0;
+}
+
+.dark .authServicesGrid {
+  background-image: linear-gradient(to right, rgba(21, 94, 117, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(21, 94, 117, 0.12) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity: 0.35;
+}
+
+@keyframes authHeroGradientShift {
+  0% { background-position: 0% 40%; }
+  50% { background-position: 100% 60%; }
+  100% { background-position: 0% 40%; }
+}
+
+@keyframes authHeroBlobFloat {
+  0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+  33% { transform: translate3d(2%, -3%, 0) scale(1.04); }
+  66% { transform: translate3d(-1%, 2%, 0) scale(1.02); }
+  100% { transform: translate3d(-2%, -1%, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authHeroGradientBase,
+  .authHeroGradientBlobs {
+    animation: none;
+  }
 }

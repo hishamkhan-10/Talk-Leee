@@ -1,4 +1,3 @@
-"use client";
 import { BarChart3, Bot, Megaphone, Mic, PhoneCall, Settings, Target, Users } from "lucide-react";
 
 const services = [

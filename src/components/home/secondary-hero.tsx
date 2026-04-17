@@ -10,23 +10,17 @@ import { useEffect, useRef, useState } from "react";
 function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   const src = "/images/ai-voice-section..mp4";
   const playerRef = useRef<HTMLDivElement | null>(null);
-  const videoARef = useRef<HTMLVideoElement | null>(null);
-  const videoBRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [isInView, setIsInView] = useState(false);
-
-  const resolvedSrc = src;
-  const [activeVideo, setActiveVideo] = useState<0 | 1>(0);
-  const activeVideoRef = useRef<0 | 1>(0);
-  const isCrossfadingRef = useRef(false);
+  const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
     const el = playerRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
-        const nextInView = Boolean(entry?.isIntersecting);
+        const nextInView = Boolean(entries[0]?.isIntersecting);
         setIsInView(nextInView);
         if (nextInView) setShouldLoadVideo(true);
       },
@@ -37,206 +31,45 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    if (!shouldLoadVideo || !resolvedSrc) return;
-    const playbackRate = 0.8;
-
-    const applyPlaybackRate = () => {
-      const a = videoARef.current;
-      const b = videoBRef.current;
-      if (a) {
-        try {
-          a.playbackRate = playbackRate;
-          a.defaultPlaybackRate = playbackRate;
-        } catch {}
-      }
-      if (b) {
-        try {
-          b.playbackRate = playbackRate;
-          b.defaultPlaybackRate = playbackRate;
-        } catch {}
-      }
+    if (!shouldLoadVideo) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const targetRate = 0.8;
+    const applyRate = (el: HTMLVideoElement) => {
+      try { el.playbackRate = targetRate; el.defaultPlaybackRate = targetRate; } catch {}
     };
-
-    applyPlaybackRate();
-    const intervalId = window.setInterval(applyPlaybackRate, 250);
-    const intervalStopId = window.setTimeout(() => window.clearInterval(intervalId), 5000);
-    const a = videoARef.current;
-    const b = videoBRef.current;
-    a?.addEventListener("loadedmetadata", applyPlaybackRate);
-    a?.addEventListener("loadeddata", applyPlaybackRate);
-    a?.addEventListener("canplay", applyPlaybackRate);
-    a?.addEventListener("play", applyPlaybackRate);
-    b?.addEventListener("loadedmetadata", applyPlaybackRate);
-    b?.addEventListener("loadeddata", applyPlaybackRate);
-    b?.addEventListener("canplay", applyPlaybackRate);
-    b?.addEventListener("play", applyPlaybackRate);
-
-    return () => {
-      window.clearTimeout(intervalStopId);
-      window.clearInterval(intervalId);
-      a?.removeEventListener("loadedmetadata", applyPlaybackRate);
-      a?.removeEventListener("loadeddata", applyPlaybackRate);
-      a?.removeEventListener("canplay", applyPlaybackRate);
-      a?.removeEventListener("play", applyPlaybackRate);
-      b?.removeEventListener("loadedmetadata", applyPlaybackRate);
-      b?.removeEventListener("loadeddata", applyPlaybackRate);
-      b?.removeEventListener("canplay", applyPlaybackRate);
-      b?.removeEventListener("play", applyPlaybackRate);
-    };
-  }, [resolvedSrc, shouldLoadVideo]);
+    applyRate(v);
+    const onCanPlay = () => applyRate(v);
+    const onRateChange = () => { if (Math.abs(v.playbackRate - targetRate) > 0.01) applyRate(v); };
+    v.addEventListener("canplay", onCanPlay);
+    v.addEventListener("ratechange", onRateChange);
+    return () => { v.removeEventListener("canplay", onCanPlay); v.removeEventListener("ratechange", onRateChange); };
+  }, [shouldLoadVideo]);
 
   useEffect(() => {
-    activeVideoRef.current = activeVideo;
-  }, [activeVideo]);
-
-  useEffect(() => {
-    if (!shouldLoadVideo || !resolvedSrc) return;
-    const a = videoARef.current;
-    const b = videoBRef.current;
-    if (!a || !b) return;
-
-    isCrossfadingRef.current = false;
-    setActiveVideo(0);
-    activeVideoRef.current = 0;
-
-    try {
-      a.currentTime = 0;
-    } catch {}
-    try {
-      b.currentTime = 0.01;
-    } catch {}
-
-    try {
-      b.pause();
-    } catch {}
-    const p = a.play();
+    if (!shouldLoadVideo) return;
+    const v = videoRef.current;
+    if (!v) return;
+    if (!isInView) { try { v.pause(); } catch {} return; }
+    const p = v.play();
     if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
-
-    return () => {
-      try {
-        a.pause();
-        b.pause();
-      } catch {}
-    };
-  }, [resolvedSrc, shouldLoadVideo]);
+  }, [isInView, shouldLoadVideo]);
 
   useEffect(() => {
-    if (!shouldLoadVideo || !resolvedSrc) return;
-    const crossfadeMs = 320;
-    const loopThresholdSeconds = 0.45;
-    const loopToTimeSeconds = 0.01;
-
-    const waitForStart = (el: HTMLVideoElement, timeoutMs: number) =>
-      new Promise<void>((resolve) => {
-        if (!el.paused && !el.ended) return resolve();
-
-        let done = false;
-        let frameRequestId = 0;
-        const finish = () => {
-          if (done) return;
-          done = true;
-          el.removeEventListener("playing", onPlaying);
-          el.removeEventListener("timeupdate", onTimeUpdate);
-          if (frameRequestId) {
-            const cancel = (el as unknown as { cancelVideoFrameCallback?: (id: number) => void }).cancelVideoFrameCallback;
-            cancel?.call(el, frameRequestId);
-          }
-          resolve();
-        };
-
-        const onPlaying = () => finish();
-        const onTimeUpdate = () => {
-          if (el.currentTime > loopToTimeSeconds + 0.02) finish();
-        };
-
-        el.addEventListener("playing", onPlaying);
-        el.addEventListener("timeupdate", onTimeUpdate);
-
-        const request = (el as unknown as { requestVideoFrameCallback?: (cb: () => void) => number }).requestVideoFrameCallback;
-        if (request) frameRequestId = request.call(el, () => finish());
-        window.setTimeout(finish, timeoutMs);
-      });
-
-    const check = () => {
-      const a = videoARef.current;
-      const b = videoBRef.current;
-      if (!a || !b) return;
-      if (isCrossfadingRef.current) return;
-
-      const currentIndex = activeVideoRef.current;
-      const current = currentIndex === 0 ? a : b;
-      const next = currentIndex === 0 ? b : a;
-      const duration = current.duration;
-      if (!Number.isFinite(duration) || duration <= 0) return;
-      if (current.paused || current.ended) return;
-      if (current.currentTime < duration - loopThresholdSeconds) return;
-
-      isCrossfadingRef.current = true;
-
-      (async () => {
-        try {
-          next.currentTime = loopToTimeSeconds;
-        } catch {}
-
-        const p = next.play();
-        if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
-
-        await waitForStart(next, 350);
-
-        setActiveVideo(currentIndex === 0 ? 1 : 0);
-        activeVideoRef.current = currentIndex === 0 ? 1 : 0;
-
-        window.setTimeout(() => {
-          try {
-            current.pause();
-          } catch {}
-          try {
-            current.currentTime = loopToTimeSeconds;
-          } catch {}
-          isCrossfadingRef.current = false;
-        }, crossfadeMs);
-      })();
-    };
-
-    if (!isInView) return;
-
-    const a = videoARef.current;
-    const b = videoBRef.current;
-    if (!a || !b) return;
-
+    if (!shouldLoadVideo) return;
+    const v = videoRef.current;
+    if (!v) return;
     const onTimeUpdate = () => {
-      check();
+      const d = v.duration;
+      if (!Number.isFinite(d) || d <= 0) return;
+      const remaining = d - v.currentTime;
+      setOpacity(remaining <= 0.3 ? 0.85 : v.currentTime < 0.3 ? 0.85 + (v.currentTime / 0.3) * 0.15 : 1);
     };
+    v.addEventListener("timeupdate", onTimeUpdate);
+    return () => v.removeEventListener("timeupdate", onTimeUpdate);
+  }, [shouldLoadVideo]);
 
-    a.addEventListener("timeupdate", onTimeUpdate);
-    b.addEventListener("timeupdate", onTimeUpdate);
-    return () => {
-      a.removeEventListener("timeupdate", onTimeUpdate);
-      b.removeEventListener("timeupdate", onTimeUpdate);
-    };
-  }, [isInView, resolvedSrc, shouldLoadVideo]);
-
-  useEffect(() => {
-    if (!shouldLoadVideo || !resolvedSrc) return;
-    const a = videoARef.current;
-    const b = videoBRef.current;
-    if (!a || !b) return;
-
-    if (!isInView) {
-      try {
-        a.pause();
-        b.pause();
-      } catch {}
-      return;
-    }
-
-    const currentIndex = activeVideoRef.current;
-    const current = currentIndex === 0 ? a : b;
-    const p = current.play();
-    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
-  }, [isInView, resolvedSrc, shouldLoadVideo]);
-
-  if (!shouldLoadVideo || !resolvedSrc) {
+  if (!shouldLoadVideo) {
     return (
       <div ref={playerRef} className={`secondaryHeroPlayer ${className ?? ""}`}>
         <Image
@@ -246,23 +79,6 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
           sizes="(max-width: 768px) 100vw, 600px"
           className="secondaryHeroPoster"
         />
-        <style jsx>{`
-          .secondaryHeroPlayer {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            overflow: hidden;
-            border-radius: 14px;
-          }
-
-          :global(.secondaryHeroPoster) {
-            object-fit: cover;
-            border-radius: 14px;
-          }
-        `}</style>
       </div>
     );
   }
@@ -271,30 +87,15 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
     <div
       ref={playerRef}
       className={`secondaryHeroPlayer ${className ?? ""}`}
-      onMouseDown={(e) => {
-        if (e.button === 2) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }}
-      onAuxClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onContextMenuCapture={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
     >
       <video
-        ref={videoARef}
-        className={`secondaryHeroVideo secondaryHeroVideoLayer ${activeVideo === 0 ? "active" : ""}`}
-        src={resolvedSrc}
+        ref={videoRef}
+        className="secondaryHeroVideo"
+        style={{ opacity, transition: "opacity 300ms ease-in-out" }}
+        src={src}
         autoPlay
+        loop
         muted
         playsInline
         preload="metadata"
@@ -303,74 +104,8 @@ function SecondaryHeroVideoPlayer({ className }: { className?: string }) {
         controlsList="nodownload noremoteplayback noplaybackrate"
         disablePictureInPicture
         disableRemotePlayback
-        onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onError={() => {
-          // Fallback handled by known good URL
-        }}
-      >
-        Your browser does not support the video tag.
-      </video>
-
-      <video
-        ref={videoBRef}
-        className={`secondaryHeroVideo secondaryHeroVideoLayer ${activeVideo === 1 ? "active" : ""}`}
-        src={resolvedSrc}
-        autoPlay
-        muted
-        playsInline
-        preload="metadata"
-        poster="/images/ai-voice-section..jpg"
-        controls={false}
-        controlsList="nodownload noremoteplayback noplaybackrate"
-        disablePictureInPicture
-        disableRemotePlayback
-        onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onError={() => {
-          // Fallback handled by known good URL
-        }}
-      >
-        Your browser does not support the video tag.
-      </video>
-
-      <style jsx>{`
-        .secondaryHeroPlayer {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          max-width: 600px;
-          margin-left: auto;
-          margin-right: auto;
-          overflow: hidden;
-          border-radius: 14px;
-        }
-
-        .secondaryHeroVideoLayer {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          transition: opacity 320ms ease-in-out;
-          will-change: opacity;
-        }
-
-        .secondaryHeroVideoLayer.active {
-          opacity: 1;
-        }
-
-        .secondaryHeroVideo {
-          display: block;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 14px;
-          background: transparent;
-        }
-      `}</style>
+        onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      />
     </div>
   );
 }
@@ -512,375 +247,6 @@ export function SecondaryHero() {
         </motion.div>
       </div>
 
-      <style jsx>{`
-        .secondaryHeroSection {
-          box-sizing: border-box;
-        }
-
-        @media (max-height: 700px) {
-          .secondaryHeroSection {
-            padding-top: 8px;
-            padding-bottom: 8px;
-          }
-        }
-
-        @media (width: 768px) and (height: 1024px) and (orientation: portrait) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 380px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 20px !important;
-            padding-right: 20px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 42rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (width: 820px) and (height: 1180px) and (orientation: portrait) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 420px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 24px !important;
-            padding-right: 24px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 46rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (width: 834px) and (height: 1194px) and (orientation: portrait) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 420px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 24px !important;
-            padding-right: 24px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 46rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (width: 1024px) and (height: 1366px) and (orientation: portrait) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 520px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 28px !important;
-            padding-right: 28px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 50rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (width: 912px) and (height: 1368px) and (orientation: portrait) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 500px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 26px !important;
-            padding-right: 26px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 48rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (width: 853px) and (height: 1280px) and (orientation: portrait) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 520px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 28px !important;
-            padding-right: 28px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 50rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (width: 1024px) and (height: 600px) and (orientation: landscape) {
-          :global(.secondaryHeroGrid) {
-            grid-template-columns: 1fr !important;
-          }
-
-          :global(.secondaryHeroPlayer) {
-            max-width: 100% !important;
-          }
-
-          :global(.secondaryHeroImageWrap) {
-            max-width: 100% !important;
-            min-height: 300px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-            background-color: #ffffff !important;
-          }
-
-          :global(.dark) :global(.secondaryHeroImageWrap) {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-          }
-
-          :global(.secondaryHeroContent) {
-            text-align: center !important;
-            padding-left: 24px !important;
-            padding-right: 24px !important;
-          }
-
-          :global(.secondaryHeroFeatures) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 46rem !important;
-          }
-
-          :global(.secondaryHeroCtas) {
-            justify-content: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-          .secondaryHeroSection:hover :global(.secondaryHeroCard) {
-            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
-            border-color: rgba(0, 0, 0, 0.08);
-          }
-          :global(.dark) .secondaryHeroSection:hover :global(.secondaryHeroCard) {
-            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-            border-color: rgba(255, 255, 255, 0.12);
-          }
-        }
-
-        .secondaryHeroImageWrap {
-          z-index: 0;
-          transform-style: preserve-3d;
-          transition: box-shadow 300ms ease-in-out, transform 300ms ease-in-out;
-          will-change: transform;
-          transform-origin: center;
-        }
-
-        @media (min-width: 768px) {
-          .secondaryHeroImageWrap {
-            transform-origin: right center;
-          }
-        }
-
-        .secondaryHeroImage {
-          z-index: 0;
-          backface-visibility: hidden;
-          transform-origin: 35% 50%;
-          transform: perspective(1000px) rotateY(-10deg) scale(1);
-          transition: transform 300ms ease-in-out, filter 300ms ease-in-out;
-          filter: saturate(1.06) contrast(1.03);
-          will-change: transform, filter;
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-          .secondaryHeroImageWrap:hover {
-            z-index: 2;
-            box-shadow: 0 18px 56px rgba(0, 0, 0, 0.14);
-            transform: scale(1.06);
-          }
-
-          .secondaryHeroImageWrap:hover .secondaryHeroImage {
-            transform: perspective(1000px) rotateY(0deg) scale(1.06);
-            filter: saturate(1.12) contrast(1.06);
-          }
-        }
-
-        .secondaryHeroImageWrap:focus-visible .secondaryHeroImage {
-          transform: perspective(1000px) rotateY(0deg) scale(1.06);
-          filter: saturate(1.12) contrast(1.06);
-        }
-
-        .secondaryHeroContent {
-          transition: transform 300ms ease-in-out;
-          will-change: transform;
-          transform-origin: center;
-        }
-
-        @media (min-width: 768px) {
-          .secondaryHeroContent {
-            transform-origin: left center;
-          }
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-          .secondaryHeroContent:hover {
-            transform: none;
-          }
-        }
-
-        @media (hover: none) and (pointer: coarse) {
-          .secondaryHeroImageWrap:active .secondaryHeroImage {
-            transform: perspective(1000px) rotateY(0deg) scale(1.03);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .secondaryHeroImage {
-            transition: none;
-            transform: none;
-          }
-        }
-      `}</style>
       </section>
     </>
   );

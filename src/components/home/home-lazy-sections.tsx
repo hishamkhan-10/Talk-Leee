@@ -1,11 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Hero } from "@/components/ui/helix-hero";
 
 const SecondaryHero = dynamic(() => import("@/components/home/secondary-hero").then((m) => m.SecondaryHero), {
-  ssr: false,
+  ssr: true,
   loading: () => <SectionPlaceholder minHeightClassName="min-h-[70vh]" />,
 });
 
@@ -117,13 +117,9 @@ function FAQSection() {
 
 function NavbarHeroBackgroundVideo() {
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const videoARef = useRef<HTMLVideoElement | null>(null);
-  const videoBRef = useRef<HTMLVideoElement | null>(null);
-  const activeIndexRef = useRef<0 | 1>(0);
-  const isCrossfadingRef = useRef(false);
-  const fadeTimeoutRef = useRef<number | null>(null);
-  const [activeIndex, setActiveIndex] = useState<0 | 1>(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isInView, setIsInView] = useState(true);
+  const [opacity, setOpacity] = useState(1);
 
   const fallbackPoster = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
@@ -145,198 +141,36 @@ function NavbarHeroBackgroundVideo() {
 </svg>`
   )}`;
 
-  const waitForCanPlay = useCallback((video: HTMLVideoElement, timeoutMs: number) => {
-    return new Promise<boolean>((resolve) => {
-      if (video.readyState >= 2) {
-        resolve(true);
-        return;
-      }
-
-      let timeoutId: number | null = null;
-      let finished = false;
-
-      const cleanup = () => {
-        video.removeEventListener("canplay", onCanPlay);
-        video.removeEventListener("error", onError);
-        if (timeoutId) window.clearTimeout(timeoutId);
-        timeoutId = null;
-      };
-
-      const finish = (ok: boolean) => {
-        if (finished) return;
-        finished = true;
-        cleanup();
-        resolve(ok);
-      };
-
-      const onCanPlay = () => finish(true);
-      const onError = () => finish(false);
-
-      video.addEventListener("canplay", onCanPlay, { once: true });
-      video.addEventListener("error", onError, { once: true });
-      timeoutId = window.setTimeout(() => finish(video.readyState >= 2), timeoutMs);
-
-      try {
-        video.load();
-      } catch {}
-    });
-  }, []);
-
-  const waitForPlaybackStart = useCallback((video: HTMLVideoElement, timeoutMs: number) => {
-    return new Promise<boolean>((resolve) => {
-      if (!video.paused && video.readyState >= 2) {
-        resolve(true);
-        return;
-      }
-
-      let timeoutId: number | null = null;
-      let finished = false;
-
-      const cleanup = () => {
-        video.removeEventListener("playing", onPlaying);
-        video.removeEventListener("error", onError);
-        if (timeoutId) window.clearTimeout(timeoutId);
-        timeoutId = null;
-      };
-
-      const finish = (ok: boolean) => {
-        if (finished) return;
-        finished = true;
-        cleanup();
-        resolve(ok);
-      };
-
-      const onPlaying = () => finish(true);
-      const onError = () => finish(false);
-
-      video.addEventListener("playing", onPlaying, { once: true });
-      video.addEventListener("error", onError, { once: true });
-      timeoutId = window.setTimeout(() => finish(!video.paused && video.readyState >= 2), timeoutMs);
-    });
-  }, []);
-
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-
     const io = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        setIsInView(Boolean(entry?.isIntersecting));
-      },
+      (entries) => setIsInView(Boolean(entries[0]?.isIntersecting)),
       { threshold: 0.01 }
     );
-
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  const triggerCrossfade = useCallback(() => {
-    const videoA = videoARef.current;
-    const videoB = videoBRef.current;
-    if (!videoA || !videoB) return;
-    if (isCrossfadingRef.current) return;
-
-    const fromIndex = activeIndexRef.current;
-    const toIndex: 0 | 1 = fromIndex === 0 ? 1 : 0;
-    const from = fromIndex === 0 ? videoA : videoB;
-    const to = toIndex === 0 ? videoA : videoB;
-
-    isCrossfadingRef.current = true;
-
-    void (async () => {
-      const canPlay = await waitForCanPlay(to, 1200);
-      if (!canPlay) {
-        isCrossfadingRef.current = false;
-        return;
-      }
-
-      try {
-        to.currentTime = 0.01;
-      } catch {}
-
-      const playResult = to.play();
-      if (playResult && typeof (playResult as Promise<void>).catch === "function") {
-        const ok = await (playResult as Promise<void>).then(
-          () => true,
-          () => false
-        );
-        if (!ok) {
-          isCrossfadingRef.current = false;
-          return;
-        }
-      }
-
-      const started = await waitForPlaybackStart(to, 900);
-      if (!started) {
-        try {
-          to.pause();
-        } catch {}
-        isCrossfadingRef.current = false;
-        return;
-      }
-
-      activeIndexRef.current = toIndex;
-      setActiveIndex(toIndex);
-
-      if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
-      fadeTimeoutRef.current = window.setTimeout(() => {
-        try {
-          from.pause();
-          from.currentTime = 0.01;
-        } catch {}
-        isCrossfadingRef.current = false;
-      }, 320);
-    })();
-  }, [waitForCanPlay, waitForPlaybackStart]);
-
   useEffect(() => {
-    const a = videoARef.current;
-    const b = videoBRef.current;
-    if (!a || !b) return;
-
-    if (!isInView) {
-      try {
-        a.pause();
-        b.pause();
-      } catch {}
-      return;
-    }
-
-    const active = activeIndexRef.current === 0 ? a : b;
-    const p = active.play();
+    const v = videoRef.current;
+    if (!v) return;
+    if (!isInView) { try { v.pause(); } catch {} return; }
+    const p = v.play();
     if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
   }, [isInView]);
 
   useEffect(() => {
-    if (!isInView) return;
-    const videoA = videoARef.current;
-    const videoB = videoBRef.current;
-    if (!videoA || !videoB) return;
-
-    const loopThresholdSeconds = 0.24;
+    const v = videoRef.current;
+    if (!v) return;
     const onTimeUpdate = () => {
-      if (isCrossfadingRef.current) return;
-      const active = activeIndexRef.current === 0 ? videoA : videoB;
-      const duration = active.duration;
-      if (!Number.isFinite(duration) || duration <= 0) return;
-      if (active.paused || active.ended) return;
-      const remaining = duration - active.currentTime;
-      if (remaining > 0 && remaining <= loopThresholdSeconds) triggerCrossfade();
+      const d = v.duration;
+      if (!Number.isFinite(d) || d <= 0) return;
+      const remaining = d - v.currentTime;
+      setOpacity(remaining <= 0.3 ? 0.85 : v.currentTime < 0.3 ? 0.85 + (v.currentTime / 0.3) * 0.15 : 1);
     };
-
-    videoA.addEventListener("timeupdate", onTimeUpdate);
-    videoB.addEventListener("timeupdate", onTimeUpdate);
-    return () => {
-      videoA.removeEventListener("timeupdate", onTimeUpdate);
-      videoB.removeEventListener("timeupdate", onTimeUpdate);
-    };
-  }, [isInView, triggerCrossfade]);
-
-  useEffect(() => {
-    return () => {
-      if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
-    };
+    v.addEventListener("timeupdate", onTimeUpdate);
+    return () => v.removeEventListener("timeupdate", onTimeUpdate);
   }, []);
 
   return (
@@ -353,44 +187,18 @@ function NavbarHeroBackgroundVideo() {
       }}
     >
       <video
-        ref={videoARef}
+        ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
-        style={{ opacity: activeIndex === 0 ? 1 : 0, transition: "opacity 320ms ease-in-out" }}
+        style={{ opacity, transition: "opacity 300ms ease-in-out" }}
         src="/images/hero-navbar-video.mp4"
         autoPlay
+        loop
         muted
         playsInline
         preload="metadata"
         poster={fallbackPoster}
         disablePictureInPicture
         disableRemotePlayback
-        onLoadedMetadata={() => {
-          if (!isInView) return;
-          if (activeIndexRef.current !== 0) return;
-          const v = videoARef.current;
-          if (!v) return;
-          void v.play().catch(() => {});
-        }}
-      />
-      <video
-        ref={videoBRef}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ opacity: activeIndex === 1 ? 1 : 0, transition: "opacity 320ms ease-in-out" }}
-        src="/images/hero-navbar-video.mp4"
-        autoPlay
-        muted
-        playsInline
-        preload="metadata"
-        poster={fallbackPoster}
-        disablePictureInPicture
-        disableRemotePlayback
-        onLoadedMetadata={() => {
-          if (!isInView) return;
-          if (activeIndexRef.current !== 1) return;
-          const v = videoBRef.current;
-          if (!v) return;
-          void v.play().catch(() => {});
-        }}
       />
     </div>
   );
