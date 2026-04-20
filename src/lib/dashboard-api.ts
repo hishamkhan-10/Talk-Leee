@@ -7,6 +7,7 @@ export interface DashboardSummary {
     failed_calls: number;
     minutes_used: number;
     minutes_remaining: number;
+    minutes_included: number;
     active_campaigns: number;
 }
 
@@ -77,6 +78,7 @@ const DUMMY_SUMMARY: DashboardSummary = {
     failed_calls: 158,
     minutes_used: 3420,
     minutes_remaining: 1580,
+    minutes_included: 5000,
     active_campaigns: 3,
 };
 

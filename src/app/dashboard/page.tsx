@@ -902,13 +902,15 @@ export default function DashboardPage() {
 
         const outcomes = (() => {
             const completed = Math.max(0, Math.round(currentAnswered * 0.72));
-            const voicemail = Math.max(0, Math.round(currentAnswered * 0.11));
-            const busy = Math.max(0, Math.round(currentTotal * 0.05));
-            const noAnswer = Math.max(0, Math.round(currentTotal * 0.07));
+            const voicemail = Math.max(0, Math.round(currentAnswered * 0.17));
+            const callback = Math.max(0, currentAnswered - completed - voicemail);
+            const busy = Math.max(0, Math.round(currentFailed * 0.30));
+            const noAnswer = Math.max(0, Math.round(currentFailed * 0.45));
             const networkError = Math.max(0, currentFailed - busy - noAnswer);
             return [
                 { label: "Completed", value: completed, color: "#10B981" },
                 { label: "Voicemail", value: voicemail, color: "#3B82F6" },
+                { label: "Callback", value: callback, color: "#06B6D4" },
                 { label: "Busy", value: busy, color: "#F59E0B" },
                 { label: "No Answer", value: noAnswer, color: "#A855F7" },
                 { label: "Network Error", value: networkError, color: "#EF4444" },
@@ -975,6 +977,7 @@ export default function DashboardPage() {
                     failed_calls: prev.failed_calls + failedInc,
                     minutes_used: prev.minutes_used + minutesInc,
                     minutes_remaining: Math.max(0, prev.minutes_remaining - minutesInc),
+                    minutes_included: prev.minutes_included || 5000,
                 };
             });
         }, 1000);
@@ -1041,6 +1044,7 @@ export default function DashboardPage() {
                 isNum(obj.failed_calls) &&
                 isNum(obj.minutes_used) &&
                 isNum(obj.minutes_remaining) &&
+                isNum(obj.minutes_included) &&
                 isNum(obj.active_campaigns)
             );
         };
@@ -1225,9 +1229,13 @@ export default function DashboardPage() {
     const successRateFontClass = successRate >= 100 ? "text-base" : "text-lg";
 
     const minutesTooltip = useHoverTooltip();
-    const minutesUsed = effectiveSummary?.minutes_used ?? 0;
+    const minutesUsedRaw = effectiveSummary?.minutes_used ?? 0;
     const minutesRemaining = effectiveSummary?.minutes_remaining ?? 0;
-    const minutesTotal = minutesUsed + minutesRemaining;
+    const minutesTotal = effectiveSummary?.minutes_included ?? 5000;
+    
+    // Cap used at total to ensure it never exceeds the plan limit in the UI
+    const minutesUsed = Math.min(minutesUsedRaw, minutesTotal);
+
     const minutesUsedPct = minutesTotal > 0 ? Math.round((minutesUsed / minutesTotal) * 100) : 0;
     const minutesUsedText = minutesUsed.toLocaleString();
     const minutesRemainingText = minutesRemaining.toLocaleString();
@@ -1245,8 +1253,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between gap-6">
                     <span className="text-gray-700 font-bold">Remaining minutes</span>
                     <span className="tabular-nums font-black text-gray-900">
-                        {minutesRemaining.toLocaleString()}{" "}
-                        <span className="text-gray-600 font-semibold">({Math.max(0, 100 - minutesUsedPct)}%)</span>
+                        {minutesRemaining.toLocaleString()}
                     </span>
                 </div>
             </div>
@@ -1638,6 +1645,8 @@ export default function DashboardPage() {
                                                     {minutesUsedText}
                                                 </motion.span>
                                             </div>
+
+                                            <div className="h-9 w-px bg-gray-200/80" aria-hidden />
 
                                             <div className="min-w-0 flex flex-col items-center text-center px-3">
                                                 <span className="text-sm font-semibold text-gray-700 dark:text-muted-foreground">Remaining</span>

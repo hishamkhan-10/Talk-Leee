@@ -157,6 +157,26 @@ export function Sidebar({ className }: { className?: string }) {
         [isAdmin]
     );
 
+    // Automatically expand dropdowns if a child is active
+    useEffect(() => {
+        setOpenDropdowns((prev) => {
+            const next = new Set(prev);
+            let changed = false;
+            visibleNavigation.forEach((item) => {
+                if (item.children) {
+                    const hasActiveChild = item.children.some(
+                        (child) => pathname === child.href || pathname.startsWith(child.href + "/")
+                    );
+                    if (hasActiveChild && !next.has(item.name)) {
+                        next.add(item.name);
+                        changed = true;
+                    }
+                }
+            });
+            return changed ? next : prev;
+        });
+    }, [pathname, visibleNavigation]);
+
     const profileUser = user ?? {
         id: "guest",
         email: "guest@talk-lee.ai",
