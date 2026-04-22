@@ -48,7 +48,7 @@
   --sidebar-expanded-width: 232px;
   --sidebar-collapsed-width: 72px;
   --sidebar-transition-ms: 220ms;
-  --home-navbar-height: 56px;
+  --home-navbar-height: 44px;
   --home-navbar-bg: rgba(255, 255, 255, 0.76);
   --home-navbar-border: rgba(17, 24, 39, 0.10);
   --home-navbar-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
@@ -108,7 +108,7 @@
 
 @media (min-width: 768px) {
   :root {
-    --home-navbar-height: 60px;
+    --home-navbar-height: 48px;
   }
 }
 
@@ -245,12 +245,50 @@
 
 .home-navbar-fixed {
   position: absolute;
-  top: 0;
+  top: 8px;
   left: 0;
   right: 0;
-  width: 100%;
+  margin: 0 auto;
+  width: calc(100% - 1.5rem);
   z-index: 500;
   pointer-events: auto;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 300ms ease, box-shadow 300ms ease, color 300ms ease, background 300ms ease;
+}
+
+.home-navbar-fixed::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  z-index: -1;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .home-navbar-fixed {
+    top: 10px;
+    width: max-content;
+    max-width: calc(100% - 1.5rem);
+  }
+}
+
+.light .home-navbar-fixed {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
@@ -259,34 +297,46 @@
 }
 
 .home-navbar-scrolled {
-  color: #0b2a6f;
+  color: #7dd3fc;
   font-weight: 700;
   text-shadow: none;
+  background: rgba(0, 16, 34, 0.78);
+  border-color: rgba(125, 211, 252, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .home-navbar-scrolled a,
 .home-navbar-scrolled button,
 .home-navbar-scrolled summary {
-  color: #0b2a6f !important;
+  color: #7dd3fc !important;
   font-weight: 700 !important;
 }
 
 .home-navbar-scrolled svg {
+  filter: drop-shadow(0 0 10px rgba(125, 211, 252, 0.25));
+}
+
+.light .home-navbar-page {
+  color: #0b2a6f;
+  background: rgba(236, 254, 255, 0.82);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.light .home-navbar-page a,
+.light .home-navbar-page button,
+.light .home-navbar-page summary {
+  color: #0b2a6f !important;
+}
+
+.light .home-navbar-page svg {
   filter: none;
 }
 
-.dark .home-navbar-scrolled {
-  color: #7dd3fc;
-}
-
-.dark .home-navbar-scrolled a,
-.dark .home-navbar-scrolled button,
-.dark .home-navbar-scrolled summary {
-  color: #7dd3fc !important;
-}
-
-.dark .home-navbar-scrolled svg {
-  filter: drop-shadow(0 0 10px rgba(125, 211, 252, 0.25));
+.light .home-navbar-page .home-nav-link:hover {
+  background-color: rgba(11, 42, 111, 0.06);
+  border-color: rgba(11, 42, 111, 0.1);
+  box-shadow: 0 2px 8px rgba(11, 42, 111, 0.08);
 }
 
 .home-navbar-offset {
@@ -303,28 +353,38 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.375rem 0.5rem;
+  padding: 0.375rem 0.625rem;
   border-radius: 0.625rem;
   line-height: 1.25rem;
   text-decoration: none;
-  -webkit-transition: background-color 250ms ease-in-out, color 250ms ease-in-out, -webkit-transform 250ms ease-in-out, box-shadow 250ms ease-in-out;
-  transition: background-color 250ms ease-in-out, color 250ms ease-in-out, transform 250ms ease-in-out, box-shadow 250ms ease-in-out;
+  border: 1px solid transparent;
+  -webkit-transition: background-color 250ms ease-in-out, color 250ms ease-in-out, -webkit-transform 250ms ease-in-out, box-shadow 250ms ease-in-out, border-color 250ms ease-in-out;
+  transition: background-color 250ms ease-in-out, color 250ms ease-in-out, transform 250ms ease-in-out, box-shadow 250ms ease-in-out, border-color 250ms ease-in-out;
 }
 
 .home-nav-link:hover {
-  background-color: var(--home-hover-bg);
-  box-shadow: 0 0 0 1px var(--home-surface-border);
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.06);
   -webkit-transform: scale(1.02);
   transform: scale(1.02);
 }
 
 .light .home-navbar-fixed .home-nav-link:hover {
-  box-shadow: 0 0 0 1px var(--home-surface-border), 0 14px 30px rgba(0, 0, 0, 0.22);
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.home-navbar-scrolled .home-nav-link:hover {
+  background-color: rgba(125, 211, 252, 0.08);
+  border-color: rgba(125, 211, 252, 0.15);
+  box-shadow: 0 2px 8px rgba(125, 211, 252, 0.1);
 }
 
 .home-nav-link:active {
-  -webkit-transform: scale(1.02);
-  transform: scale(1.02);
+  -webkit-transform: scale(1.01);
+  transform: scale(1.01);
 }
 
 .home-nav-link:focus-visible {
@@ -487,13 +547,15 @@
 }
 
 .home-menu-toggle:hover {
-  background-color: var(--home-hover-bg);
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
 }
 
 .light .home-navbar-fixed .home-menu-toggle:hover {
-  box-shadow: 0 0 0 1px var(--home-surface-border), 0 14px 30px rgba(0, 0, 0, 0.18);
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .home-menu-toggle:active {
@@ -536,9 +598,9 @@ details > .home-mobile-panel {
   left: 0;
   width: min(88vw, 360px);
   padding: calc(0.75rem + env(safe-area-inset-top)) 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) 0.75rem;
-  background: color-mix(in oklab, var(--background) 96%, transparent);
-  border-right: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
-  box-shadow: 0 0.75rem 2rem rgba(17, 24, 39, 0.14);
+  background: color-mix(in oklab, var(--background) 97%, transparent);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12), 1px 0 3px rgba(0, 0, 0, 0.06);
   z-index: 70;
   overflow-y: auto;
   display: block;
@@ -548,6 +610,11 @@ details > .home-mobile-panel {
   clip-path: inset(0 0 0 100%);
   transition: clip-path 260ms ease-out, opacity 200ms ease-out, visibility 0s linear 260ms;
   will-change: clip-path, opacity, visibility;
+}
+
+.light details > .home-mobile-panel {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12), 1px 0 3px rgba(0, 0, 0, 0.06);
 }
 
 details[open] > .home-mobile-panel {
@@ -564,7 +631,7 @@ details > summary.home-menu-toggle {
 }
 
 .home-navbar-menu-open[data-theme="light"] {
-  background: #000;
+  background: rgba(0, 0, 0, 0.95);
   color: #fff;
   text-shadow: none;
 }
@@ -576,7 +643,7 @@ details > summary.home-menu-toggle {
 }
 
 .home-navbar-menu-open[data-theme="dark"] {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.95);
   color: #000;
   text-shadow: none;
 }
@@ -590,7 +657,8 @@ details > summary.home-menu-toggle {
 .home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel {
   background: #000;
   color: #fff;
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3), 1px 0 3px rgba(0, 0, 0, 0.15);
 }
 
 .home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel a,
@@ -601,7 +669,8 @@ details > summary.home-menu-toggle {
 .home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel {
   background: #fff;
   color: #000;
-  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1), 1px 0 3px rgba(0, 0, 0, 0.04);
 }
 
 .home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel a,
@@ -610,11 +679,13 @@ details > summary.home-menu-toggle {
 }
 
 .home-navbar-menu-open[data-theme="light"] details[open] > .home-mobile-panel .home-mobile-link:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .home-navbar-menu-open[data-theme="dark"] details[open] > .home-mobile-panel .home-mobile-link:hover {
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 .home-mobile-link {
@@ -623,14 +694,21 @@ details > summary.home-menu-toggle {
   padding: 0.6rem 0.75rem;
   border-radius: 0.75rem;
   text-decoration: none;
-  -webkit-transition: background-color 250ms ease-in-out, -webkit-transform 250ms ease-in-out;
-  transition: background-color 250ms ease-in-out, transform 250ms ease-in-out;
+  border: 1px solid transparent;
+  -webkit-transition: background-color 250ms ease-in-out, -webkit-transform 250ms ease-in-out, border-color 250ms ease-in-out, box-shadow 250ms ease-in-out;
+  transition: background-color 250ms ease-in-out, transform 250ms ease-in-out, border-color 250ms ease-in-out, box-shadow 250ms ease-in-out;
 }
 
 .home-mobile-link:hover {
   background-color: var(--home-hover-bg);
-  -webkit-transform: scale(1.02);
-  transform: scale(1.02);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  -webkit-transform: scale(1.01);
+  transform: scale(1.01);
+}
+
+.light .home-mobile-link:hover {
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .home-mobile-link:active {
@@ -795,12 +873,15 @@ details > summary.home-menu-toggle {
 }
 
 /* ── Navbar tablet/phone media queries (moved from style jsx) ── */
-@media (width: 768px) and (height: 1024px) and (orientation: portrait),
-       (width: 820px) and (height: 1180px) and (orientation: portrait),
-       (width: 1024px) and (height: 1366px) and (orientation: portrait),
-       (width: 912px) and (height: 1368px) and (orientation: portrait),
-       (width: 853px) and (height: 1280px) and (orientation: portrait),
-       (width: 1024px) and (height: 600px) and (orientation: landscape) {
+/* Cover all touch tablets up to 1024px wide and all specific tablet dimensions */
+@media (hover: none) and (pointer: coarse) and (max-width: 1024px) {
+  .home-navbar-fixed {
+    width: calc(100% - 1.5rem) !important;
+    max-width: none !important;
+  }
+  .navbarInnerGrid {
+    grid-template-columns: 1fr auto !important;
+  }
   .navbarMobileMenu {
     display: block !important;
   }
@@ -812,35 +893,30 @@ details > summary.home-menu-toggle {
   }
 }
 
-@media (width: 375px) and (height: 667px) {
-  .navbarThemeWrap {
-    position: absolute !important;
-    right: 4px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+@media (width: 768px) and (height: 1024px) and (orientation: portrait),
+       (width: 820px) and (height: 1180px) and (orientation: portrait),
+       (width: 1024px) and (height: 1366px) and (orientation: portrait),
+       (width: 912px) and (height: 1368px) and (orientation: portrait),
+       (width: 853px) and (height: 1280px) and (orientation: portrait),
+       (width: 1024px) and (height: 600px) and (orientation: landscape) {
+  .home-navbar-fixed {
+    width: calc(100% - 1.5rem) !important;
+    max-width: none !important;
+  }
+  .navbarInnerGrid {
+    grid-template-columns: 1fr auto !important;
+  }
+  .navbarMobileMenu {
+    display: block !important;
+  }
+  .navbarDesktopNav {
+    display: none !important;
+  }
+  .navbarDesktopAction {
+    display: none !important;
   }
 }
 
-@media (width: 414px) and (height: 896px),
-       (width: 390px) and (height: 844px),
-       (width: 430px) and (height: 932px),
-       (width: 412px) and (height: 915px) {
-  .navbarThemeWrap {
-    position: absolute !important;
-    right: 6px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-  }
-}
-
-@media (width: 360px) and (height: 740px) {
-  .navbarThemeWrap {
-    position: absolute !important;
-    right: 4px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-  }
-}
 
 /* ── TrustedByMarquee styles (moved from style jsx) ── */
 .heroMarqueeGradientBase {
@@ -1136,6 +1212,121 @@ details > summary.home-menu-toggle {
   }
 }
 
+@media (min-width: 767px) and (max-width: 769px) {
+  /* Content — clear navbar, fit everything in one screen */
+  .heroContentWrap {
+    padding-top: calc(var(--home-navbar-height) + 1rem) !important;
+    padding-bottom: 1rem !important;
+  }
+
+  /* 1. Tick line */
+  .heroTrustedBadgeTop {
+    display: none !important;
+  }
+  .heroTrustedBadgeInlineWrap {
+    display: block !important;
+    margin-top: 0 !important;
+    margin-bottom: 0.75rem !important;
+  }
+  .heroTrustedBadgeInline {
+    display: inline-flex !important;
+    white-space: normal !important;
+    flex-wrap: wrap !important;
+    max-width: calc(100vw - 2rem) !important;
+    font-size: 13px !important;
+    padding: 5px 14px !important;
+    gap: 6px !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+  }
+
+  /* 2. Title */
+  .heroHeadlineContainer {
+    gap: 6px !important;
+    margin-bottom: 0.75rem !important;
+  }
+  .heroDesktopTitle {
+    margin-top: 0 !important;
+  }
+
+  /* 3. Description */
+  .heroDescWrap {
+    margin-bottom: 0.75rem !important;
+  }
+  .heroDescText {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+  }
+
+  /* 4. Three stat boxes */
+  .heroStatsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+    max-width: 580px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .heroStatBox.stats-card {
+    padding: 0.65rem 0.5rem !important;
+  }
+  .heroStatBox .text-3xl {
+    font-size: 1.5rem !important;
+    line-height: 1.75rem !important;
+  }
+  .heroStatBox .text-sm {
+    font-size: 0.7rem !important;
+    margin-top: 2px !important;
+  }
+
+  /* 5. Industry names */
+  .heroMarqueeWrap {
+    margin-top: 0.75rem !important;
+  }
+  .heroMarqueeWrap > div {
+    height: 2rem !important;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  .heroMarqueeWrap > div > div > div > div {
+    height: 1.6rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 9.5px !important;
+  }
+
+  /* Secondary hero — match Nest Hub layout */
+  .secondaryHeroGrid {
+    grid-template-columns: 1fr !important;
+  }
+  .secondaryHeroPlayer {
+    max-width: 100% !important;
+  }
+  .secondaryHeroImageWrap {
+    max-width: 100% !important;
+    min-height: 380px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background-color: #ffffff !important;
+  }
+  .dark .secondaryHeroImageWrap {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+  .secondaryHeroContent {
+    text-align: center !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  .secondaryHeroFeatures {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: 42rem !important;
+  }
+  .secondaryHeroCtas {
+    justify-content: center !important;
+    align-items: center !important;
+  }
+}
+
 .heroAskAiPing {
   animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
@@ -1146,6 +1337,170 @@ details > summary.home-menu-toggle {
     0 0 18px rgba(34, 211, 238, 0.28),
     0 0 42px rgba(56, 189, 248, 0.18),
     0 12px 48px rgba(0, 0, 0, 0.55);
+}
+
+@media (min-width: 374px) and (max-width: 376px) {
+  /* 1. Tick line — space after navbar + centered */
+  .heroTrustedBadgeInlineWrap {
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+  }
+  .heroTrustedBadgeInline {
+    white-space: normal !important;
+    flex-wrap: wrap !important;
+    max-width: calc(100vw - 2rem) !important;
+    font-size: 10px !important;
+    padding: 5px 12px !important;
+    gap: 4px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* 2. Title — centered, clearly visible */
+  .heroHeadlineContainer {
+    gap: 5px !important;
+    margin-bottom: 1rem !important;
+  }
+  h1.heroMobileTitle {
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow {
+    white-space: nowrap !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+    margin-top: 0.4rem !important;
+  }
+
+  /* 3. Description paragraph */
+  .heroDescWrap {
+    margin-bottom: 1rem !important;
+  }
+  .heroDescText {
+    font-size: 0.85rem !important;
+    line-height: 1.4rem !important;
+  }
+
+  /* 4. Three stat boxes — 2-col grid, centered */
+  .heroStatsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .heroStatBox.stats-card {
+    padding: 0.65rem 0.5rem !important;
+    border-radius: 0.875rem !important;
+  }
+  .heroStatBox .text-3xl,
+  .heroStatBox .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.5rem !important;
+  }
+  .heroStatBox .text-sm,
+  .heroStatBox .text-\[11px\] {
+    font-size: 8px !important;
+    line-height: 1.15 !important;
+    margin-top: 2px !important;
+  }
+
+  /* 5. Industry names — fully visible, centered */
+  .heroMarqueeWrap {
+    margin-top: 0.75rem !important;
+  }
+  .heroMarqueeWrap > div {
+    height: 1.85rem !important;
+    padding-left: 0.2rem !important;
+    padding-right: 0.2rem !important;
+  }
+  .heroMarqueeWrap > div > div > div > div {
+    height: 1.5rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+    font-size: 7.5px !important;
+  }
+}
+
+@media (min-width: 424px) and (max-width: 426px) {
+  /* 1. Tick line — space after navbar + centered */
+  .heroTrustedBadgeInlineWrap {
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+  }
+  .heroTrustedBadgeInline {
+    white-space: normal !important;
+    flex-wrap: wrap !important;
+    max-width: calc(100vw - 2rem) !important;
+    font-size: 10.5px !important;
+    padding: 5px 12px !important;
+    gap: 5px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* 2. Title — centered, clearly visible */
+  .heroHeadlineContainer {
+    gap: 6px !important;
+    margin-bottom: 1rem !important;
+  }
+  h1.heroMobileTitle {
+    font-size: 21px !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow {
+    white-space: nowrap !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+    margin-top: 0.4rem !important;
+  }
+
+  /* 3. Description paragraph */
+  .heroDescWrap {
+    margin-bottom: 1rem !important;
+  }
+  .heroDescText {
+    font-size: 0.875rem !important;
+    line-height: 1.45rem !important;
+  }
+
+  /* 4. Three stat boxes — 3-col grid, centered */
+  .heroStatsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .heroStatBox.stats-card {
+    padding: 0.75rem 0.5rem !important;
+    border-radius: 0.875rem !important;
+  }
+  .heroStatBox .text-3xl {
+    font-size: 1.35rem !important;
+    line-height: 1.6rem !important;
+  }
+  .heroStatBox .text-sm {
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+    margin-top: 2px !important;
+  }
+
+  /* 5. Industry names — fully visible, centered */
+  .heroMarqueeWrap {
+    margin-top: 0.85rem !important;
+  }
+  .heroMarqueeWrap > div {
+    height: 1.9rem !important;
+    padding-left: 0.2rem !important;
+    padding-right: 0.2rem !important;
+  }
+  .heroMarqueeWrap > div > div > div > div {
+    height: 1.5rem !important;
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
+    font-size: 8px !important;
+  }
 }
 
 @media (width: 360px) and (height: 740px) {
@@ -1180,18 +1535,134 @@ details > summary.home-menu-toggle {
   }
 }
 
-@media (width: 540px) and (height: 720px) {
-  .heroMobileTitle {
-    font-size: 22px !important;
-    line-height: 1.06 !important;
-    padding-left: 12px;
-    padding-right: 12px;
+@media (min-width: 539px) and (max-width: 541px) {
+  .heroTrustedBadgeInlineWrap {
+    margin-bottom: 10px !important;
   }
-  .heroMobileTitle .heroTitleGlow {
+  .heroTrustedBadgeInline {
+    font-size: 13px !important;
+    white-space: normal !important;
+  }
+  .heroHeadlineContainer {
+    gap: 8px !important;
+  }
+  h1.heroMobileTitle {
+    font-size: 26px !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow {
     white-space: nowrap !important;
   }
-  .heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+  h1.heroMobileTitle .heroTitleGlow + .heroTitleGlow {
     margin-top: 0.5rem !important;
+  }
+  .heroContentWrap {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+  .heroDescText {
+    font-size: 1.05rem !important;
+    line-height: 1.65rem !important;
+  }
+  .heroStatsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (min-width: 319px) and (max-width: 321px) {
+  /* Content wrapper — reduce side padding for more room */
+  .heroContentWrap {
+    padding-left: 0.625rem !important;
+    padding-right: 0.625rem !important;
+  }
+
+  /* 1. Tick line (trusted badge) */
+  .heroTrustedBadgeInlineWrap {
+    margin-bottom: 5px !important;
+  }
+  .heroTrustedBadgeInline {
+    white-space: normal !important;
+    flex-wrap: wrap !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    font-size: 9px !important;
+    padding: 4px 8px !important;
+    gap: 3px !important;
+    line-height: 1.2 !important;
+  }
+  .heroTrustedBadgeInline svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  /* 2. Title — two balanced centered lines */
+  .heroHeadlineContainer {
+    gap: 3px !important;
+    margin-bottom: 0.75rem !important;
+  }
+  h1.heroMobileTitle {
+    font-size: 15px !important;
+    line-height: 1.18 !important;
+    text-align: center !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow {
+    white-space: nowrap !important;
+  }
+  h1.heroMobileTitle .heroTitleGlow + .heroTitleGlow {
+    margin-top: 0.3rem !important;
+  }
+
+  /* 3. Description paragraph */
+  .heroDescWrap {
+    margin-bottom: 0.75rem !important;
+  }
+  .heroDescText {
+    font-size: 0.8rem !important;
+    line-height: 1.35rem !important;
+  }
+
+  /* 4. Three stat boxes */
+  .heroStatsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .heroStatBox.stats-card {
+    padding: 0.5rem 0.35rem !important;
+    border-radius: 0.75rem !important;
+  }
+  .heroStatBox .text-3xl,
+  .heroStatBox .text-2xl {
+    font-size: 1.1rem !important;
+    line-height: 1.3rem !important;
+  }
+  .heroStatBox .text-sm,
+  .heroStatBox .text-\[11px\] {
+    font-size: 7px !important;
+    line-height: 1.1 !important;
+    letter-spacing: 0.02em !important;
+    margin-top: 2px !important;
+  }
+
+  /* 5. Industry names (marquee) */
+  .heroMarqueeWrap {
+    margin-top: 0.6rem !important;
+  }
+  .heroMarqueeWrap > div {
+    height: 1.75rem !important;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  .heroMarqueeWrap > div > div > div > div {
+    height: 1.4rem !important;
+    padding-left: 0.3rem !important;
+    padding-right: 0.3rem !important;
+    font-size: 7px !important;
   }
 }
 

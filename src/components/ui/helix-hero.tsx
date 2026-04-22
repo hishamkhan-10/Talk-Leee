@@ -89,7 +89,7 @@ function DescriptionSlideshow({ paragraphs }: { paragraphs: string[]; intervalMs
         return () => clearTimeout(id);
     }, [phase, paragraphs.length]);
 
-    const pClass = "text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full";
+    const pClass = "heroDescText text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full";
     const pStyle: React.CSSProperties = { fontFamily: "var(--font-manrope)" };
 
     const isSlideVisible = phase === "typing" || phase === "holding";
@@ -239,7 +239,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             <motion.div
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="heroTrustedBadgeTop pointer-events-auto absolute top-3 md:top-4 left-1/2 -translate-x-1/2 z-30 hidden md:flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
+                className="heroTrustedBadgeTop pointer-events-auto absolute top-6 md:top-7 left-1/2 -translate-x-1/2 z-30 hidden md:flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
             >
                 <CheckCircle className="w-4 h-4 text-foreground" />
                 <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
@@ -252,7 +252,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
             {/* Hero content */}
             <div
                 ref={heroContentRef}
-                className="absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16"
+                className="heroContentWrap absolute inset-0 z-10 flex items-center justify-center px-4 md:px-16"
             >
                 <div className="w-full max-w-4xl text-center">
                     <motion.div
@@ -306,14 +306,14 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         </h1>
                     </motion.div>
 
-                    <div className="mb-8 max-w-2xl mx-auto max-[420px]:mb-6 [@media(max-height:700px)]:mb-6">
+                    <div className="heroDescWrap mb-8 max-w-2xl mx-auto max-[420px]:mb-6 [@media(max-height:700px)]:mb-6">
                         <motion.div
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut", delay: 0.05 } }}
                         >
                             {descriptionParagraphs.length <= 1 ? (
                                 <p
-                                    className="text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full"
+                                    className="heroDescText text-muted-foreground text-base md:text-lg leading-relaxed font-normal tracking-tight whitespace-pre-line break-words max-w-full"
                                     style={{ fontFamily: "var(--font-manrope)" }}
                                 >
                                     {descriptionParagraphs[0] ?? ""}
@@ -324,7 +324,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         </motion.div>
                     </div>
                     {stats && stats.length > 0 && (
-                        <div className="mx-auto grid w-full max-w-[820px] grid-cols-1 gap-4 max-[420px]:grid-cols-2 max-[420px]:gap-3 sm:grid-cols-3 sm:gap-6">
+                        <div className="heroStatsGrid mx-auto grid w-full max-w-[820px] grid-cols-1 gap-4 max-[420px]:grid-cols-2 max-[420px]:gap-3 sm:grid-cols-3 sm:gap-6">
                             {stats.map((stat, index) => (
                                 <div
                                     key={index}
@@ -343,7 +343,7 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                             ))}
                         </div>
                     )}
-                    <div className="mt-7 w-full max-w-[720px] mx-auto max-[420px]:mt-6 [@media(max-height:700px)]:mt-6">
+                    <div className="heroMarqueeWrap mt-7 w-full max-w-[720px] mx-auto max-[420px]:mt-6 [@media(max-height:700px)]:mt-6">
                         <TrustedByMarquee animate={false} transparentContainer heroTypography />
                     </div>
                 </div>

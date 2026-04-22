@@ -187,8 +187,9 @@ export function Navbar() {
       <nav
         aria-label="Primary"
         className={[
-          "home-navbar-fixed dark px-4 sm:px-6 md:px-8 flex items-center h-[var(--home-navbar-height)]",
+          "home-navbar-fixed dark px-3 sm:px-4 md:px-5 flex items-center h-[var(--home-navbar-height)]",
           isAiVoices || isUseCasesPage || isIndustriesPage || isProductsPage || (isHome && !isInHeroZone) ? "home-navbar-scrolled" : "",
+          isAiVoices || isUseCasesPage || isIndustriesPage || isProductsPage ? "home-navbar-page" : "",
           mobileMenuOpen ? "home-navbar-menu-open" : "",
         ].join(" ")}
         data-theme={theme}
@@ -196,14 +197,14 @@ export function Navbar() {
           fontFamily: "var(--font-manrope)",
           ...(isAiVoices
             ? {
-                background: theme === "dark" ? "#001022" : "#ecfeff",
+                background: "rgba(0, 16, 34, 0.78)",
               }
             : null),
         }}
       >
-        <div className="mx-auto w-full max-w-7xl">
-          <div className="grid w-full h-full grid-cols-[1fr_auto_1fr] items-center px-2 sm:px-4">
-            <div className="col-start-1 flex items-center gap-3 justify-self-start">
+        <div className="w-full">
+          <div className="navbarInnerGrid grid h-full grid-cols-[1fr_auto] md:grid-cols-[auto_auto_auto] items-center gap-3 md:gap-7">
+            <div className="flex items-center gap-3 justify-self-start">
               <details
                 ref={mobileMenuRef}
                 className="navbarMobileMenu relative md:hidden group"
@@ -214,7 +215,7 @@ export function Navbar() {
               <summary
                 className="home-menu-toggle list-none cursor-pointer"
                 style={{
-                  color: isAiVoices ? (theme === "dark" ? "#7dd3fc" : "#0b2a6f") : "rgba(226, 232, 240, 0.95)",
+                  color: isAiVoices ? "#7dd3fc" : "rgba(226, 232, 240, 0.95)",
                 }}
                 aria-label="Open navigation menu"
                 aria-haspopup="menu"
@@ -371,7 +372,7 @@ export function Navbar() {
           </div>
 
           <ul
-            className="navbarDesktopNav col-start-2 hidden md:flex items-center justify-center justify-self-center gap-2 lg:gap-3 xl:gap-4"
+            className="navbarDesktopNav hidden md:flex items-center justify-center gap-1.5 lg:gap-2.5"
             role="list"
           >
             {menuItems.map((item) => {
@@ -426,16 +427,18 @@ export function Navbar() {
                             : undefined
                         }
                       >
-                        <div className="rounded-3xl border border-border/70 bg-cyan-100/90 dark:bg-cyan-950/90 backdrop-blur-sm p-2 shadow-xl">
+                        <div className="rounded-3xl border border-black/[0.06] dark:border-white/[0.08] bg-cyan-100/90 dark:bg-cyan-950/90 p-2 shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.12)]">
                           <ul className={`grid ${dropdownGridClass} gap-1.5`} role="list">
                             {item.items.map((child) => (
                               <li key={child.href}>
                                 <Link
                                   href={child.href}
                                   className={[
-                                    "group/card block h-full rounded-2xl border border-border/70 bg-transparent px-3 py-2.5",
+                                    "group/card block h-full rounded-2xl border border-black/[0.05] dark:border-white/[0.07] bg-transparent px-3 py-2.5",
                                     "transition-[transform,background-color,box-shadow,border-color,filter] duration-200 ease-out",
-                                    "hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:shadow-md hover:bg-foreground/5",
+                                    "hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-[1.02] hover:bg-foreground/5",
+                                    "hover:border-black/[0.1] dark:hover:border-white/[0.12]",
+                                    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.03)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_1px_3px_rgba(0,0,0,0.1)]",
                                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                   ].join(" ")}
                                   onClick={() => {
@@ -454,7 +457,7 @@ export function Navbar() {
                                   }}
                                 >
                                   <div className="flex items-start gap-3">
-                                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-white">
+                                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.06] dark:border-white/[0.1] bg-white dark:bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
                                       {"icon" in child && child.icon ? (
                                         <child.icon className="h-4 w-4 text-black" aria-hidden />
                                       ) : null}
@@ -498,7 +501,7 @@ export function Navbar() {
             })}
           </ul>
 
-          <div className="navbarThemeWrap col-start-3 flex items-center gap-2 lg:gap-3 justify-self-end">
+          <div className="navbarThemeWrap flex items-center gap-1.5 lg:gap-2.5 justify-self-end">
             <div className="navbarDesktopAction hidden md:inline-flex">
               <Link
                 href="/dashboard"
@@ -513,7 +516,7 @@ export function Navbar() {
             <Link
               href="/dashboard"
               className={[
-                "navbarDesktopAction hidden md:inline-flex px-3 text-[13px] font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow] duration-200 ease-out shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "navbarDesktopAction hidden md:inline-flex px-3 text-[13px] font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow,transform] duration-200 ease-out shadow-[0_2px_8px_rgba(99,102,241,0.25),0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(99,102,241,0.35),0_2px_4px_rgba(0,0,0,0.08)] hover:scale-[1.02] active:scale-[1.0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isCompact ? "py-1" : "py-1.5",
               ].join(" ")}
             >
@@ -523,8 +526,8 @@ export function Navbar() {
               type="button"
               onClick={toggleTheme}
               className={[
-                "inline-flex items-center justify-center rounded-full hover:scale-[1.03] transition-[background-color,transform,color,width,height] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                "text-foreground/80 hover:text-foreground hover:bg-white/10",
+                "inline-flex items-center justify-center rounded-full hover:scale-[1.05] transition-[background-color,transform,color,width,height,box-shadow,border-color] duration-[250ms] ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "text-foreground/80 hover:text-foreground hover:bg-white/10 border border-transparent hover:border-white/[0.1] dark:hover:border-white/[0.12] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
                 isCompact ? "w-8 h-8" : "w-9 h-9",
               ].join(" ")}
               aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
