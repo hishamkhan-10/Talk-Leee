@@ -298,7 +298,6 @@
 
 .home-navbar-scrolled {
   color: #7dd3fc;
-  font-weight: 700;
   text-shadow: none;
   background: rgba(0, 16, 34, 0.78);
   border-color: rgba(125, 211, 252, 0.12);
@@ -309,7 +308,17 @@
 .home-navbar-scrolled button,
 .home-navbar-scrolled summary {
   color: #7dd3fc !important;
-  font-weight: 700 !important;
+}
+
+.home-navbar-scrolled .navbarDesktopAction a[href="/dashboard"].bg-indigo-600,
+.home-navbar-scrolled a.bg-indigo-600 {
+  color: #ffffff !important;
+  background-color: #4f46e5 !important;
+}
+
+.home-navbar-scrolled .navbarDesktopAction a[href="/dashboard"].bg-indigo-600:hover,
+.home-navbar-scrolled a.bg-indigo-600:hover {
+  background-color: #4338ca !important;
 }
 
 .home-navbar-scrolled svg {
@@ -327,6 +336,23 @@
 .light .home-navbar-page button,
 .light .home-navbar-page summary {
   color: #0b2a6f !important;
+}
+
+.light .home-navbar-page a.bg-indigo-600 {
+  color: #ffffff !important;
+  background-color: #4f46e5 !important;
+}
+
+.light .home-navbar-page a.bg-indigo-600:hover {
+  background-color: #4338ca !important;
+}
+
+.home-navbar-page button.home-nav-link {
+  font-family: inherit;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  letter-spacing: inherit;
+  line-height: inherit;
 }
 
 .light .home-navbar-page svg {

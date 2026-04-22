@@ -40,27 +40,25 @@ export const industryNavItems = [
   {
     label: "Real Estate",
     href: "/industries/real-estate",
-    description: "Automate Communication & Close Deals Faster",
+    description: "Automate Communication, Nurture Leads & Close Deals Faster with AI",
     icon: Building2,
   },
   {
     label: "Professional Services",
     href: "/industries/professional-services",
-    description: "Smarter communication for modern firms",
+    description: "Smarter Communication & Seamless Client Management for Modern Firms",
     icon: Briefcase,
   },
   {
     label: "Software & Tech Support",
     href: "/industries/software-tech-support",
-    description:
-      "In today’s fast-paced software and technology world, delivering fast, reliable, and personalized support is crucial.",
+    description: "Deliver Fast, Reliable & Personalized Tech Support with AI",
     icon: Laptop,
   },
   {
     label: "Education",
     href: "/industries/education",
-    description:
-      "Boost engagement and streamline school operations with Talky AI. Automate calls, admissions, and student support effortlessly!",
+    description: "Boost Engagement & Streamline School Operations with AI Automation",
     icon: GraduationCap,
   },
 ] as const;
