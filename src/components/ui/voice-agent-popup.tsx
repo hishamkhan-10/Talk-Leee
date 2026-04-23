@@ -2,8 +2,10 @@
 
 import type React from "react";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { apiBaseUrl } from "@/lib/env";
+import { getBrowserAuthToken } from "@/lib/auth-token";
 
 type AIState = "idle" | "connecting" | "browsing" | "listening" | "processing" | "speaking";
 
@@ -52,6 +54,8 @@ const AudioVisualizer: React.FC<{ isActive: boolean; audioLevel: number }> = ({ 
 };
 
 export function VoiceAgentPopup() {
+    const router = useRouter();
+    const pathname = usePathname();
     const [aiState, setAiState] = useState<AIState>("idle");
     const [popupOpen, setPopupOpen] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
@@ -312,13 +316,19 @@ export function VoiceAgentPopup() {
     }, [handleMessage, selectedVoice.id, failSession, startMicrophone]);
 
     const handleMainButtonClick = useCallback(() => {
+        const token = getBrowserAuthToken();
+        if (!token) {
+            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            return;
+        }
+
         if (!popupOpen) {
             setPopupOpen(true);
             startSession();
         } else {
             endSession();
         }
-    }, [popupOpen, startSession, endSession]);
+    }, [popupOpen, startSession, endSession, router, pathname]);
 
     useEffect(() => {
         return () => {
