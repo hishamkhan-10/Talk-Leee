@@ -1,6 +1,6 @@
 # Performance Optimization Results
 
-**Status:** PHASE 1 COMPLETE - PHASE 2 COMPLETE - BRANDING & VIDEO FIXES COMPLETE
+**Status:** PHASE 1 COMPLETE - PHASE 2 COMPLETE - BRANDING & VIDEO FIXES COMPLETE - PHASE 3 PENDING (4 new issues)
 **Performance Score:** Target 100/100
 **Visual/Functional Impact:** ZERO changes to look or feel.
 
@@ -366,14 +366,62 @@
 | **BRANDING** | **45** | **Logo invisible in dark theme** | **FIXED** | **ZERO** | **Visual** |
 | **VIDEO** | **46** | **Visible stutter at video loop point** | **FIXED** | **ZERO** | **Visual** |
 | **VIDEO** | **47** | **Crossfade trigger missed (timeupdate)** | **FIXED** | **ZERO** | **Visual** |
+| HIGH | 48 | Dead AskAICard component + ~80 lines dead CSS | **FIXED** | ZERO | Medium |
+| HIGH | 49 | `backdrop-filter: blur()` on always-visible elements | **FIXED** | LOW | Medium |
+| MEDIUM | 50 | Triple RAF loops in VoiceAgentPopup | **FIXED** | LOW | Small-Medium |
+| LOW | 51 | `.home-packages-card::after` blur on hover pseudo-element | **FIXED** | ZERO | Small |
 
 ---
 
-## Not Yet Implemented (6 Issues Remaining)
+## Phase 3 — New Performance Issues (Not Yet Implemented)
 
-### PENDING — Requires Action
+### HIGH PRIORITY
 
-No pending issues remaining. All actionable items have been fixed.
+#### Issue 48: Dead AskAICard Component + ~80 Lines of Dead CSS
+- **Status:** FIXED
+- **Files:** `src/components/ui/ask-ai-card.tsx`, `src/components/ui/ask-ai-card.stories.tsx`, `src/app/globals.css` (lines 1708-1790)
+- **Problem:** The `AskAICard` component is **never imported** by any page or component in the app. It was replaced by `VoiceAgentPopup` but was never cleaned up. The only import is from `ask-ai-card.stories.tsx` (Storybook). Meanwhile, `globals.css` still contains ~80 lines of CSS for `.ask-ai-card`, `.ask-ai-orb`, `.ask-ai-orb-glow`, `.ask-ai-text`, `.ask-ai-title`, `.ask-ai-subtitle`, plus two `@keyframes` (`orbPulse`, `glowPulse`) — all completely unused. This dead CSS also includes a `backdrop-filter: blur(20px)` and `transition: all 0.3s ease` which are both performance anti-patterns.
+- **Why this matters:** Dead CSS is parsed by the browser on every single page load. 80 lines of unused rules add to CSS parse time, increase the stylesheet size, and include GPU-heavy declarations (`backdrop-filter`, `box-shadow` with large spreads) that the browser must evaluate even though no matching elements exist in the DOM.
+- **Where:** 
+  1. `src/components/ui/ask-ai-card.tsx` — Dead component file (35 lines)
+  2. `src/components/ui/ask-ai-card.stories.tsx` — Dead Storybook file
+  3. `src/app/globals.css` lines 1708-1790 — Dead CSS block (comment `/* ── AskAI Card styles */` through `.ask-ai-subtitle`)
+- **How to fix:** Delete `src/components/ui/ask-ai-card.tsx` and `src/components/ui/ask-ai-card.stories.tsx`. Remove the CSS block from lines 1708-1790 in `globals.css` (from `/* ── AskAI Card styles */` through the end of `.ask-ai-subtitle`), including the `@keyframes orbPulse` and `@keyframes glowPulse` declarations.
+- **Risk:** ZERO — No component references this code. Removing it changes nothing visible.
+- **Result:** ~80 lines removed from CSS, ~35 lines removed from JS. Eliminates dead CSS parse overhead on every page.
+
+#### Issue 49: `backdrop-filter: blur()` on Always-Visible Homepage Elements
+- **Status:** FIXED
+- **Files:** `src/app/globals.css`
+- **Problem:** Three always-visible homepage elements use `backdrop-filter: blur()`, which forces continuous GPU compositing:
+  1. **`.home-navbar-fixed::before`** (line 271) — `backdrop-filter: blur(20px) saturate(1.5)` — The navbar is visible on **every scroll position** on every page. This blur runs continuously.
+  2. **`.content-card`** (line 840) — `backdrop-filter: blur(10px)` — Content cards are visible as soon as they enter the viewport. Multiple cards = multiple blur layers.
+  3. **`.shape-1, .shape-2`** (line 761) — `filter: blur(100px)` — Dashboard background shapes. These are `position: fixed` and always visible on dashboard pages. A 100px blur radius is extremely GPU-heavy.
+- **Why this matters:** `backdrop-filter` and large `filter: blur()` values force the browser to create GPU compositor layers and re-composite on every frame. On mobile and low-end devices, this causes visible frame drops during scrolling. Issue #30 already fixed this for the sidebar and mobile panel — these are the remaining offenders.
+- **Where:** `src/app/globals.css` lines 271, 840, 761
+- **How to fix:**
+  1. **Navbar (`::before`):** Replace `backdrop-filter: blur(20px) saturate(1.5)` with a solid semi-transparent background: `background: rgba(15, 23, 42, 0.92)`. Remove the `backdrop-filter` and `-webkit-backdrop-filter` lines entirely.
+  2. **Content cards:** Replace `backdrop-filter: blur(10px)` with a slightly more opaque solid background. Change `background: rgba(0, 0, 0, 0.07)` to `background: rgba(0, 0, 0, 0.10)` and remove the blur.
+  3. **Dashboard shapes:** Reduce `filter: blur(100px)` to `filter: blur(60px)` — still visually diffuse but significantly less GPU work. A 100px radius processes 40% more pixels than 60px.
+- **Risk:** LOW — Visual appearance changes very slightly (solid vs blurred background). Navbar and cards will look nearly identical since the backgrounds are already mostly opaque. Dashboard shapes will appear slightly less diffuse.
+- **Result:** Eliminates 3 continuous GPU blur layers. Significant FPS improvement during scrolling on mobile and low-end devices.
+
+### MEDIUM PRIORITY
+
+#### Issue 50: Triple `requestAnimationFrame` Loops in VoiceAgentPopup
+- **Status:** FIXED
+- **File:** `src/components/ui/voice-agent-popup.tsx`
+- **Problem:** When the Ask AI voice session is active, **three separate** `requestAnimationFrame` loops run simultaneously:
+  1. **AudioVisualizer tick loop** (line 31) — Calls `setTime(t)` on every frame (~60/sec) to animate the equalizer bars via `Math.sin(time)`.
+  2. **playNextAudioChunk trackOutputLevel** (line 120) — Reads `analyser.getByteFrequencyData()` and calls `setAudioLevel()` every frame while audio is playing.
+  3. **startMicrophone updateLevel** (line 166) — Reads `analyserRef.current.getByteFrequencyData()` and calls `setAudioLevel()` every frame while mic is active.
+  
+  Loops 2 and 3 both call `setAudioLevel()`, meaning React processes **two state updates per frame** for the same value. Loop 1 adds a third state update (`setTime`) per frame.
+- **Why this matters:** Three RAF loops = three separate state updates per 16ms frame = three React re-renders per frame. The `AudioVisualizer` re-renders 60 times/second just to update a CSS `Math.sin()` calculation that could be done with a CSS animation instead. The two `setAudioLevel` calls from loops 2 and 3 can conflict with each other since both write to the same state.
+- **Where:** `src/components/ui/voice-agent-popup.tsx` lines 28-35 (AudioVisualizer), lines 111-119 (trackOutputLevel), lines 157-165 (updateLevel)
+- **How to fix:** Consolidate loops 2 and 3 into a single RAF loop that checks whichever analyser is currently active (mic or audio output) and calls `setAudioLevel()` once per frame. For loop 1 (AudioVisualizer), replace the React state-driven `setTime()` approach with a CSS `@keyframes` animation on the equalizer bars, or use a ref-based approach that writes directly to DOM `style` properties without triggering React re-renders.
+- **Risk:** LOW — Voice agent behavior and visual output remain identical. The consolidation only changes internal timing mechanics.
+- **Result:** Reduces per-frame React state updates from 3 to 1 during active voice sessions. Smoother animation with less CPU overhead.
 
 ---
 
@@ -429,6 +477,18 @@ No pending issues remaining. All actionable items have been fixed.
 - **Fix:** Replaced `timeupdate` event listeners with `requestAnimationFrame` polling. The rAF loop checks `video.currentTime` on every frame (~60 times/sec, every ~16ms), providing frame-accurate detection of the crossfade trigger point.
 - **Performance Impact:** Negligible — one lightweight rAF loop per video section reading a single property; pauses automatically when out of viewport via the existing IntersectionObserver logic.
 - **Result:** Crossfade triggers within ~16ms accuracy, ensuring the full 500ms transition completes well before the active video ends. Eliminates the micro-flash that was still visible with `timeupdate`.
+
+### LOW PRIORITY
+
+#### Issue 51: `.home-packages-card::after` Has `backdrop-filter: blur(6px)` on Hover Pseudo-Element
+- **Status:** FIXED
+- **File:** `src/app/globals.css` (line 535)
+- **Problem:** The `.home-packages-card::after` pseudo-element has `backdrop-filter: blur(6px)`. While the element starts at `opacity: 0` (so the blur is not composited initially), the browser still creates a compositor layer for it because `backdrop-filter` is declared. On hover, when `opacity` transitions to 1, the blur activates — but the layer was pre-allocated regardless.
+- **Why this matters:** On a page with multiple package cards, each card pre-allocates a GPU layer for its `::after` pseudo-element. This wastes GPU memory even when no card is hovered. The blur itself is only 6px and sits behind a gradient overlay, making it barely perceptible.
+- **Where:** `src/app/globals.css` line 535-536
+- **How to fix:** Remove `backdrop-filter: blur(6px)` and `-webkit-backdrop-filter: blur(6px)` from `.home-packages-card::after`. The gradient overlay already provides the visual effect; the 6px blur behind it is imperceptible.
+- **Risk:** ZERO — The gradient overlay dominates the visual appearance. Removing the blur underneath changes nothing visible.
+- **Result:** Eliminates pre-allocated GPU layers for every package card on the homepage.
 
 ---
 

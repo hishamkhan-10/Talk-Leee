@@ -20,32 +20,41 @@ const VOICE_AGENTS: VoiceAgent[] = [
     { id: "sophia", name: "Sophia", gender: "female", description: "Warm & Professional" },
 ];
 
+const BAR_COUNT = 14;
+
 const AudioVisualizer: React.FC<{ isActive: boolean; audioLevel: number }> = ({ isActive, audioLevel }) => {
-    const [time, setTime] = useState(0);
+    const barsRef = useRef<(HTMLDivElement | null)[]>([]);
+    const rafRef = useRef(0);
 
     useEffect(() => {
         if (!isActive) return;
-        let rafId = 0;
         const tick = (t: number) => {
-            setTime(t);
-            rafId = requestAnimationFrame(tick);
+            for (let i = 0; i < BAR_COUNT; i++) {
+                const el = barsRef.current[i];
+                if (!el) continue;
+                const h = Math.max(4, 6 + audioLevel * 14 + Math.sin(t / 90 + i * 0.65) * (3 + audioLevel * 6));
+                el.style.height = `${h}px`;
+                el.style.opacity = `${0.8 + audioLevel * 0.2}`;
+            }
+            rafRef.current = requestAnimationFrame(tick);
         };
-        rafId = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(rafId);
-    }, [isActive]);
+        rafRef.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafRef.current);
+    }, [isActive, audioLevel]);
 
     if (!isActive) return null;
 
     return (
         <div className="flex items-center justify-center gap-[3px] h-6">
-            {[...Array(14)].map((_, i) => (
+            {[...Array(BAR_COUNT)].map((_, i) => (
                 <div
                     key={i}
-                    className="w-[2px] rounded-full transition-all duration-75"
+                    ref={(el) => { barsRef.current[i] = el; }}
+                    className="w-[2px] rounded-full"
                     style={{
-                        height: `${Math.max(4, 6 + audioLevel * 14 + Math.sin(time / 90 + i * 0.65) * (3 + audioLevel * 6))}px`,
+                        height: "4px",
                         background: `linear-gradient(to top, #6366f1, #818cf8, #a5b4fc)`,
-                        opacity: 0.8 + audioLevel * 0.2,
+                        opacity: 0.8,
                     }}
                 />
             ))}
@@ -72,8 +81,9 @@ export function VoiceAgentPopup() {
     const micStreamRef = useRef<MediaStream | null>(null);
     const micAudioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
-    const animationFrameRef = useRef<number | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
+    const outputAnalyserRef = useRef<AnalyserNode | null>(null);
+    const levelRafRef = useRef<number | null>(null);
 
     const selectedVoice = VOICE_AGENTS[0];
     const isActive = popupOpen;
@@ -81,6 +91,43 @@ export function VoiceAgentPopup() {
     useEffect(() => {
         voiceSelectedRef.current = voiceSelected;
     }, [voiceSelected]);
+
+    const startLevelLoop = useCallback(() => {
+        if (levelRafRef.current) return;
+        const micData = new Uint8Array(128);
+        const outData = new Uint8Array(128);
+
+        const poll = () => {
+            let level = 0;
+
+            const micAnalyser = analyserRef.current;
+            if (micAnalyser) {
+                micAnalyser.getByteFrequencyData(micData);
+                let sum = 0;
+                for (let i = 0; i < micData.length; i++) sum += micData[i];
+                level = Math.max(level, Math.min(1, sum / micData.length / 128));
+            }
+
+            const outAnalyser = outputAnalyserRef.current;
+            if (outAnalyser && isPlayingRef.current) {
+                outAnalyser.getByteFrequencyData(outData);
+                let sum = 0;
+                for (let i = 0; i < outData.length; i++) sum += outData[i];
+                level = Math.max(level, Math.min(1, sum / outData.length / 100));
+            }
+
+            setAudioLevel(level);
+            levelRafRef.current = requestAnimationFrame(poll);
+        };
+        levelRafRef.current = requestAnimationFrame(poll);
+    }, []);
+
+    const stopLevelLoop = useCallback(() => {
+        if (levelRafRef.current) {
+            cancelAnimationFrame(levelRafRef.current);
+            levelRafRef.current = null;
+        }
+    }, []);
 
     const playNextAudioChunk = useCallback(async () => {
         if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
@@ -104,6 +151,7 @@ export function VoiceAgentPopup() {
 
                 const analyser = ctx.createAnalyser();
                 analyser.fftSize = 256;
+                outputAnalyserRef.current = analyser;
 
                 const source = ctx.createBufferSource();
                 source.buffer = audioBuffer;
@@ -111,19 +159,9 @@ export function VoiceAgentPopup() {
                 analyser.connect(ctx.destination);
                 source.start();
 
-                const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                const trackOutputLevel = () => {
-                    if (isPlayingRef.current) {
-                        analyser.getByteFrequencyData(dataArray);
-                        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-                        setAudioLevel(Math.min(1, average / 100));
-                        requestAnimationFrame(trackOutputLevel);
-                    }
-                };
-                trackOutputLevel();
-
                 source.onended = () => {
                     isPlayingRef.current = false;
+                    outputAnalyserRef.current = null;
                     setAudioLevel(0);
                     playNextAudioChunkRef.current?.();
                 };
@@ -156,17 +194,8 @@ export function VoiceAgentPopup() {
             analyser.fftSize = 256;
             source.connect(analyser);
             analyserRef.current = analyser;
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-            const updateLevel = () => {
-                if (analyserRef.current) {
-                    analyserRef.current.getByteFrequencyData(dataArray);
-                    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-                    setAudioLevel(Math.min(1, average / 128));
-                    animationFrameRef.current = requestAnimationFrame(updateLevel);
-                }
-            };
-            updateLevel();
+            startLevelLoop();
 
             const processor = audioContext.createScriptProcessor(4096, 1, 1);
             processorRef.current = processor;
@@ -196,16 +225,17 @@ export function VoiceAgentPopup() {
         } catch {
             setError("Microphone access denied");
         }
-    }, []);
+    }, [startLevelLoop]);
 
     const stopMicrophone = useCallback(() => {
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        stopLevelLoop();
         if (processorRef.current) { processorRef.current.disconnect(); processorRef.current = null; }
         if (micAudioContextRef.current) { micAudioContextRef.current.close(); micAudioContextRef.current = null; }
         if (micStreamRef.current) { micStreamRef.current.getTracks().forEach(track => track.stop()); micStreamRef.current = null; }
         analyserRef.current = null;
+        outputAnalyserRef.current = null;
         setAudioLevel(0);
-    }, []);
+    }, [stopLevelLoop]);
 
     const cleanupWsResources = useCallback(() => {
         const ws = wsRef.current;
