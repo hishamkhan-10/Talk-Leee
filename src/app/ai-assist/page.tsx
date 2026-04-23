@@ -267,7 +267,7 @@ export default function AIAssistPage() {
               Guide agents live. Capture insights instantly. Follow up automatically.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <Button size="lg" className="rounded-full px-8">
+              <Button size="lg" className="rounded-full px-8 bg-blue-600 hover:bg-blue-700 text-white">
                 Get started with Talkly AI Assist today.
               </Button>
             </div>

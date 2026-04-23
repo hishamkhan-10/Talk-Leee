@@ -167,7 +167,7 @@ export default function EducationIndustryPage() {
             <Button
               type="button"
               size="lg"
-              className="rounded-full px-8 bg-gray-100 text-gray-900 border border-border/70 shadow-sm hover:bg-gray-200 dark:bg-white/10 dark:text-foreground dark:hover:bg-white/15"
+              className="rounded-full px-8 bg-blue-950 hover:bg-blue-900 text-white border-blue-950 hover:border-blue-900 dark:bg-blue-900 dark:hover:bg-blue-800 dark:border-blue-900 dark:hover:border-blue-800"
             >
               Start Free Trial
             </Button>

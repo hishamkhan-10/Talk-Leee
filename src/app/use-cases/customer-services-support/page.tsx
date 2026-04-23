@@ -198,7 +198,7 @@ export default function CustomerServicesSupportUseCasePage() {
             <Button asChild size="lg" className="rounded-full px-8 bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
               <Link href="/#contact">Talk to our team</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full px-8">
+            <Button asChild size="lg" variant="outline" className="rounded-full px-8 bg-blue-950 hover:bg-blue-900 text-white border-blue-950 hover:border-blue-900 dark:bg-blue-900 dark:hover:bg-blue-800 dark:border-blue-900 dark:hover:border-blue-800">
               <Link href="/ai-assist">Explore AI Assist</Link>
             </Button>
           </div>
