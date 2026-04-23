@@ -82,6 +82,11 @@ function isPublicPath(pathname: string) {
     if (pathname === "/auth") return true;
     if (pathname.startsWith("/connectors/callback")) return true;
     if (pathname.startsWith("/_next/")) return true;
+    if (pathname === "/ai-voice-dialer" || pathname.startsWith("/ai-voice-dialer/")) return true;
+    if (pathname === "/ai-assist" || pathname.startsWith("/ai-assist/")) return true;
+    if (pathname === "/ai-voice-agent" || pathname.startsWith("/ai-voice-agent/")) return true;
+    if (pathname.startsWith("/use-cases")) return true;
+    if (pathname.startsWith("/industries")) return true;
     return false;
 }
 
