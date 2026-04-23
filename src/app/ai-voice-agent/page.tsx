@@ -223,7 +223,7 @@ export default function AIVoiceAgentPage() {
               <Button size="lg" className="rounded-full px-8 bg-blue-600 hover:bg-blue-700 text-white">
                 Book a Demo Now
               </Button>
-              <Button size="lg" variant="outline" className="rounded-full px-8 bg-blue-950 hover:bg-blue-900 text-white border-blue-950 hover:border-blue-900 dark:bg-blue-900 dark:hover:bg-blue-800 dark:border-blue-900 dark:hover:border-blue-800">
+              <Button size="lg" variant="outline" className="rounded-full px-8 bg-blue-950 hover:bg-blue-950 text-white hover:text-white border-blue-950 hover:border-blue-950 dark:bg-blue-900 dark:hover:bg-blue-900 dark:text-white dark:hover:text-white dark:border-blue-900 dark:hover:border-blue-900">
                 Get Started Free
               </Button>
             </div>
