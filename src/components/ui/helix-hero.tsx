@@ -4,7 +4,6 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { MagneticText } from "./morphing-cursor";
 import { motion } from "framer-motion";
-import { CheckCircle } from "lucide-react";
 import { TrustedByMarquee } from "../home/trusted-by-section";
 import dynamic from "next/dynamic";
 
@@ -249,24 +248,6 @@ export const Hero: React.FC<HeroProps> = ({ title, description, stats, adjustFor
                         animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } }}
                         className="heroHeadlineContainer flex flex-col items-center gap-0 mb-6"
                     >
-                        <motion.div
-                            whileHover={{ scale: 1.04, y: -2 }}
-                            transition={{ duration: 0.2 }}
-                            className="heroTrustedBadgeTop pointer-events-auto hidden md:inline-flex mb-0 max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 px-3 md:px-4 py-1.5 rounded-full bg-muted/60 border border-border text-xs md:text-sm font-medium text-muted-foreground text-center"
-                        >
-                            <CheckCircle className="w-4 h-4 text-foreground" />
-                            <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
-                                Trusted by 10,000+ businesses worldwide
-                            </span>
-                        </motion.div>
-                        <div className="heroTrustedBadgeInlineWrap md:hidden mb-0">
-                            <div className="heroTrustedBadgeInline mx-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 border border-border text-[11px] font-medium text-muted-foreground text-center whitespace-nowrap">
-                                <CheckCircle className="w-4 h-4 text-foreground" />
-                                <span className="font-normal" style={{ fontFamily: "var(--font-manrope)" }}>
-                                    Trusted by 10,000+ businesses worldwide
-                                </span>
-                            </div>
-                        </div>
                         <h1
                             ref={mobileTitleRef}
                             className="heroMobileTitle md:hidden w-full text-center"
