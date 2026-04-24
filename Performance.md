@@ -1,6 +1,8 @@
 # Performance Optimization Results
 
-**Status:** PHASE 1 COMPLETE - PHASE 2 COMPLETE - BRANDING & VIDEO FIXES COMPLETE - PHASE 3 PENDING (4 new issues)
+**Status:** PHASE 1 COMPLETE
+ - PHASE 2 COMPLETE - BRANDING & VIDEO FIXES COMPLETE - 
+ PHASE 3 PENDING (4 new issues)
 **Performance Score:** Target 100/100
 **Visual/Functional Impact:** ZERO changes to look or feel.
 
@@ -502,3 +504,109 @@
 | LOW | 37 | Missing image priority hints on industry pages | Accepted | ZERO | next/image defaults to lazy; per-page audit needed |
 | LOW | 38 | `tw-animate-css` full import in globals.css | Accepted | LOW | Requires audit of which animations are used |
 | LOW | 40 | Dashboard charts 2,143-line single file | Accepted | ZERO | Pure refactor deferred to avoid large diff |
+
+---
+
+## Code to Be Fixed
+
+Dead/unused code found across the project. None of this code is referenced, imported, or used anywhere in production. Removing it will not affect the project in any way.
+
+### Unused Component Files (can be deleted entirely)
+
+#### 1. `src/components/layout/global-sidebar-toggle.tsx` — Lines 1-49
+- **What:** Complete unused `GlobalSidebarToggle` component. Never imported by any page or layout.
+- **Verified:** Grepped for `GlobalSidebarToggle` and `global-sidebar-toggle` — zero matches in production code.
+
+#### 2. `src/components/notifications/notification-center-drawer.tsx` — Lines 1-26
+- **What:** Complete unused `NotificationCenterDrawer` component that wraps `NotificationCenter` in a `ViewportDrawer`. Never imported anywhere.
+- **Verified:** Grepped for `NotificationCenterDrawer` and `notification-center-drawer` — zero matches in production code.
+
+### Unused Library Files (can be deleted entirely)
+
+#### 3. `src/lib/billing-api.ts` — Lines 1-415
+- **What:** Complete unused file containing React Query hooks for billing data (`useBillingPlan`, `useBillingUsage`, `useDailyUsage`, `useBillingInvoices`, etc.). All exported functions and constants are never imported.
+- **Verified:** Grepped for `from.*billing-api` — zero matches in production code.
+
+#### 4. `src/server/session-security.ts` — Lines 1-19
+- **What:** Unused re-export barrel file that re-exports everything from `@/server/auth-core`. Never imported anywhere.
+- **Verified:** Grepped for `from.*session-security` — zero matches in entire `src/` directory.
+
+### Unused CSS Classes in `src/app/globals.css`
+
+#### 5. `.glass-sidebar` — Lines 227-230
+- **What:** 4 lines of unused sidebar styling. No component uses `glass-sidebar` as a className.
+- **Verified:** Grepped for `glass-sidebar` in all `.tsx`/`.ts` files — zero matches.
+
+#### 6. `.nav-link`, `.nav-link.active`, `.nav-link:hover:not(.active)` — Lines 232-244
+- **What:** 13 lines of unused generic nav-link styling. Components use `home-nav-link` instead, not `nav-link`.
+- **Verified:** Grepped for `"nav-link"` (exact, not `home-nav-link`) in all `.tsx`/`.ts` files — zero matches.
+
+#### 7. `.home-packages-card`, `.home-packages-card > *`, `.home-packages-card::after`, `.home-packages-card:hover::after` — Lines 516-541
+- **What:** 26 lines of unused package card hover effect styling. No component uses `home-packages-card` as a className.
+- **Verified:** Grepped for `home-packages-card` in all `.tsx`/`.ts` files — zero matches.
+
+#### 8. `.trusted-logo`, `.trusted-logo:hover`, `.trusted-logo:focus-visible` — Lines 543-571
+- **What:** 29 lines of unused trusted logo styling. No component uses `trusted-logo` as a className.
+- **Verified:** Grepped for `trusted-logo` in all `.tsx`/`.ts` files — zero matches.
+
+#### 9. `.dashboard-bg` — Lines 749-753
+- **What:** 5 lines of unused dashboard background styling. No component uses `dashboard-bg` as a className. (Note: `.shape-1` and `.shape-2` that follow are used — only `.dashboard-bg` itself is dead.)
+- **Verified:** Grepped for `dashboard-bg` in all `.tsx`/`.ts` files — zero matches.
+
+### Unused Exports Within Files (specific lines of dead code inside otherwise-used files)
+
+#### 10. `src/lib/auth-token.ts` — Line 4
+- **What:** `authTokenStorageKey()` function — exported but never imported anywhere. Other exports in this file (`authTokenCookieName`, `getBrowserAuthToken`, `setBrowserAuthToken`) are actively used.
+- **Verified:** Grepped for `authTokenStorageKey` — only found in `auth-token.ts` itself.
+
+#### 11. `src/lib/env.ts` — Lines 30, 99
+- **What:** `PublicEnvKey` type (line 30) and `isPublicEnvKey()` function (line 99) — exported but never imported. Other exports in this file are actively used.
+- **Verified:** Grepped for `PublicEnvKey` and `isPublicEnvKey` — only found in `env.ts` itself and its test file.
+
+#### 12. `src/lib/api.ts` — Lines 57-76, 110-136, 138-149
+- **What:** Six unused Zod schemas and their inferred types:
+  - `AuthResponseSchema` (line 57) and `AuthResponse` type (line 76)
+  - `SessionListItemSchema` (line 110), `SessionListResponseSchema` (line 131), and `SessionListResponse` type (line 136)
+  - `VerifyOtpResponseSchema` (line 138) and `VerifyOtpResponse` type (line 149)
+- **Note:** `MeResponseSchema` and `MeResponse` in this file ARE used — do not remove them.
+- **Verified:** Grepped for each schema/type name — only found in `api.ts` itself.
+
+#### 13. `src/lib/api-hooks.ts` — Lines 53, 111
+- **What:** `useConnectors()` (line 53) and `useCreateConnector()` (line 111) — exported hooks never imported by any component.
+- **Verified:** Grepped for each function name — only found in `api-hooks.ts` itself.
+
+#### 14. `src/lib/session-utils.ts` — Lines 18-25, 30-68, 70-87, 156-170
+- **What:** Four unused exports:
+  - `SessionInfo` interface (lines 18-25)
+  - `parseUserAgent()` function (lines 30-68)
+  - `generateDeviceName()` function (lines 70-87)
+  - `renameSession()` function (lines 156-170)
+- **Note:** `Device` interface, `formatSessionTime()`, and `getDeviceIcon()` in this file ARE used — do not remove them.
+- **Verified:** Grepped for each name — only found in `session-utils.ts` itself.
+
+#### 15. `src/lib/http-client.ts` — Lines 1, 3-38, 40-53, 55-60
+- **What:** Four unused type exports:
+  - `HttpMethod` type (line 1)
+  - `UnifiedApiError` type (lines 3-38)
+  - `HttpRequestOptions` type (lines 40-53)
+  - `HttpClientConfig` type (lines 55-60)
+- **Note:** `isApiClientError()` and `createHttpClient()` in this file ARE used — do not remove them.
+- **Verified:** Grepped for each type name — only found in `http-client.ts` itself.
+
+#### 16. `src/lib/notifications.ts` — Lines 7, 22-26, 28-31, 33-38, 40-52, 101-131
+- **What:** Six unused exports:
+  - `ThemePreference` type (line 7)
+  - `NotificationCategoryPreferences` interface (lines 22-26)
+  - `NotificationsPrivacySettings` interface (lines 28-31)
+  - `NotificationsIntegrationsSettings` interface (lines 33-38)
+  - `NotificationsAccountSettings` interface (lines 40-52)
+  - `defaultNotificationsSettings()` function (lines 101-131)
+- **Verified:** Grepped for each name — only found in `notifications.ts` itself.
+
+#### 17. `src/lib/billing-types.ts` — Lines 10, 52-67, 280-288
+- **What:** Three unused type exports:
+  - `OverageType` type (line 10)
+  - `UsageLedgerEntry` interface (lines 52-67)
+  - `AbuseEventType` type (lines 280-288)
+- **Note:** All other exports in this file ARE used — do not remove them.
+- **Verified:** Grepped for each name — only found in `billing-types.ts` itself.

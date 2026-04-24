@@ -15,7 +15,14 @@
       "Bash(npx next:*)",
       "Bash(rm:*)",
       "Bash(find:*)",
-      "Bash(sort -k5 -h -r)"
+      "Bash(sort -k5 -h -r)",
+      "Bash(grep -l \"from.*components/admin/admin-operations-console\" src/**/*.tsx src/**/*.ts)",
+      "Bash(bash /tmp/check_imports.sh)",
+      "Bash(bash /tmp/check_imports2.sh)",
+      "Bash(bash /tmp/check_lib.sh)",
+      "Bash(xargs grep:*)",
+      "Bash(wmic path:*)",
+      "Bash(powershell -command \"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Screen]::PrimaryScreen.Bounds | Select-Object Width,Height | Format-List\")"
     ]
   }
 }
