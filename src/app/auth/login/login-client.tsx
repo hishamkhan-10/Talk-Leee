@@ -2,80 +2,195 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, KeyRound, Loader2, Lock, Mail } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+    ArrowLeft,
+    ArrowRight,
+    Eye,
+    EyeOff,
+    Loader2,
+    Lock,
+    Mail,
+    ShieldAlert,
+} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import MFAVerification from "@/components/auth/mfa-verification";
 import PasskeyLogin from "@/components/auth/passkey-login";
 
-type Step = "email" | "otp" | "password" | "mfa" | "passkey";
+// ─── Types ───────────────────────────────────────────────────────────────────
+type Step = "email" | "password" | "mfa" | "passkey";
+type LoginTokens = { access_token: string; refresh_token: string };
 
+// ─── Validation ──────────────────────────────────────────────────────────────
+const emailSchema = z.string().email("Please enter a valid email address");
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+// ─── Animation variants ─────────────────────────────────────────────────────
+const stepVariants = {
+    enter: (dir: number) => ({ x: dir > 0 ? 24 : -24, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? -24 : 24, opacity: 0 }),
+};
+const stepTransition = { duration: 0.2, ease: "easeInOut" as const };
+
+// ─── HIBP Password Breach Check (k-anonymity) ───────────────────────────────
+async function checkPasswordBreach(password: string): Promise<number> {
+    try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+        const hashHex = Array.from(new Uint8Array(hashBuffer))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            .toUpperCase();
+        const prefix = hashHex.slice(0, 5);
+        const suffix = hashHex.slice(5);
+
+        const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+            cache: "force-cache",
+        });
+        if (!res.ok) return 0;
+
+        const text = await res.text();
+        for (const line of text.split("\n")) {
+            const [hash, count] = line.split(":");
+            if (hash?.trim() === suffix) return parseInt(count?.trim() ?? "0", 10);
+        }
+        return 0;
+    } catch {
+        return 0;
+    }
+}
+
+// ─── Turnstile CAPTCHA Widget (conditional on env var) ───────────────────────
+function TurnstileWidget({
+    siteKey,
+    onVerify,
+    onExpire,
+}: {
+    siteKey: string;
+    onVerify: (token: string) => void;
+    onExpire: () => void;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const widgetIdRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const existing = document.querySelector(
+            'script[src*="challenges.cloudflare.com/turnstile"]',
+        );
+
+        function render() {
+            if (!containerRef.current || widgetIdRef.current) return;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const w = (window as any).turnstile as
+                | { render: (el: HTMLElement, opts: Record<string, unknown>) => string; remove: (id: string) => void }
+                | undefined;
+            if (!w) return;
+            widgetIdRef.current = w.render(containerRef.current, {
+                sitekey: siteKey,
+                callback: onVerify,
+                "expired-callback": onExpire,
+                theme: "auto",
+                size: "flexible",
+            });
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (existing && (window as any).turnstile) {
+            render();
+        } else if (!existing) {
+            const script = document.createElement("script");
+            script.src =
+                "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+            script.async = true;
+            script.onload = () => render();
+            document.head.appendChild(script);
+        } else {
+            const id = setInterval(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if ((window as any).turnstile) {
+                    clearInterval(id);
+                    render();
+                }
+            }, 100);
+            return () => clearInterval(id);
+        }
+
+        return () => {
+            if (widgetIdRef.current) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const w = (window as any).turnstile as
+                    | { remove: (id: string) => void }
+                    | undefined;
+                try { w?.remove(widgetIdRef.current); } catch { /* ignore */ }
+                widgetIdRef.current = null;
+            }
+        };
+    }, [siteKey, onVerify, onExpire]);
+
+    return <div ref={containerRef} className="flex justify-center" />;
+}
+
+// ─── Main Login Component ────────────────────────────────────────────────────
 export default function LoginClientPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [step, setStep] = useState<Step>("email");
-    const [email, setEmail] = useState("");
-    const [otpCode, setOtpCode] = useState("");
-    const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
-    const [showPasskey, setShowPasskey] = useState(false);
-    const [usePasswordLogin, setUsePasswordLogin] = useState(false);
-    const emailInputRef = useRef<HTMLInputElement | null>(null);
-    const otpInputRef = useRef<HTMLInputElement | null>(null);
-    const errorId = useId();
-    const messageId = useId();
-    const otpHelpId = useId();
 
+    const [step, setStep] = useState<Step>("email");
+    const [direction, setDirection] = useState(1);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [showPasskey, setShowPasskey] = useState(false);
+    const [breachCount, setBreachCount] = useState<number | null>(null);
+    const [checkingBreach, setCheckingBreach] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+    const emailInputRef = useRef<HTMLInputElement | null>(null);
+    const errorId = useId();
+
+    // Auto-focus email input
     useEffect(() => {
         const t = window.setTimeout(() => {
             if (step === "email") emailInputRef.current?.focus();
-            if (step === "otp") otpInputRef.current?.focus();
         }, 0);
         return () => window.clearTimeout(t);
     }, [step]);
 
-    async function handleEmailSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-        setMessage("");
-
-        try {
-            const response = await api.login(email);
-            const msg = typeof response === "string" ? response : response?.message || "Verification code sent! Check your email.";
-            setMessage(msg);
-            setStep("otp");
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else if (typeof err === "object" && err !== null) {
-                setError((err as { detail?: string }).detail || "Login failed");
-            } else {
-                setError("Login failed. Please try again.");
-            }
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleOtpSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-
-        try {
-            const response = await api.verifyOtp(email, otpCode);
-            api.setToken(response.access_token);
-            localStorage.setItem("refresh_token", response.refresh_token);
+    // ─── Shared post-login handler (deduplicated) ────────────────────
+    const handleLoginSuccess = useCallback(
+        async (tokens: LoginTokens) => {
+            api.setToken(tokens.access_token);
+            localStorage.setItem("refresh_token", tokens.refresh_token);
+            if (rememberMe) localStorage.setItem("remember_me", "true");
 
             const rawNext = searchParams.get("next");
-            const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+            const safeNext =
+                rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+                    ? rawNext
+                    : null;
 
             let role: string | null = null;
             try {
@@ -85,133 +200,125 @@ export default function LoginClientPage() {
                 role = null;
             }
 
-            router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else if (typeof err === "object" && err !== null) {
-                setError((err as { detail?: string }).detail || "Verification failed");
-            } else {
-                setError("Verification failed. Please try again.");
-            }
-        } finally {
-            setLoading(false);
-        }
+            router.push(
+                role === "white_label_admin"
+                    ? "/white-label/dashboard"
+                    : safeNext ?? "/dashboard",
+            );
+        },
+        [router, searchParams, rememberMe],
+    );
+
+    // ─── Step navigation ─────────────────────────────────────────────
+    function goToStep(next: Step, dir: 1 | -1 = 1) {
+        setDirection(dir);
+        setStep(next);
+        setError("");
     }
 
+    // ─── Email validation (Zod) ──────────────────────────────────────
+    function validateEmail(): boolean {
+        const result = emailSchema.safeParse(email);
+        if (!result.success) {
+            setEmailError(result.error.errors[0]?.message ?? "Invalid email");
+            return false;
+        }
+        setEmailError("");
+        return true;
+    }
+
+    // ─── Account lockout / rate-limit error parser ───────────────────
+    function parseApiError(err: unknown): string {
+        if (err instanceof Error) {
+            const msg = err.message.toLowerCase();
+            if (msg.includes("locked") || msg.includes("too many attempts")) {
+                return "Your account has been temporarily locked due to too many failed attempts. Please try again in 15 minutes or reset your password.";
+            }
+            if (msg.includes("rate limit") || msg.includes("429")) {
+                return "Too many requests. Please wait a moment before trying again.";
+            }
+            return err.message;
+        }
+        if (typeof err === "object" && err !== null) {
+            return (err as { detail?: string }).detail || "An error occurred";
+        }
+        return "An unexpected error occurred. Please try again.";
+    }
+
+    // ─── Password submit ─────────────────────────────────────────────
     async function handlePasswordSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
         setError("");
 
         try {
-            // Password login — calls backend POST /api/v1/auth/login/password
             const res = await fetch("/api/v1/auth/login/password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({
+                    email,
+                    password,
+                    remember_me: rememberMe,
+                    ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+                }),
             });
+
             if (!res.ok) {
                 const body = await res.json().catch(() => null);
-                throw new Error(body?.detail || body?.message || "Invalid email or password");
+                const detail = body?.detail || body?.message || "";
+                if (res.status === 429 || detail.toLowerCase().includes("locked")) {
+                    throw new Error(
+                        "Your account has been temporarily locked due to too many failed attempts. Please try again in 15 minutes or reset your password.",
+                    );
+                }
+                throw new Error(detail || "Invalid email or password");
             }
-            const response = (await res.json()) as { access_token: string; refresh_token: string; mfa_required?: boolean };
+
+            const response = (await res.json()) as LoginTokens & { mfa_required?: boolean };
 
             if (response.mfa_required) {
-                setStep("mfa");
+                goToStep("mfa");
                 return;
             }
 
-            api.setToken(response.access_token);
-            localStorage.setItem("refresh_token", response.refresh_token);
-
-            const rawNext = searchParams.get("next");
-            const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
-
-            let role: string | null = null;
-            try {
-                const me = await api.getMe();
-                role = me.role;
-            } catch {
-                role = null;
-            }
-
-            router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
+            await handleLoginSuccess(response);
         } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("Login failed. Please check your credentials.");
-            }
+            setError(parseApiError(err));
         } finally {
             setLoading(false);
         }
     }
 
+    // ─── HIBP breach check on password blur ──────────────────────────
+    async function handlePasswordBlur() {
+        if (!password || password.length < 4) return;
+        setCheckingBreach(true);
+        const count = await checkPasswordBreach(password);
+        setBreachCount(count);
+        setCheckingBreach(false);
+    }
+
+    // ─── Back handler ────────────────────────────────────────────────
     function handleBack() {
-        setStep("email");
-        setOtpCode("");
+        goToStep("email", -1);
         setPassword("");
-        setError("");
-        setMessage("");
         setShowPasskey(false);
+        setBreachCount(null);
     }
 
-    async function handleMfaSuccess(tokens: { access_token: string; refresh_token: string }) {
-        api.setToken(tokens.access_token);
-        localStorage.setItem("refresh_token", tokens.refresh_token);
-
-        const rawNext = searchParams.get("next");
-        const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
-
-        let role: string | null = null;
-        try {
-            const me = await api.getMe();
-            role = me.role;
-        } catch {
-            role = null;
-        }
-
-        router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
+    // ─── Step description ────────────────────────────────────────────
+    function getStepDescription(): string {
+        if (step === "email") return "Sign in with your email and password";
+        if (step === "password") return "Enter your password to continue";
+        if (step === "mfa") return "Verify with two-factor authentication";
+        if (step === "passkey") return "Sign in with a passkey";
+        return "";
     }
 
-    async function handlePasskeySuccess(tokens: { access_token: string; refresh_token: string }) {
-        api.setToken(tokens.access_token);
-        localStorage.setItem("refresh_token", tokens.refresh_token);
-
-        const rawNext = searchParams.get("next");
-        const safeNext = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
-
-        let role: string | null = null;
-        try {
-            const me = await api.getMe();
-            role = me.role;
-        } catch {
-            role = null;
-        }
-
-        router.push(role === "white_label_admin" ? "/white-label/dashboard" : safeNext ?? "/dashboard");
-    }
-
-    async function handleResend() {
-        setLoading(true);
-        setError("");
-        setMessage("");
-
-        try {
-            const response = await api.login(email);
-            const msg = typeof response === "string" ? response : response?.message || "New verification code sent!";
-            setMessage(msg);
-        } catch (err) {
-            if (err instanceof Error) setError(err.message);
-            else setError("Failed to resend code. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    }
-
+    // ─── Render ──────────────────────────────────────────────────────
     return (
         <div className="relative min-h-screen bg-transparent flex items-center justify-center p-4 overflow-hidden">
+            {/* Background effects */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 authHeroGradientBase" />
                 <div className="absolute -inset-[30%] authHeroGradientBlobs" />
@@ -220,285 +327,409 @@ export default function LoginClientPage() {
             </div>
 
             <div className="relative z-10 w-full max-w-md">
+                {/* Branding */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-block">
-                        <p className="text-3xl font-bold tracking-tight text-foreground">Talk-Lee</p>
-                        <p className="text-sm text-[#D2B48C] dark:text-cyan-400 mt-1">AI Voice Dialer</p>
+                        <p className="text-3xl font-bold tracking-tight text-foreground">
+                            Talk-Lee
+                        </p>
+                        <p className="text-sm text-[#D2B48C] dark:text-cyan-400 mt-1">
+                            AI Voice Dialer
+                        </p>
                     </Link>
                 </div>
 
-                <Card>
+                <style>{`.login-card, .login-card:hover, .dark .login-card, .dark .login-card:hover { transform: none !important; translate: none !important; transition: none !important; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important; border-color: inherit !important; } .login-card, .login-card:hover { background-color: white !important; } .dark .login-card, .dark .login-card:hover, .login-card:is(.dark *), .login-card:is(.dark *):hover { background-color: #0f172a !important; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.1) !important; }`}</style>
+                <Card className="login-card">
                     <CardHeader className="text-center">
                         <CardTitle asChild>
                             <h1>Welcome back</h1>
                         </CardTitle>
-                        <CardDescription>
-                            {step === "email" && !usePasswordLogin
-                                ? "Enter your email to receive a verification code"
-                                : step === "email" && usePasswordLogin
-                                ? "Sign in with your email and password"
-                                : step === "otp"
-                                ? `Enter the verification code sent to ${email}`
-                                : step === "password"
-                                ? "Enter your password to continue"
-                                : step === "mfa"
-                                ? "Verify with two-factor authentication"
-                                : "Sign in with a passkey"}
-                        </CardDescription>
+                        <CardDescription>{getStepDescription()}</CardDescription>
                     </CardHeader>
 
-                    {step === "email" ? (
-                        <form
-                            onSubmit={usePasswordLogin ? (e) => { e.preventDefault(); if (email) setStep("password"); } : handleEmailSubmit}
-                            aria-busy={loading}
-                            aria-describedby={error ? errorId : undefined}
-                        >
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            placeholder="you@example.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="pl-10"
-                                            required
-                                            disabled={loading}
-                                            ref={emailInputRef}
-                                            aria-invalid={error ? true : undefined}
-                                            aria-describedby={error ? errorId : undefined}
-                                        />
-                                    </div>
-                                </div>
-
-                                {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
-                                        {error}
-                                    </div>
-                                ) : null}
-                            </CardContent>
-
-                            <CardFooter className="flex flex-col gap-4">
-                                <Button type="submit" className="w-full" disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                                            {usePasswordLogin ? "Continuing..." : "Sending code..."}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {usePasswordLogin ? "Continue with Password" : "Send Verification Code"}
-                                            <ArrowRight className="h-4 w-4" aria-hidden />
-                                        </>
-                                    )}
-                                </Button>
-
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-border" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-background px-2 text-muted-foreground">Or</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col items-center gap-2 w-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setUsePasswordLogin(!usePasswordLogin); setError(""); }}
-                                        className="text-sm text-foreground font-medium hover:underline"
-                                    >
-                                        {usePasswordLogin ? "Sign in with Email Code" : "Sign in with Password"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPasskey(true)}
-                                        className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-                                    >
-                                        Sign in with Passkey
-                                    </button>
-                                </div>
-
-                                <p className="text-sm text-muted-foreground text-center">
-                                    New to Talk-Lee?{" "}
-                                    <Link href="/auth/register" className="text-foreground font-medium hover:underline">
-                                        Create an account
-                                    </Link>
-                                </p>
-                            </CardFooter>
-                        </form>
-                    ) : step === "password" ? (
-                        <form onSubmit={handlePasswordSubmit} aria-busy={loading} aria-describedby={error ? errorId : undefined}>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="login-password">Password</Label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
-                                        <Input
-                                            id="login-password"
-                                            type="password"
-                                            placeholder="Enter your password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="pl-10"
-                                            required
-                                            disabled={loading}
-                                            autoComplete="current-password"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Signing in as {email}</p>
-                                </div>
-
-                                {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
-                                        {error}
-                                    </div>
-                                ) : null}
-                            </CardContent>
-
-                            <CardFooter className="flex flex-col gap-4">
-                                <Button type="submit" className="w-full" disabled={loading || !password}>
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                                            Signing in...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Sign In
-                                            <ArrowRight className="h-4 w-4" aria-hidden />
-                                        </>
-                                    )}
-                                </Button>
-                                <div className="flex items-center justify-between w-full">
-                                    <button type="button" onClick={handleBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1" disabled={loading}>
-                                        <ArrowLeft className="h-3 w-3" aria-hidden /> Change email
-                                    </button>
-                                </div>
-                            </CardFooter>
-                        </form>
-                    ) : step === "otp" ? (
-                        <form
-                            onSubmit={handleOtpSubmit}
-                            aria-busy={loading}
-                            aria-describedby={[message ? messageId : null, error ? errorId : null, otpHelpId].filter(Boolean).join(" ")}
-                        >
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="otp">Verification Code</Label>
-                                    <div className="relative">
-                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
-                                        <Input
-                                            id="otp"
-                                            type="text"
-                                            placeholder="Enter verification code"
-                                            value={otpCode}
-                                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                                            className="pl-10 text-center text-lg tracking-widest font-mono"
-                                            required
-                                            disabled={loading}
-                                            maxLength={8}
-                                            autoComplete="one-time-code"
-                                            inputMode="numeric"
-                                            pattern="[0-9]*"
-                                            ref={otpInputRef}
-                                            aria-invalid={error ? true : undefined}
-                                            aria-describedby={[message ? messageId : null, error ? errorId : null, otpHelpId].filter(Boolean).join(" ")}
-                                        />
-                                    </div>
-                                    <p id={otpHelpId} className="text-xs text-muted-foreground text-center">
-                                        Check your email for the verification code
-                                    </p>
-                                </div>
-
-                                {error ? (
-                                    <div id={errorId} role="alert" aria-live="assertive" className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3">
-                                        {error}
-                                    </div>
-                                ) : null}
-
-                                {message ? (
-                                    <div id={messageId} role="status" aria-live="polite" className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3">
-                                        {message}
-                                    </div>
-                                ) : null}
-                            </CardContent>
-
-                            <CardFooter className="flex flex-col gap-4">
-                                <Button type="submit" className="w-full" disabled={loading || otpCode.length < 6}>
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                                            Verifying...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Verify & Sign In
-                                            <ArrowRight className="h-4 w-4" aria-hidden />
-                                        </>
-                                    )}
-                                </Button>
-
-                                <div className="flex items-center justify-between w-full">
-                                    <button
-                                        type="button"
-                                        onClick={handleBack}
-                                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-                                        disabled={loading}
-                                    >
-                                        <ArrowLeft className="h-3 w-3" aria-hidden />
-                                        Change email
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleResend}
-                                        className="text-sm text-foreground font-medium hover:underline"
-                                        disabled={loading}
-                                    >
-                                        Resend code
-                                    </button>
-                                </div>
-                            </CardFooter>
-                        </form>
-                    ) : step === "mfa" ? (
-                        <MFAVerification
-                            email={email}
-                            onSuccess={handleMfaSuccess}
-                            onBackClick={handleBack}
-                            onError={(err) => setError(err)}
-                        />
-                    ) : step === "passkey" || showPasskey ? (
-                        <div className="space-y-4">
-                            <CardContent className="space-y-4">
-                                <PasskeyLogin
-                                    onSuccess={handlePasskeySuccess}
-                                    onError={(err) => setError(err)}
-                                    disabled={loading}
-                                />
-                            </CardContent>
-                            <CardFooter>
-                                <button
-                                    type="button"
-                                    onClick={handleBack}
-                                    className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 w-full py-2"
-                                    disabled={loading}
+                    <AnimatePresence mode="wait" custom={direction}>
+                        {/* ─── EMAIL STEP ──────────────────────────────── */}
+                        {step === "email" && !showPasskey ? (
+                            <motion.div
+                                key="email"
+                                custom={direction}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={stepTransition}
+                            >
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (validateEmail()) goToStep("password");
+                                    }}
+                                    aria-busy={loading}
+                                    aria-describedby={error ? errorId : undefined}
                                 >
-                                    <ArrowLeft className="h-3 w-3" aria-hidden />
-                                    Back to email
-                                </button>
-                            </CardFooter>
-                        </div>
-                    ) : null}
+                                    <CardContent className="space-y-4">
+                                        {/* Email field */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email">Email</Label>
+                                            <div className="relative">
+                                                <Mail
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                                                    aria-hidden
+                                                />
+                                                <Input
+                                                    id="email"
+                                                    type="email"
+                                                    placeholder="you@example.com"
+                                                    value={email}
+                                                    onChange={(e) => {
+                                                        setEmail(e.target.value);
+                                                        if (emailError) setEmailError("");
+                                                    }}
+                                                    className="pl-10"
+                                                    required
+                                                    disabled={loading}
+                                                    ref={emailInputRef}
+                                                    aria-invalid={
+                                                        emailError || error ? true : undefined
+                                                    }
+                                                    aria-describedby={
+                                                        [
+                                                            emailError ? "email-error" : null,
+                                                            error ? errorId : null,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .join(" ") || undefined
+                                                    }
+                                                />
+                                            </div>
+                                            {emailError && (
+                                                <p
+                                                    id="email-error"
+                                                    className="text-sm text-red-600 dark:text-red-400"
+                                                >
+                                                    {emailError}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Remember me */}
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={rememberMe}
+                                                onChange={(e) => setRememberMe(e.target.checked)}
+                                                className="h-4 w-4 rounded border-input text-primary focus:ring-ring focus:ring-offset-background accent-primary"
+                                            />
+                                            <span className="text-sm text-muted-foreground">
+                                                Remember me
+                                            </span>
+                                        </label>
+
+                                        {/* Turnstile CAPTCHA */}
+                                        {TURNSTILE_SITE_KEY && (
+                                            <TurnstileWidget
+                                                siteKey={TURNSTILE_SITE_KEY}
+                                                onVerify={setTurnstileToken}
+                                                onExpire={() => setTurnstileToken(null)}
+                                            />
+                                        )}
+
+                                        {error && (
+                                            <div
+                                                id={errorId}
+                                                role="alert"
+                                                aria-live="assertive"
+                                                className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3"
+                                            >
+                                                {error}
+                                            </div>
+                                        )}
+                                    </CardContent>
+
+                                    <CardFooter className="flex flex-col gap-4">
+                                        {/* Primary action */}
+                                        <Button
+                                            type="submit"
+                                            className="w-full"
+                                            disabled={
+                                                loading ||
+                                                (!!TURNSTILE_SITE_KEY && !turnstileToken)
+                                            }
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <Loader2
+                                                        className="h-4 w-4 animate-spin"
+                                                        aria-hidden
+                                                    />
+                                                    Continuing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Continue with Password
+                                                    <ArrowRight
+                                                        className="h-4 w-4"
+                                                        aria-hidden
+                                                    />
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        {/* Alternative login method */}
+                                        <div className="flex flex-col items-center gap-2 w-full">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasskey(true)}
+                                                className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                                            >
+                                                Sign in with Passkey
+                                            </button>
+                                        </div>
+
+                                        <p className="text-sm text-muted-foreground text-center">
+                                            New to Talk-Lee?{" "}
+                                            <Link
+                                                href="/auth/register"
+                                                className="text-foreground font-medium hover:underline"
+                                            >
+                                                Create an account
+                                            </Link>
+                                        </p>
+                                    </CardFooter>
+                                </form>
+                            </motion.div>
+
+                        /* ─── PASSWORD STEP ─────────────────────────── */
+                        ) : step === "password" ? (
+                            <motion.div
+                                key="password"
+                                custom={direction}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={stepTransition}
+                            >
+                                <form
+                                    onSubmit={handlePasswordSubmit}
+                                    aria-busy={loading}
+                                    aria-describedby={error ? errorId : undefined}
+                                >
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="login-password">Password</Label>
+                                            <div className="relative">
+                                                <Lock
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                                                    aria-hidden
+                                                />
+                                                <Input
+                                                    id="login-password"
+                                                    type={showPassword ? "text" : "password"}
+                                                    placeholder="Enter your password"
+                                                    value={password}
+                                                    onChange={(e) => {
+                                                        setPassword(e.target.value);
+                                                        setBreachCount(null);
+                                                    }}
+                                                    onBlur={handlePasswordBlur}
+                                                    className="pl-10 pr-10"
+                                                    required
+                                                    disabled={loading}
+                                                    autoComplete="current-password"
+                                                    autoFocus
+                                                />
+                                                {/* Password visibility toggle */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowPassword(!showPassword)
+                                                    }
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                    aria-label={
+                                                        showPassword
+                                                            ? "Hide password"
+                                                            : "Show password"
+                                                    }
+                                                    tabIndex={-1}
+                                                >
+                                                    {showPassword ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-xs text-muted-foreground">
+                                                    Signing in as {email}
+                                                </p>
+                                                {/* Forgot password link */}
+                                                <Link
+                                                    href={`/auth/forgot-password?email=${encodeURIComponent(email)}`}
+                                                    className="text-xs text-foreground font-medium hover:underline"
+                                                >
+                                                    Forgot password?
+                                                </Link>
+                                            </div>
+                                        </div>
+
+                                        {/* Breach detection warning */}
+                                        {breachCount !== null && breachCount > 0 && (
+                                            <div
+                                                role="alert"
+                                                className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3"
+                                            >
+                                                <ShieldAlert
+                                                    className="h-4 w-4 mt-0.5 shrink-0"
+                                                    aria-hidden
+                                                />
+                                                <p>
+                                                    This password has appeared in{" "}
+                                                    <strong>
+                                                        {breachCount.toLocaleString()}
+                                                    </strong>{" "}
+                                                    known data breaches. Consider changing it
+                                                    after signing in.
+                                                </p>
+                                            </div>
+                                        )}
+                                        {checkingBreach && (
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <Loader2
+                                                    className="h-3 w-3 animate-spin"
+                                                    aria-hidden
+                                                />
+                                                Checking password security...
+                                            </p>
+                                        )}
+
+                                        {error && (
+                                            <div
+                                                id={errorId}
+                                                role="alert"
+                                                aria-live="assertive"
+                                                className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3"
+                                            >
+                                                {error}
+                                            </div>
+                                        )}
+                                    </CardContent>
+
+                                    <CardFooter className="flex flex-col gap-4">
+                                        <Button
+                                            type="submit"
+                                            className="w-full"
+                                            disabled={loading || !password}
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <Loader2
+                                                        className="h-4 w-4 animate-spin"
+                                                        aria-hidden
+                                                    />
+                                                    Signing in...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Sign In
+                                                    <ArrowRight
+                                                        className="h-4 w-4"
+                                                        aria-hidden
+                                                    />
+                                                </>
+                                            )}
+                                        </Button>
+                                        <div className="flex items-center justify-between w-full">
+                                            <button
+                                                type="button"
+                                                onClick={handleBack}
+                                                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                                disabled={loading}
+                                            >
+                                                <ArrowLeft className="h-3 w-3" aria-hidden />{" "}
+                                                Change email
+                                            </button>
+                                        </div>
+                                    </CardFooter>
+                                </form>
+                            </motion.div>
+
+                        /* ─── MFA STEP ──────────────────────────────── */
+                        ) : step === "mfa" ? (
+                            <motion.div
+                                key="mfa"
+                                custom={direction}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={stepTransition}
+                            >
+                                <MFAVerification
+                                    email={email}
+                                    onSuccess={handleLoginSuccess}
+                                    onBackClick={handleBack}
+                                    onError={(err) => setError(err)}
+                                />
+                            </motion.div>
+
+                        /* ─── PASSKEY STEP ──────────────────────────── */
+                        ) : step === "passkey" || showPasskey ? (
+                            <motion.div
+                                key="passkey"
+                                custom={direction}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={stepTransition}
+                            >
+                                <div className="space-y-4">
+                                    <CardContent className="space-y-4">
+                                        <PasskeyLogin
+                                            onSuccess={handleLoginSuccess}
+                                            onError={(err) => setError(err)}
+                                            disabled={loading}
+                                        />
+                                    </CardContent>
+                                    <CardFooter>
+                                        <button
+                                            type="button"
+                                            onClick={handleBack}
+                                            className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 w-full py-2"
+                                            disabled={loading}
+                                        >
+                                            <ArrowLeft className="h-3 w-3" aria-hidden />
+                                            Back to email
+                                        </button>
+                                    </CardFooter>
+                                </div>
+                            </motion.div>
+                        ) : null}
+                    </AnimatePresence>
                 </Card>
 
-                <p className="text-xs text-muted-foreground text-center mt-8">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+                {/* Terms & Privacy with actual links */}
+                <p className="text-xs text-muted-foreground text-center mt-8">
+                    By continuing, you agree to our{" "}
+                    <Link
+                        href="/terms"
+                        className="underline hover:text-foreground transition-colors"
+                    >
+                        Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                        href="/privacy"
+                        className="underline hover:text-foreground transition-colors"
+                    >
+                        Privacy Policy
+                    </Link>
+                    .
+                </p>
             </div>
-
         </div>
     );
 }
-
