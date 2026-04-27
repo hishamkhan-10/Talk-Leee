@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Bot, Cpu, Mic, ShieldCheck } from "lucide-react";
+import { Bot, Cpu, Mic, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -298,19 +298,6 @@ export function SecondaryHero() {
                 </div>
               </div>
 
-              <div className="secondaryHeroCtas mt-4 sm:mt-6 flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3 sm:gap-4">
-                <Link href="/auth/register">
-                  <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all hover:scale-105 dark:bg-indigo-500 dark:hover:bg-indigo-400">
-                    Start Free Trial
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="#use-cases">
-                  <Button size="lg" variant="outline" className="rounded-full px-6 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold border-border text-foreground hover:text-foreground transition-all hover:scale-105 hover:bg-background">
-                    View Use Cases
-                  </Button>
-                </Link>
-              </div>
             </div>
           </div>
         </motion.div>

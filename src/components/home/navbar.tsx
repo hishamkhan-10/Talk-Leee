@@ -336,20 +336,7 @@ export function Navbar() {
                         closeMobileMenu();
                       }}
                     >
-                      Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard"
-                      className={[
-                        "home-mobile-link text-sm font-medium focus-visible:outline-none text-foreground/90 hover:text-foreground",
-                      ].join(" ")}
-                      onClick={() => {
-                        closeMobileMenu();
-                      }}
-                    >
-                      Start Free Trial
+                      Login
                     </Link>
                   </li>
                 </ul>
@@ -509,16 +496,7 @@ export function Navbar() {
                 isCompact ? "py-1" : "py-1.5",
               ].join(" ")}
             >
-              Dashboard
-            </Link>
-            <Link
-              href="/dashboard"
-              className={[
-                "navbarDesktopAction hidden md:inline-flex px-3 text-[13px] font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-[background-color,box-shadow,transform] duration-200 ease-out shadow-[0_2px_8px_rgba(99,102,241,0.25),0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(99,102,241,0.35),0_2px_4px_rgba(0,0,0,0.08)] hover:scale-[1.02] active:scale-[1.0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isCompact ? "py-1" : "py-1.5",
-              ].join(" ")}
-            >
-              Start Free Trial
+              Login
             </Link>
             <button
               type="button"
