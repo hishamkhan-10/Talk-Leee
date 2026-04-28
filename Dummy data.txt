@@ -2,491 +2,1198 @@
 FRONTEND CODEBASE - MOCK & DUMMY DATA INVENTORY
 ================================================================================
 Generated: 2026-04-14
-Project: Talk-Leee Frontend
+Updated:   2026-04-28
+Project:   Talk-Leee Frontend
 
 This document contains a complete reference of all mock/dummy data, hardcoded
-API responses, and placeholder content found in the frontend codebase.
+API responses, dev auth stubs, and placeholder content found in the frontend
+codebase. It covers all 31 production source files that contain mock data,
+plus test files and storybook stories.
 
 ================================================================================
-1. TEST FILES WITH MOCKED FETCH RESPONSES
+TABLE OF CONTENTS
 ================================================================================
 
-File Path: src/app/ai-voices/page.test.tsx
-Line Range: 29-48
-Description: Mock voice data containing 2 voice objects (Sarah, Michael) with
-properties like id, name, description, initial, color, bg, and previewUrl.
-Used to test voice list rendering after API fetch.
+  1.  PRIMARY MOCK DATA FILES (entire files are mock data)
+  2.  DEV AUTH STUBS (fake users/tokens)
+  3.  WHITE-LABEL INLINE MOCK DATA
+  4.  CAMPAIGN SEED / GENERATED DATA
+  5.  NOTIFICATION DEFAULTS (mock profile)
+  6.  SIDEBAR GUEST FALLBACK
+  7.  DUMMY CALL STATE (AI Options page)
+  8.  DASHBOARD SEEDED VISUALIZATION
+  9.  BILLING API FALLBACKS (billing-api.ts)
+  10. ADMIN PAGES (import from billing-mock-data.ts)
+  11. BILLING PAGES (import from billing-mock-data.ts)
+  12. MASTER FILE-BY-FILE REFERENCE (all 31 production files)
+  13. TOTAL MOCK DATA STATISTICS
 
-File Path: src/app/ai-voices/page.test.tsx
-Line Range: 90-100
-Description: Single mock voice object (Sarah) used to test play state toggling
-functionality in voice preview component.
-
-File Path: src/components/connectors/connector-card.test.ts
-Line Range: 75-76
-Description: Mock API response with hardcoded authorization URL
-"https://provider.example/auth" for testing connector authorization flow.
-
-File Path: src/components/home/contact-section.test.tsx
-Line Range: 27-28
-Description: Hardcoded dummy contact information including email
-"contact@talk-lee.com" and phone "+1 (555) 123-4567" for testing contact form.
-
-File Path: src/lib/campaign-performance.test.ts
-Line Range: 15-30
-Description: Helper function makeCampaign() creates mock Campaign objects with
-default values (camp-x, voice, etc.) for test data generation.
-
-File Path: src/lib/campaign-performance.test.ts
-Line Range: 55-59
-Description: Array of 3 mock Campaign objects used to test filtering functionality.
-Includes campaigns with ids: a, b, c with different statuses and completion rates.
-
-File Path: src/lib/campaign-performance.test.ts
-Line Range: 72-76
-Description: Array of 3 mock Campaign objects for testing sorting functionality
-with duplicate names to verify stable sort with tiebreak.
-
-File Path: src/lib/campaign-performance.test.ts
-Line Range: 86-87
-Description: Mock array of 143 numeric items used to test pagination logic.
-
-File Path: src/lib/http-client.test.ts
-Line Range: 10-11
-Description: Mock API response with JSON structure { ok: true } for status 200
-responses in HTTP client testing.
-
-File Path: src/lib/http-client.test.ts
-Line Range: 29-32
-Description: Mock 429 rate limit response with "Too many requests" message and
-retry-after header set to "2" seconds.
-
-File Path: src/lib/backend-api.assistant.test.ts
-Line Range: 9-10
-Description: Mock API response returning empty items array { items: [] } for
-assistant actions list endpoint test.
-
-File Path: src/lib/backend-api.assistant.test.ts
-Line Range: 30-31
-Description: Mock API response with pagination structure returning empty items,
-total: 0, page: 1, page_size: 50 for assistant runs list.
-
-File Path: src/lib/backend-api.assistant.test.ts
-Line Range: 66-70
-Description: Mock assistant plan response with planId: "plan-1", summary: "ok",
-steps array, and estimatedImpact object for plan endpoint test.
-
-File Path: src/lib/backend-api.assistant.test.ts
-Line Range: 98-111
-Description: Mock assistant run response with id: "run-1", action_type: "notes:add",
-status: "in_progress", and other run properties for execute endpoint test.
-
-File Path: src/lib/backend-api.assistant.test.ts
-Line Range: 144-152
-Description: Mock retry response with id: "run-2", action_type: "demo:fail",
-status: "pending" for testing assistant run retry functionality.
-
-File Path: src/lib/notifications.test.ts
-Line Range: 14-26
-Description: Mock localStorage storage implementation using Map data structure
-for testing notification persistence.
-
-File Path: src/lib/notifications.test.ts
-Line Range: 34, 52, 75, 94
-Description: Mock notification creation with type: "success"/"info"/"warning"/"error",
-title and message for testing notification store functionality.
-
-File Path: src/app/meetings/meeting-row.test.tsx
-Line Range: 13-22
-Description: Mock CalendarEvent object with id: "m1", title: "Demo", containing
-3 participants (Ada, Bob, Cara) for meeting row testing.
-
-File Path: src/app/meetings/meeting-row.test.tsx
-Line Range: 28
-Description: Mock CalendarEvent with id: "m2", title: "Demo" with empty
-participants array for empty participant summary test.
-
-File Path: src/components/states/page-states.test.ts
-Line Range: 18-24
-Description: Mock error state component props with title: "Oops", message: "Failed"
-for ErrorState component testing.
-
-File Path: src/components/states/page-states.test.ts
-Line Range: 40, 53-62, 73-84
-Description: Mock empty state component configurations with different action
-labels and handlers for EmptyState component testing.
-
-File Path: src/lib/email-utils.test.ts
-Line Range: 6-7, 19-20, 24, 32, 37
-Description: Test data strings including email addresses (a@x.com, b@x.com),
-HTML fragments, and viewport meta tags for email utility testing.
-
-File Path: src/lib/email-audit.test.ts
-Line Range: 14-27
-Description: Mock localStorage storage implementation using Map for email audit
-store testing.
-
-File Path: src/lib/email-audit.test.ts
-Line Range: 36, 63, 86, 104
-Description: Mock email audit attempts with hardcoded data (to: ["a@x.com"],
-templateId: "tpl-1", subject: "Hello") for audit store testing.
-
-File Path: src/lib/reminders-utils.test.ts
-Line Range: 6-25
-Description: Mock Reminder object factory function "rem()" providing default
-values for all reminder properties used throughout reminder utility tests.
-
-File Path: src/lib/reminders-utils.test.ts
-Line Range: 36-40
-Description: Array of 3 mock Reminder objects with different meetings and
-contacts (m1, c1) for testing reminder grouping functionality.
-
-File Path: src/lib/reminders-utils.test.ts
-Line Range: 48-50
-Description: Array of 2 mock Reminder objects with different scheduledAt
-timestamps for testing reminder sorting.
-
-File Path: src/lib/reminders-utils.test.ts
-Line Range: 59, 63, 68-76, 81-90
-Description: Mock Reminder objects for testing retry guidance with various
-retry counts and nextRetryAt values.
-
-File Path: src/lib/connectors-utils.test.ts
-Line Range: 26-28
-Description: Mock authorization URLs including "https://example.com/auth",
-"https://example.com/a", "https://example.com/b" for URL extraction testing.
-
-File Path: src/lib/connectors-utils.test.ts
-Line Range: 33-34, 38-39
-Description: Mock connector callback parameters with status: "success"/"error",
-type: "calendar"/"email"/"drive" for callback parsing tests.
-
-File Path: src/lib/connectors-utils.test.ts
-Line Range: 54
-Description: Mock last sync date "2025-01-01T00:00:00Z" for testing sync
-timestamp formatting.
-
-File Path: src/lib/meetings-utils.test.ts
-Line Range: 15-19
-Description: Array of 4 mock CalendarEvent objects with various titles (A, B, C, D)
-and times for testing meeting sorting and splitting.
-
-File Path: src/lib/meetings-utils.test.ts
-Line Range: 28-40
-Description: Mock CalendarEvent objects with leadName and participant information
-for testing lead label extraction logic.
-
-File Path: src/lib/meetings-utils.test.ts
-Line Range: 50-53, 62-71
-Description: Mock CalendarEvent objects with various status values ("cancelled",
-"completed", "scheduled") and participant lists for status/summary testing.
-
-File Path: src/lib/meetings-utils.test.ts
-Line Range: 79-82
-Description: Mock CalendarEvent objects with title: "Bravo", "alpha", "Charlie"
-and invalid startTime: "not-a-date" for sorting stability tests.
-
-File Path: src/lib/meetings-utils.test.ts
-Line Range: 100
-Description: Mock HTML with dangerous content (onclick, script tags, onerror handlers)
-for testing HTML sanitization.
-
-File Path: src/lib/routes.test.ts
-Line Range: 14-27
-Description: File path strings read from source files (app/settings/connectors/page.tsx,
-etc.) used to verify layout component imports.
-
-File Path: src/lib/backend-api.email.test.ts
-Line Range: 12-19
-Description: Mock email template response with id: "tpl-1", name: "Welcome",
-html_content: "<p>Hello</p>" for email template list test.
-
-File Path: src/lib/backend-api.email.test.ts
-Line Range: 50, 60-64
-Description: Mock email send response with message_id: "msg-1", status: "queued"
-and send parameters including to addresses and template id.
-
-File Path: src/lib/backend-api.calendar-events.test.ts
-Line Range: 9
-Description: Mock empty calendar events response { items: [] } for list endpoint test.
-
-File Path: src/lib/backend-api.calendar-events.test.ts
-Line Range: 30
-Description: Mock paginated calendar events response with items: [], total: 0,
-page: 2, page_size: 10 for pagination testing.
-
-File Path: src/lib/backend-api.calendar-events.test.ts
-Line Range: 57-68
-Description: Mock calendar event creation response with id: "evt-1", title: "Demo",
-timestamps, and participant data (Ada Lovelace, ada@example.test).
-
-File Path: src/lib/backend-api.calendar-events.test.ts
-Line Range: 116-127
-Description: Mock event update response with title: "Updated", status: "confirmed"
-and other updated event properties.
-
-File Path: src/lib/backend-api.calendar-events.test.ts
-Line Range: 164
-Description: Mock empty response (status 200) for calendar event deletion/cancel test.
-
-File Path: src/lib/backend-api.connectors.test.ts
-Line Range: 9
-Description: Mock connector authorize response with authorization_url:
-"https://provider.example/authorize".
-
-File Path: src/lib/backend-api.connectors.test.ts
-Line Range: 56-59
-Description: Mock connector status response with 2 items: calendar (connected),
-email (error) with hardcoded status and error messages.
 
 ================================================================================
-2. STORYBOOK STORY FILES WITH MOCK DATA
+1. PRIMARY MOCK DATA FILES (entire files are mock data)
 ================================================================================
 
-File Path: src/components/campaigns/campaign-performance-table.stories.tsx
-Line Range: 5-62
-Description: Array of 4 mock Campaign objects (demo) with IDs camp-001 to camp-004.
-Includes campaigns with statuses: running, paused, draft, completed with various
-call metrics and dates from 2025-12-10 to 2025-12-28.
+These 3 files are entirely mock data. They should be deleted or completely
+rewritten when the real backend is connected.
 
-File Path: src/components/campaigns/event-stream.stories.tsx
-Line Range: 5-20
-Description: Single mock Campaign object (camp-001) with Holiday Sales Outreach
-campaign details including calls_completed: 342, calls_failed: 45.
+--------------------------------------------------------------------------------
+FILE 1 of 3: src/lib/billing-mock-data.ts
+Lines: 1-382 (ENTIRE FILE - 382 lines)
+Status: DELETE when backend is connected
+--------------------------------------------------------------------------------
 
-File Path: src/components/campaigns/alert-timeline.stories.tsx
-Line Range: 5-20
-Description: Single mock Campaign object (camp-001) identical to event-stream
-story for displaying campaign timeline alerts.
+Imports:
+  Lines 6-27: Type imports from "./billing-types"
+    - BillingPlan, TenantPlan, UsageSummary, Invoice, InvoiceLineItem,
+      BillingAdjustment, OverageAlert, PartnerBillingSummary,
+      TenantBillingSummary, AuditLogEntry, ApiKey, WebhookEndpoint,
+      WebhookDelivery, RateLimitRule, CallGuardRule, TenantLimit,
+      PartnerLimit, AbuseEvent, BlockedEntity, SecretEntry
 
-File Path: src/components/campaigns/command-bar.stories.tsx
-Line Range: 5-34
-Description: Array of 2 mock Campaign objects (camp-001, camp-002) for command
-bar demo with different statuses and call completion metrics.
+Exports (20 named constants):
 
-File Path: src/components/ui/dashboard-charts.stories.tsx
-Line Range: 30-38
-Description: Mock TimeSeriesPoint array (timeSeries) with 7 days of data. Values:
-Mon=120, Tue=180, Wed=240, Thu=210, Fri=320, Sat=280, Sun=360.
+  Lines 31-81     PLANS
+                  Array of 4 hardcoded billing plans.
+                  - Starter:      $29/mo, $290/yr, 500 min, 5 concurrent,
+                                  $0.08/min overage, $15/slot overage
+                                  features: ["500 included minutes",
+                                  "5 concurrent calls", "Basic analytics",
+                                  "Email support", "1 AI voice agent"]
+                  - Professional: $79/mo, $790/yr, 2000 min, 20 concurrent,
+                                  $0.06/min overage, $12/slot overage
+                                  (recommended: true)
+                                  features: ["2,000 included minutes",
+                                  "20 concurrent calls", "Advanced analytics",
+                                  "Priority support", "5 AI voice agents",
+                                  "CRM integration", "Call recordings"]
+                  - Business:     $199/mo, $1990/yr, 7500 min, 50 concurrent,
+                                  $0.04/min overage, $10/slot overage
+                                  features: ["7,500 included minutes",
+                                  "50 concurrent calls", "Full analytics suite",
+                                  "Dedicated support", "Unlimited AI voice agents",
+                                  "All integrations", "Custom voices",
+                                  "White-label option"]
+                  - Enterprise:   $499/mo, $4990/yr, 25000 min, 200 concurrent,
+                                  $0.03/min overage, $8/slot overage
+                                  features: ["25,000 included minutes",
+                                  "200 concurrent calls", "Enterprise analytics",
+                                  "24/7 dedicated support", "Unlimited everything",
+                                  "SLA guarantee", "Custom integrations",
+                                  "Dedicated account manager",
+                                  "Multi-tenant management"]
 
-File Path: src/components/ui/dashboard-charts.stories.tsx
-Line Range: 40-44
-Description: Mock DualSeriesPoint array (dualSeries) with hourly data from 09:00
-to 11:00 with two series (a and b) for dual-axis charts.
+  Lines 85-97     CURRENT_TENANT_PLAN
+                  Mock current plan assignment.
+                  - planId: "plan_professional"
+                  - plan: PLANS[1] (Professional)
+                  - billingState: "active"
+                  - billingCycleStart/End: Current month (dynamically calculated)
+                  - nextInvoiceDate: End of current month
+                  - isYearly: false
 
-File Path: src/components/ui/dashboard-charts.stories.tsx
-Line Range: 46-50
-Description: Mock FeedItem array with 3 activity feed items: "Campaign started",
-"Queue spike", "Connector synced" with different tones (good, warn, neutral).
+  Lines 101-113   CURRENT_USAGE
+                  Mock billing period usage stats.
+                  - period: "monthly"
+                  - minutesUsed: 1437
+                  - minutesIncluded: 2000
+                  - minutesOverage: 0
+                  - peakConcurrency: 14
+                  - concurrencyLimit: 20
+                  - totalCalls: 892
+                  - successfulCalls: 847
+                  - failedCalls: 45
+                  - averageCallDuration: 96
 
-File Path: src/components/ui/dashboard-charts.stories.tsx
-Line Range: 52-56
-Description: Mock TimelineItem array with 3 alert timeline items: "High failure rate",
-"Outage detected", "Recovered" with severities (warn, error, info) and dates.
+  Lines 115-132   DAILY_USAGE
+                  Array of 14 UsageSummary objects (last 14 days).
+                  Each has semi-random values using Math.random():
+                  - minutesUsed: 60 + Math.random() * 140
+                  - peakConcurrency: 3 + Math.random() * 12
+                  - totalCalls: 40 + Math.random() * 80
+                  - failedCalls: 2 + Math.random() * 10
+                  - averageCallDuration: 60 + Math.random() * 60
+                  Values change on every page load.
 
-File Path: src/components/ui/dashboard-charts.stories.tsx
-Line Range: 62-95
-Description: Mock LiveTimeBucket array (buckets) containing 120 time buckets with
-dynamic call metrics using sine waves and random values for live call visualization.
+  Line 136        OVERAGE_ALERTS
+                  Empty array []. No overage alerts in mock data.
 
-File Path: src/components/ui/dashboard-charts.stories.tsx
-Line Range: 78-81, 83-86, 88-90, 92-94
-Description: Mock arrays for LiveChartMarker, LiveAnomaly, MaintenanceWindow, and
-PeakBand objects used in live calls time series chart story.
+  Lines 140-145   ADJUSTMENTS
+                  Array of 4 billing adjustments.
+                  - adj_001: Service interruption credit, -$15.00, 2026-03-15,
+                    by Support Team, "Compensation for 2-hour outage on March 14"
+                  - adj_002: Referral bonus (promo), -$25.00, 2026-02-20,
+                    by System, "Referral program — referred TechCorp Inc."
+                  - adj_003: Premium voice add-on (debit), +$10.00, 2026-03-01,
+                    by System, "Monthly add-on charge for premium voice package"
+                  - adj_004: Billing correction (refund), -$8.50, 2026-01-28,
+                    by Billing Admin, "Duplicate charge corrected"
 
-File Path: src/components/reminders/reminder-row.stories.tsx
-Line Range: 58-81
-Description: Mock demoReminder() function creating Reminder objects with different
-statuses (scheduled, sent, failed, canceled) and associated metadata like meetingId,
-contactId, retry counts.
+  Lines 160-230   INVOICES
+                  Array of 3 hardcoded invoices.
+                  - INV-2026-0003: Mar 2026, 2340/2000 min, 340 overage,
+                    peak 18/20, total $84.40, Paid 2026-04-02.
+                    Line items: Professional Plan $79, included 2000 min,
+                    overage 340 * $0.06 = $20.40, credit -$15.00
+                  - INV-2026-0002: Feb 2026, 1820/2000 min, no overage,
+                    peak 12/20, total $54.00, Paid 2026-03-03.
+                    Line items: Professional Plan $79, referral -$25.00
+                  - INV-2026-0001: Jan 2026, 1950/2000 min, no overage,
+                    peak 15/20, total $79.00, Paid 2026-02-02.
+                    Line items: Professional Plan $79
 
-File Path: src/components/ui/health-stat-card.stories.tsx
-Line Range: 15-24
-Description: Mock stats array with 3 health metrics: Healthy (92%), Degraded (6%),
-Down (2%) with change percentages and graph data with colors and descriptions.
+  Lines 234-239   PARTNER_BILLING
+                  Array of 4 partner billing summaries.
+                  - Acme Solutions: 12 tenants (10 active), 18500/25000 min,
+                    $2388 rev, peak 42 concurrent
+                  - TechBridge Corp: 8 tenants (7 active), 14200/15000 min,
+                    $1592 rev, peak 28 concurrent
+                  - GlobalVoice Ltd: 5 tenants (5 active), 8900/7500 min,
+                    1400 overage, $1051 rev + $56 overage, peak 19 concurrent
+                  - CloudConnect Inc: 3 tenants (1 active), 420/2000 min,
+                    $237 rev, past_due, peak 4 concurrent
+
+  Lines 243-250   TENANT_BILLING
+                  Array of 6 tenant billing summaries.
+                  - t_001: Sunrise Dental, Professional, 1820/2000 min, $79,
+                    active, paid
+                  - t_002: Metro Realty Group, Business, 5400/7500 min, $199,
+                    active, paid
+                  - t_003: QuickFix Auto, Starter, 620/500 min (120 overage),
+                    $38.60, active, paid
+                  - t_004: Evergreen Health, Professional, 1100/2000 min, $79,
+                    active, paid
+                  - t_005: PeakView Financial, Business, 8900/7500 min
+                    (1400 overage), $255, active, paid
+                  - t_006: StaleStartup LLC, Starter, 12/500 min, $29,
+                    past_due, past_due
+
+  Lines 254-267   AUDIT_LOGS
+                  Array of 12 audit log entries.
+                  Actions: user.login, role.changed, billing.plan_changed,
+                  user.login_failed, tenant.suspended, billing.adjustment,
+                  security.mfa_enabled, settings.webhook_updated,
+                  user.logout_all, billing.invoice_generated,
+                  tenant.created, user.registered
+                  Attributed to multiple users:
+                  admin@talkly.ai (IP 192.168.1.100),
+                  partner@acme.com (IP 10.0.0.55),
+                  john@sunrise.com (IP 203.0.113.42),
+                  sarah@techbridge.io (IP 172.16.0.88),
+                  mike@globalvoice.com (IP 10.10.5.12),
+                  lisa@peakview.com (IP 198.51.100.23),
+                  new@quickfix.com (IP 203.0.113.88)
+
+  Lines 271-277   API_KEYS
+                  Array of 5 API keys.
+                  - key_001: Production API Key, tlk_prod_a8f2, active,
+                    scopes: [calls:read, calls:write, campaigns:read,
+                    contacts:read, contacts:write], rateLimit 1000,
+                    by admin@talkly.ai
+                  - key_002: Analytics Dashboard, tlk_prod_c4e1, active,
+                    scopes: [analytics:read, calls:read], rateLimit 500,
+                    by admin@talkly.ai
+                  - key_003: CRM Integration, tlk_prod_9b3d, active,
+                    scopes: [contacts:read, contacts:write, calls:read],
+                    rateLimit 200, by partner@acme.com
+                  - key_004: Old Staging Key, tlk_stg_f7a2, revoked,
+                    scopes: [calls:read], by admin@talkly.ai
+                  - key_005: Webhook Sender, tlk_prod_2e8f, active,
+                    scopes: [webhooks:write, calls:read], rateLimit 300,
+                    by admin@talkly.ai
+
+  Lines 281-286   WEBHOOK_ENDPOINTS
+                  Array of 4 webhook endpoints.
+                  - wh_001: https://api.acme.com/webhooks/talklee (active),
+                    events: [call.started, call.ended, call.failed]
+                  - wh_002: https://billing.acme.com/hooks/talklee (active),
+                    events: [billing.invoice_created, billing.payment_received,
+                    billing.payment_failed, billing.plan_changed]
+                  - wh_003: https://old-system.example.com/webhook (failing),
+                    events: [call.ended], 47 failures
+                  - wh_004: https://security.internal/alerts (active),
+                    events: [tenant.suspended, partner.suspended,
+                    security.mfa_enabled, security.login_failed]
+
+  Lines 288-297   WEBHOOK_DELIVERIES
+                  Array of 8 delivery records with payloads, HTTP status codes,
+                  delivery times, and success/failed statuses.
+
+  Lines 301-309   RATE_LIMIT_RULES
+                  Array of 7 rate limiting rules.
+                  - rl_001: API Default Rate Limit, per_user, /api/v1/*,
+                    100 req/60s, burst 20, reject, active
+                  - rl_002: Login Rate Limit, per_ip, /auth/login,
+                    5 req/300s, burst 3, reject, active
+                  - rl_003: Tenant API Limit, per_tenant, /api/v1/*,
+                    500 req/60s, burst 100, throttle, active
+                  - rl_004: Call Initiation Limit, per_tenant, /api/v1/calls,
+                    30 req/60s, burst 10, reject, active
+                  - rl_005: Webhook Delivery Limit, global,
+                    /billing/webhooks/*, 1000 req/60s, throttle, active
+                  - rl_006: Registration Limit, per_ip, /auth/register,
+                    3 req/3600s, reject, active
+                  - rl_007: CSV Upload Limit, per_user,
+                    /api/v1/contacts/upload, 10 req/3600s, log_only, inactive
+
+  Lines 313-321   CALL_GUARD_RULES
+                  Array of 7 call guard rules.
+                  - cg_001: Tenant Active Check (tenant_active), enabled,
+                    block, priority 1
+                  - cg_002: Partner Active Check (partner_active), enabled,
+                    block, priority 2
+                  - cg_003: Concurrency Limit Check (concurrency_limit),
+                    enabled, block, priority 3
+                  - cg_004: Call Rate Limit Check (rate_limit), enabled,
+                    block, priority 4
+                  - cg_005: Feature Entitlement Check (allowed_feature),
+                    enabled, block, priority 5
+                  - cg_006: Billing Active Check (billing_active), enabled,
+                    warn, priority 6
+                  - cg_007: Caller Whitelist Check (caller_whitelist),
+                    disabled, log_only, priority 7
+
+  Lines 325-332   TENANT_LIMITS
+                  Array of 6 tenant limit entries.
+                  - t_001: Sunrise Dental, 20 concurrent, 30/min, 500/hr,
+                    3600s max, features: [outbound, inbound, transfer,
+                    recording, ai_agent], active
+                  - t_002: Metro Realty Group, 50 concurrent, 60/min, 1000/hr,
+                    7200s max, features: [outbound, inbound, transfer,
+                    recording, ai_agent, voicemail], active
+                  - t_003: QuickFix Auto, 5 concurrent, 10/min, 100/hr,
+                    1800s max, features: [outbound, inbound], active
+                  - t_004: Evergreen Health, 20 concurrent, 25/min, 400/hr,
+                    3600s max, features: [outbound, inbound, transfer,
+                    recording], active
+                  - t_005: PeakView Financial, 50 concurrent, 50/min, 800/hr,
+                    5400s max, features: [outbound, inbound, transfer,
+                    recording, ai_agent, voicemail, analytics], active
+                  - t_006: StaleStartup LLC, 5 concurrent, 5/min, 50/hr,
+                    1800s max, features: [outbound, inbound], suspended
+
+  Lines 336-341   PARTNER_LIMITS
+                  Array of 4 partner limit entries.
+                  - partner_001: Acme Solutions, 25 tenants, 100 concurrent,
+                    120/min, 3000/hr, features: [all + white_label], active
+                  - partner_002: TechBridge Corp, 15 tenants, 60 concurrent,
+                    80/min, 2000/hr, features: [outbound through ai_agent],
+                    active
+                  - partner_003: GlobalVoice Ltd, 10 tenants, 50 concurrent,
+                    60/min, 1500/hr, features: [outbound through analytics],
+                    active
+                  - partner_004: CloudConnect Inc, 5 tenants, 15 concurrent,
+                    20/min, 500/hr, features: [outbound, inbound], restricted
+
+  Lines 345-354   ABUSE_EVENTS
+                  Array of 8 abuse detection events.
+                  Types: rapid_dialing, concurrent_flood, short_duration_spam,
+                  credential_stuffing, unusual_destination, after_hours_spike,
+                  api_scraping, geo_anomaly
+                  Severities: critical, high, medium, low
+                  Statuses: open, investigating, resolved, dismissed
+
+  Lines 358-365   BLOCKED_ENTITIES
+                  Array of 6 blocked entities.
+                  - blk_001: IP 203.0.113.42, rapid dialing, by system_auto
+                  - blk_002: IP 198.51.100.0/24, credential stuffing,
+                    by admin@talkly.ai, expires 2026-04-19
+                  - blk_003: IP 203.0.113.99, API scraping,
+                    by admin@talkly.ai
+                  - blk_004: phone +1-900-555-0100, premium rate,
+                    by system_auto
+                  - blk_005: phone +44-909-555-0200, premium rate,
+                    by system_auto
+                  - blk_006: IP 192.0.2.100, suspicious activity,
+                    by admin@talkly.ai, expired
+
+  Lines 369-382   SECRETS
+                  Array of 12 secret entries (10 production, 2 staging).
+                  Categories: payment, database, voice_provider, email,
+                  storage, monitoring, api_key
+                  Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+                  DATABASE_URL, TWILIO_AUTH_TOKEN (expired), SENDGRID_API_KEY,
+                  REDIS_URL, JWT_SECRET, S3_ACCESS_KEY, DATADOG_API_KEY,
+                  OPENAI_API_KEY, STRIPE_SECRET_KEY (staging),
+                  DATABASE_URL (staging)
+                  All with masked values like "sk_live_............a8f2".
+
+--------------------------------------------------------------------------------
+FILE 2 of 3: src/lib/dashboard-api.ts
+Lines: 1-420 (ENTIRE FILE - 420 lines)
+Status: REWRITE - swap all dummy returns for real HTTP calls
+--------------------------------------------------------------------------------
+
+Line 1 declares: "PROTOTYPE MODE - All APIs return dummy data"
+
+  Lines 4-12     DashboardSummary interface
+  Lines 15-29    Campaign interface
+  Lines 31-37    CampaignCreate interface
+  Lines 40-53    Call interface
+  Lines 55-58    CallDetail interface
+  Lines 61-72    Contact interface
+
+  Lines 75-83    DUMMY_SUMMARY
+                  Dashboard summary stats object.
+                  - total_calls: 1247
+                  - answered_calls: 1089
+                  - failed_calls: 158
+                  - minutes_used: 3420
+                  - minutes_remaining: 1580
+                  - minutes_included: 5000
+                  - active_campaigns: 3
+
+  Lines 85-142   DUMMY_CAMPAIGNS
+                  Array of 4 campaign objects.
+                  - camp-001: "Holiday Sales Outreach", running,
+                    500 leads, 342 completed, 45 failed,
+                    voice-001, max 10 concurrent, created 2024-12-15
+                  - camp-002: "Customer Satisfaction Survey", paused,
+                    200 leads, 87 completed, 12 failed,
+                    voice-002, max 5 concurrent, created 2024-12-20
+                  - camp-003: "New Product Launch", draft,
+                    750 leads, 0 completed, 0 failed,
+                    voice-003, max 15 concurrent, created 2024-12-28
+                  - camp-004: "Appointment Reminders", completed,
+                    300 leads, 285 completed, 15 failed,
+                    voice-001, max 20 concurrent, created 2024-12-10
+
+  Lines 144-234  DUMMY_CALLS
+                  Array of 8 call records.
+                  - call-001: +1 (555) 123-4567, completed, interested, 245s
+                  - call-002: +1 (555) 234-5678, completed, callback_requested, 180s
+                  - call-003: +1 (555) 345-6789, no_answer, 0s
+                  - call-004: +1 (555) 456-7890, completed, survey_completed, 320s
+                  - call-005: +1 (555) 567-8901, failed, busy, 0s
+                  - call-006: +1 (555) 678-9012, completed, not_interested, 95s
+                  - call-007: +1 (555) 789-0123, in_progress, 45s
+                  - call-008: +1 (555) 890-1234, completed, voicemail, 60s
+                  All dated 2024-12-30.
+
+  Lines 236-273  DUMMY_CONTACTS
+                  Array of 3 contact objects.
+                  - contact-001: John Smith, john.smith@email.com,
+                    +1 (555) 123-4567, completed, interested, 1 attempt
+                  - contact-002: Sarah Johnson, sarah.j@email.com,
+                    +1 (555) 234-5678, pending, callback_requested, 1 attempt
+                  - contact-003: Michael Brown, m.brown@email.com,
+                    +1 (555) 345-6789, pending, no_answer, 2 attempts
+
+  Lines 276-420  DashboardApi class (all methods return dummy data)
+                  - getDashboardSummary() line 278: returns DUMMY_SUMMARY
+                  - listCampaigns() line 283: returns DUMMY_CAMPAIGNS
+                  - getCampaign() line 287: finds from DUMMY_CAMPAIGNS
+                  - createCampaign() line 292: creates new with defaults
+                  - startCampaign() line 309: ignores _id, returns
+                    { message: "Campaign started! (Prototype mode)",
+                    jobs_enqueued: 50 }
+                  - pauseCampaign() line 314: ignores _id, returns
+                    { message: "Campaign paused! (Prototype mode)" }
+                  - stopCampaign() line 319: ignores _id, returns
+                    { message: "Campaign stopped! (Prototype mode)" }
+                  - getCampaignStats() line 324: ignores _id, returns
+                    { campaign_id, campaign_status: "running",
+                    total_leads: 500, job_status_counts: {pending: 158,
+                    completed: 342}, call_outcome_counts: {interested: 120,
+                    callback_requested: 85, not_interested: 92,
+                    voicemail: 45}, goals_achieved: 120 }
+                  - listContacts() line 343: ignores _campaignId,
+                    returns DUMMY_CONTACTS with hardcoded total of 3
+                  - addContact() line 356: creates new with defaults,
+                    returns "Contact added! (Prototype mode)"
+                  - listCalls() line 376: returns paginated DUMMY_CALLS
+                  - getCall() line 385: finds from DUMMY_CALLS with summary
+                    "Customer expressed interest in the holiday promotion.
+                    Requested callback next week to discuss premium package
+                    options."
+                  - getCallTranscript() line 394: ignores _id, returns
+                    hardcoded 5-turn transcript (JSON or text format).
+                    Conversation between "Sarah from Talky AI" and a customer
+                    about "30% off on all premium packages" promotion.
+                    Metadata: total_turns: 5, duration_seconds: 245
+
+--------------------------------------------------------------------------------
+FILE 3 of 3: src/lib/extended-api.ts
+Lines: 1-110 (ENTIRE FILE - 110 lines)
+Status: REWRITE - swap all dummy returns for real HTTP calls
+--------------------------------------------------------------------------------
+
+Line 1 declares: "PROTOTYPE MODE - All APIs return dummy data"
+
+  Lines 4-10     BulkImportResponse interface
+  Lines 13-18    CallSeriesItem interface
+  Lines 20-22    CallAnalyticsResponse interface
+  Lines 25-30    Recording interface
+  Lines 32-37    RecordingListResponse interface
+
+  Lines 40-48    DUMMY_ANALYTICS
+                  Array of 7 CallSeriesItem objects (one week of data).
+                  - 2024-12-24: 145 total, 128 answered, 17 failed
+                  - 2024-12-25: 52 total, 45 answered, 7 failed
+                  - 2024-12-26: 189 total, 165 answered, 24 failed
+                  - 2024-12-27: 210 total, 184 answered, 26 failed
+                  - 2024-12-28: 178 total, 156 answered, 22 failed
+                  - 2024-12-29: 234 total, 205 answered, 29 failed
+                  - 2024-12-30: 239 total, 206 answered, 33 failed
+
+  Lines 51-57    DUMMY_RECORDINGS
+                  Array of 5 recording objects.
+                  - rec-001: call-001, 245s, 2024-12-30T10:19:10Z
+                  - rec-002: call-002, 180s, 2024-12-30T10:23:03Z
+                  - rec-003: call-004, 320s, 2024-12-30T09:50:22Z
+                  - rec-004: call-006, 95s, 2024-12-30T10:36:39Z
+                  - rec-005: call-008, 60s, 2024-12-30T10:46:03Z
+
+  Lines 59-108   ExtendedApi class (all methods return dummy data)
+                  - uploadCSV() line 61: ignores all params (_campaignId,
+                    _file, _skipDuplicates). Returns:
+                    total_rows: 150, imported: 142, failed: 3,
+                    duplicates_skipped: 5, errors: 3 entries
+                    (row 23 invalid phone, row 67 missing field,
+                    row 98 invalid email)
+                  - getCallAnalytics() line 80: ignores _fromDate, _toDate,
+                    _groupBy. Returns { series: DUMMY_ANALYTICS }
+                  - listRecordings() line 92: ignores _callId. Returns
+                    DUMMY_RECORDINGS with hardcoded total
+                  - getRecordingStreamUrl() line 105: returns
+                    "#recording-{id}-prototype" (non-functional URL)
+
 
 ================================================================================
-3. TEST DATA IN UTILITY/TEST SUPPORT FILES
+2. DEV AUTH STUBS (fake users/tokens)
 ================================================================================
 
-File Path: src/components/home/contact-section.test.tsx
-Line Range: 27-28
-Description: Dummy contact details in assertion including email "contact@talk-lee.com"
-and phone "+1 (555) 123-4567" expected to be rendered in component.
+These files contain development-mode authentication bypasses that return
+hardcoded fake user profiles instead of calling the real backend.
 
-File Path: src/components/ui/input.test.tsx
-Line Range: 14-20
-Description: Mock input change event testing with hardcoded value "hello" used
-to verify Input component's onChange handler.
+--------------------------------------------------------------------------------
+FILE 4 of 31: src/lib/api.ts
+Lines: 1-314 (314 lines)
+Status: REMOVE dev stub blocks (keep the real API call code)
+--------------------------------------------------------------------------------
 
-================================================================================
-4. MOCKS AND MOCK SETUP
-================================================================================
+  Lines 6-8       isDevAuthStubEnabled()
+                  Returns true when process.env.NODE_ENV === "development".
+                  This function gates all dev bypasses below.
 
-File Path: src/app/ai-voices/page.test.tsx
-Line Range: 17-20
-Description: Global fetch mock setup returning { ok: true, json: async () => [] }
-for default empty voices array response.
+  Lines 10-55     devMeForToken()
+                  Returns hardcoded user profiles based on token string:
 
-File Path: src/app/ai-voices/page.test.tsx
-Line Range: 50-53
-Description: Global fetch mock override returning mockVoices array in test case
-for voice rendering test.
+                  Line 13: Empty/no token ->
+                    { id: "user-guest", email: "guest@talk-lee.ai",
+                      name: "Guest", business_name: "Talk-Lee",
+                      role: "user", minutes_remaining: 0 }
 
-File Path: src/app/ai-voices/page.test.tsx
-Line Range: 102-105
-Description: Global fetch mock returning single mockVoices array for play state
-toggle test.
+                  Lines 15-23: Token "wl-admin-token" ->
+                    { id: "usr_wl_admin", email: "wl-admin@example.com",
+                      name: "White-label Admin", business_name: "Talk-Lee",
+                      role: "white_label_admin", minutes_remaining: 0 }
 
-File Path: src/app/ai-voices/page.test.tsx
-Line Range: 72-74
-Description: Global fetch mock throwing "API Error" for error handling test case.
+                  Lines 25-36: Token matching "partner-{id}-token" ->
+                    { id: "usr_partner_{id}", email: "partner-{id}@example.com",
+                      name: "Partner Admin ({ID})",
+                      business_name: "Partner {ID}",
+                      role: "partner_admin", minutes_remaining: 0 }
 
-File Path: src/lib/http-client.test.ts
-Line Range: 8-11
-Description: Global fetch mock implementation logging calls and returning success
-response with content-type application/json header.
+                  Lines 37-45: Token "dev-token" or "e2e-token" ->
+                    { id: "usr_dev" or "usr_e2e",
+                      email: "dev@example.com" or "e2e@example.com",
+                      name: "Dev User" or "E2E User",
+                      business_name: "Talk-Lee Demo Inc.",
+                      role: "admin", minutes_remaining: 1500 }
 
-File Path: src/lib/http-client.test.ts
-Line Range: 28-33
-Description: Global fetch mock returning 429 status with "Too many requests" error
-and retry-after header for rate limit testing.
+                  Lines 47-54: Any other token (default) ->
+                    { id: "user-001", email: "demo@talk-lee.ai",
+                      name: "Demo User", business_name: "Talk-Lee Demo Inc.",
+                      role: "admin", minutes_remaining: 1500 }
 
-File Path: src/lib/backend-api.assistant.test.ts
-Line Range: 7-10, 28-31, 64-70, 95-111, 141-152
-Description: Multiple global fetch mock implementations throughout test file for
-mocking different assistant API endpoints and responses.
+  Lines 174-180   login() dev bypass
+                  When isDevAuthStubEnabled(), returns:
+                  { email: <input>, message: "Development mode: login bypassed" }
+                  Skips real POST /auth/login call.
 
-File Path: src/lib/notifications.test.ts
-Line Range: 29-31
-Description: Mock localStorage and window object setup in notification store tests
-using resetStorage() helper function.
+  Lines 192-200   verifyOtp() dev bypass
+                  When isDevAuthStubEnabled(), returns:
+                  { access_token: "dev-token",
+                    refresh_token: "dev-refresh-token",
+                    user_id: "user-001", email: <input>,
+                    message: "Development mode: OTP verified" }
+                  Skips real POST /auth/verify-otp call.
 
-File Path: src/lib/email-audit.test.ts
-Line Range: 13-27, 30-32
-Description: Mock localStorage setup using Map-based storage implementation and
-mock window object for email audit store tests.
+  Lines 213-227   register() dev bypass
+                  When isDevAuthStubEnabled(), returns:
+                  { id: "user-001", email: <input>,
+                    business_name: <input>, role: "admin",
+                    minutes_remaining: 1500,
+                    message: "Development mode: registration bypassed" }
+                  Skips real POST /auth/register call.
 
-File Path: src/components/connectors/connector-card.test.ts
-Line Range: 68-71
-Description: Mock window.open() implementation for testing connector authorization
-flow with URL capture.
+  Lines 240-242   getMe() dev bypass
+                  When isDevAuthStubEnabled(), calls devMeForToken() instead
+                  of real GET /auth/me endpoint.
 
-================================================================================
-5. HARDCODED VALUES AND MOCK IDS
-================================================================================
+--------------------------------------------------------------------------------
+FILE 5 of 31: src/server/auth-core.ts
+Lines: 1-1372 (1372 lines)
+Status: REMOVE dev stub blocks
+--------------------------------------------------------------------------------
 
-Mock IDs Found Across Tests:
-- Campaign IDs: camp-001, camp-002, camp-003, camp-004, camp-x
-- Voice IDs: voice-001, voice-002, voice-003, voice, sarah, michael
-- Email Template IDs: tpl-1, tpl-x
-- Message IDs: msg-1
-- Event IDs: evt-1, evt-9
-- Run IDs: run-1, run-2, run-x
-- Reminder IDs: rem-*, rem-scheduled, rem-failed
-- Meeting IDs: m1, m2, mtg-1
-- Contact IDs: lead-1, c1, contact-*, lead-x
-- User Identifiers: Ada, Bob, Cara, Alex, Alex Lovelace
+  Lines 527-539   devMeForToken() (server-side version)
+                  Returns hardcoded AuthMe objects based on token:
 
-Mock Email Addresses:
-- a@x.com, b@x.com, c@x.com
-- contact@talk-lee.com
-- alex@example.com
-- ada@example.test
-- c@example.test
+                  Line 530: "wl-admin-token" ->
+                    { id: "usr_platform_admin",
+                      email: "platform-admin@example.com",
+                      role: "platform_admin" }
 
-Mock URLs:
-- https://provider.example/auth
-- https://provider.example/authorize
-- https://example.test/join
-- https://example.test/cal
-- http://example.test
-- http://localhost:8000/api/v1
-- http://localhost:3000/connectors/callback
-- /audio/sarah.mp3, /audio/michael.mp3
-- /support
+                  Lines 531-535: "partner-{id}-token" ->
+                    { id: "usr_partner_{id}",
+                      email: "partner-{id}@example.com",
+                      role: "partner_admin",
+                      partner_id: partnerId }
 
-Mock Timestamps:
-- 2025-12-15, 2025-12-20, 2025-12-28 (December 2025 dates)
-- 2026-01-01, 2026-01-09, 2026-01-14 (January 2026 dates)
+                  Line 536: "e2e-token" ->
+                    { id: "usr_e2e", email: "e2e@example.com", role: "user" }
 
-================================================================================
-6. SUMMARY STATISTICS
-================================================================================
+                  Line 537: "dev-token" ->
+                    { id: "usr_dev", email: "dev@example.com", role: "user" }
 
-Total Test Files Scanned: 24 files
-Total Story Files Scanned: 7 files
-Total Mock Objects Found: 60+ mock data objects/arrays
-Total Hardcoded API Responses: 20+ mock responses
-Total Test Data Helper Functions: 3 (makeCampaign, rem, demoReminder)
-Total Mock Arrays with Test Data: 25+ arrays
+  Lines 635-639   authMeFromRequest() dev check
+                  If not production AND TALKLEE_DEV_AUTH_TOKENS !== "0"
+                  and token matches a dev token pattern, returns the fake
+                  user from devMeForToken() instead of calling the real
+                  auth backend.
 
-Files with Heaviest Mock Data Usage:
-1. src/lib/backend-api.*.test.ts (6 test files) - Mock API responses
-2. src/components/ui/dashboard-charts.stories.tsx - Mock chart data (120+ data points)
-3. src/components/campaigns/campaign-performance-table.stories.tsx - Campaign objects
-4. src/lib/reminders-utils.test.ts - Reminder test objects
+--------------------------------------------------------------------------------
+FILE 6 of 31: src/middleware.ts
+Lines: 1-350 (350 lines)
+Status: REMOVE dev bypass block
+--------------------------------------------------------------------------------
 
-================================================================================
-7. NOTES FOR CLEANUP
-================================================================================
+  Lines 21-24     devBypassAuth() helper function
+                  Returns true when NODE_ENV !== "production" AND
+                  TALKLEE_REQUIRE_AUTH !== "1".
 
-Recommended Cleanup Strategy:
-1. Replace all mock Campaign data with API-driven data fetches
-2. Convert hardcoded mock voice data to dynamic voice list from API
-3. Remove mock localStorage implementations and use real localStorage in tests
-4. Replace mock fetch implementations with MSW (Mock Service Worker) for consistency
-5. Extract common mock data factories to shared test utilities
-6. Use data builders/factories for complex objects (Campaign, Reminder, etc.)
-7. Consider environment-based API mocking for e2e test scenarios
+  Lines 319-332   Dev auth bypass in middleware
+                  When devBypassAuth() returns true:
+                  - Line 323: Sets cookie value to "dev-token"
+                  - Line 324: Path "/"
+                  - Line 326: httpOnly: false
+                  - Line 327: secure: false
+                  - Line 328: Max-Age 60 * 60 * 24 * 7 (7 days)
+                  Automatically authenticates all requests as dev user.
 
-Priority Areas:
-- HIGH: API response mocks in backend-api.*.test.ts (currently duplicated across tests)
-- MEDIUM: Campaign and Reminder mock data (used across multiple files)
-- MEDIUM: Chart/dashboard mock data (large dataset generation, can be optimized)
-- LOW: Simple utility test data (keep as-is, low maintenance burden)
+--------------------------------------------------------------------------------
+FILE 7 of 31: src/components/home/navbar.tsx
+Lines: 1-525 (525 lines)
+Status: REMOVE dev token auto-set
+--------------------------------------------------------------------------------
+
+  Lines 103-108   useEffect hook in Navbar component
+                  In development mode (process.env.NODE_ENV !== "development"):
+                  - Line 107: Sets auth token to "dev-token" in localStorage
+                    if no token already exists.
+                  Auto-logs in users during local development.
+
 
 ================================================================================
-8. SOURCE CODE PROTOTYPE MOCK DATA (dashboard-api.ts & extended-api.ts)
+3. WHITE-LABEL INLINE MOCK DATA
 ================================================================================
 
-File Path: src/lib/dashboard-api.ts
-Description: Dummy data used when in PROTOTYPE mode for Dashboard UI.
-- DUMMY_SUMMARY: DashboardSummary object with total_calls: 1247, answered_calls: 1089, failed_calls: 158, minutes_used: 3420, etc.
-- DUMMY_CAMPAIGNS: Array of 4 Campaign objects (camp-001 to camp-004) with varied statuses (running, paused, draft, completed).
-- DUMMY_CALLS: Array of 8 Call objects with different statuses (completed, no_answer, failed, in_progress).
-- DUMMY_CONTACTS: Array of 3 Contact objects with names and statuses.
+These files contain hardcoded fake data directly in components/pages for
+white-label partner features. No imports from mock data files - the data
+is defined inline.
 
-File Path: src/lib/extended-api.ts
-Description: Dummy data used for Analytics and Recordings in PROTOTYPE mode.
-- DUMMY_ANALYTICS: Array of 7 CallSeriesItem objects representing calls over a week (2024-12-24 to 2024-12-30).
-- DUMMY_RECORDINGS: Array of 5 Recording objects with ids (rec-001 to rec-005) and durations.
+--------------------------------------------------------------------------------
+FILE 8 of 31: src/components/dashboard/PartnerDashboard.tsx
+Lines: 1-73 (73 lines)
+Status: REPLACE getPartnerDashboardStats() with real API call
+--------------------------------------------------------------------------------
+
+  Lines 8-14      stableNumberFromString() helper
+                  Deterministic hash function for generating fake data.
+
+  Lines 16-34     getPartnerDashboardStats()
+                  Returns hardcoded stats based on partner ID:
+
+                  Line 20: Partner "acme" ->
+                    { totalSubTenants: 12, activeCalls: 8,
+                      minutesUsed: 1420, billingSummary: "$320" }
+
+                  Line 24: Partner "zen" ->
+                    { totalSubTenants: 7, activeCalls: 3,
+                      minutesUsed: 860, billingSummary: "$190" }
+
+                  Lines 27-33: Any other partner ->
+                    Deterministic fake data generated from partner ID hash.
+                    totalSubTenants: 3-22, activeCalls: 0-10,
+                    minutesUsed: 300-5299, billingSummary: $80-$1279.
+
+--------------------------------------------------------------------------------
+FILE 9 of 31: src/app/white-label/[partner]/analytics/partner-analytics-client.tsx
+Lines: 1-510 (510 lines)
+Status: REPLACE makeMockData() with real API call
+--------------------------------------------------------------------------------
+
+  Lines 22-28     stableNumberFromString() helper
+  Lines 30-32     clamp() helper
+  Lines 34-58     toSmoothPath() helper
+
+  Lines 66-129    makeMockData() for partner analytics
+
+                  Lines 73-97: "acme" partner hardcoded data:
+                    - minutesBySubTenant (lines 84-88):
+                      Salon Assistant: 600 min, Clinic Bot: 1200 min,
+                      Restaurant Bot: 350 min
+                    - concurrencyPeaks (lines 89-94):
+                      10:00 -> 3, 11:00 -> 6, 12:00 -> 8, 13:00 -> 4
+                    - dailyUsage (lines 75-81): 14 days,
+                      base rotating [320, 410, 290, 530] with minor
+                      variation per index
+
+                  Lines 99-128: Other partners ->
+                    Generates deterministic fake data from partner ID hash.
+                    Creates random tenant names ("Sub-Tenant 1", etc.),
+                    concurrency peaks, and daily usage arrays.
+
+--------------------------------------------------------------------------------
+FILE 10 of 31: src/app/white-label/[partner]/billing/page.tsx
+Lines: 1-222 (222 lines)
+Status: REPLACE inline data with real API call
+--------------------------------------------------------------------------------
+
+  Lines 72-78     billingCycle object (hardcoded)
+                  - cycleStart/cycleEnd: Current month boundaries (calculated)
+                  - minutesUsed: 3200
+                  - planLimit: 7500
+                  - estimatedCharges: 84
+
+  Lines 80-84     invoices array (hardcoded)
+                  - INV-1023: Feb 2026, $120, Paid
+                  - INV-1018: Jan 2026, $95, Paid
+                  - INV-1011: Dec 2025, $102, Paid
+
+  Lines 86-90     overageAlerts array (calculated from billingCycle)
+
+--------------------------------------------------------------------------------
+FILE 11 of 31: src/app/white-label/[partner]/tenants/tenants-client.tsx
+Lines: 1-645 (645 lines)
+Status: REPLACE inline functions with real API calls
+--------------------------------------------------------------------------------
+
+  Lines 60-69     getPartnerLimits()
+                  Hardcoded limits by partner:
+                  - "acme": { maxMinutes: 10_000, maxConcurrency: 10 }
+                  - "zen": { maxMinutes: 7_500, maxConcurrency: 8 }
+                  - Other partners: hash-generated maxMinutes 5000-25000,
+                    maxConcurrency 5-25
+
+  Lines 72-114    initialTenantsForPartner()
+                  Hardcoded initial tenant arrays:
+                  Lines 76-96: "acme" tenants:
+                    - "Clinic AI": id acme-clinic-ai, 1000 min,
+                      3 concurrent, active, created 14 days ago
+                    - "Dental Bot": id acme-dental-bot, 800 min,
+                      2 concurrent, suspended, created 8 days ago
+                  Lines 99-111: "zen" tenants:
+                    - "Salon Assistant": id zen-salon-assistant, 600 min,
+                      2 concurrent, active, created 10 days ago
+                  Line 113: Other partners -> empty array []
+
 
 ================================================================================
-9. ADDITIONAL MOCK DATA (billing-mock-data.ts)
+4. CAMPAIGN SEED / GENERATED DATA
 ================================================================================
 
-File Path: src/lib/billing-mock-data.ts
-Description: Mock data for frontend billing layer development.
-- PLANS: Array of 4 BillingPlan objects (Starter, Professional, Business, Enterprise).
-- CURRENT_TENANT_PLAN: Current tenant plan details (Professional).
-- CURRENT_USAGE: Current billing period usage metrics.
-- DAILY_USAGE: Array of 14 UsageSummary objects for daily breakdown.
-- ADJUSTMENTS: Array of 4 BillingAdjustment objects (credit, promo, debit, refund).
-- INVOICES: Array of 3 Invoice objects (INV-2026-0001 to INV-2026-0003).
-- PARTNER_BILLING: Array of 4 PartnerBillingSummary objects.
-- TENANT_BILLING: Array of 6 TenantBillingSummary objects.
-- AUDIT_LOGS: Array of 12 AuditLogEntry objects.
-- API_KEYS: Array of 5 ApiKey objects (active and revoked).
-- WEBHOOK_ENDPOINTS: Array of 4 WebhookEndpoint objects.
-- WEBHOOK_DELIVERIES: Array of 8 WebhookDelivery objects.
-- RATE_LIMIT_RULES: Array of 7 RateLimitRule objects.
-- CALL_GUARD_RULES: Array of 7 CallGuardRule objects.
-- TENANT_LIMITS: Array of 6 TenantLimit objects.
-- PARTNER_LIMITS: Array of 4 PartnerLimit objects.
-- ABUSE_EVENTS: Array of 8 AbuseEvent objects.
-- BLOCKED_ENTITIES: Array of 6 BlockedEntity objects.
-- SECRETS: Array of 12 SecretEntry objects (production and staging secrets).
+These components generate fake "seed" events and alerts to populate the
+campaign performance page when there is no real backend data.
+
+--------------------------------------------------------------------------------
+FILE 12 of 31: src/components/campaigns/event-stream.tsx
+Lines: 1-416 (416 lines)
+Status: REPLACE seed functions with real API data
+--------------------------------------------------------------------------------
+
+  Lines 310-358   seedEvents()
+                  Generates 5 hardcoded seed events for the event stream:
+                  1. "Campaign started" (Campaign category, 12 min ago)
+                     Description: "Holiday Sales Outreach began processing
+                     new leads."
+                     Metadata: queueDepth: 42, operator: "scheduler"
+                  2. "Worker pool scaled" (System category, 80 min ago)
+                     Description: "System scaled worker pool from 6 -> 10
+                     to handle traffic spike."
+                     Metadata: from: 6, to: 10
+                  3. "Retry rate elevated" (Alerts category, 2 hours ago)
+                     Description: "Outbound retry rate exceeded threshold
+                     for 5 minutes."
+                     Metadata: rate: "7.2%", threshold: "5.0%"
+                  4. "Campaign paused" (User Actions category, 26 hours ago)
+                     Description: "Operator paused Customer Satisfaction
+                     Survey for script review."
+                     Metadata: user: "Alex"
+                  5. "Goal reached" (Milestones category, 9 days ago)
+                     Description: "Appointment Reminders hit 95% completion
+                     milestone."
+                     Metadata: completion: "95%"
+
+  Lines 360-416   generateEvent()
+                  Generates random mock events for live event simulation.
+                  Creates new events based on (Date.now() % 5) roll.
+                  Categories cycle through Campaign, System, Alerts,
+                  User Actions, Milestones.
+
+--------------------------------------------------------------------------------
+FILE 13 of 31: src/components/campaigns/alert-timeline.tsx
+Lines: 1-584 (584 lines)
+Status: REPLACE seed function with real API data
+--------------------------------------------------------------------------------
+
+  Lines 63-105    seedAlerts()
+                  Generates 3 hardcoded seed alerts:
+                  1. "Carrier error spike" (Critical, Network, Active)
+                     Created 18 min ago, updated 6 min ago.
+                     Description: "Increased carrier error codes detected
+                     on outbound calls, retries engaged."
+                     Metadata: code: "486", p95_ms: 540
+                  2. "API throttling warning" (Warning, API, Investigating)
+                     Created 55 min ago, updated 20 min ago. Acknowledged.
+                     Description: "Upstream API returned 429 responses above
+                     threshold for 3 minutes."
+                     Metadata: route: "/calls", rate: "12/min"
+                  3. "Campaign completion delayed" (Info, Campaign, Resolved)
+                     Created 28 hours ago, updated 20 hours ago.
+                     Acknowledged.
+                     Description: "Campaign completion ETA extended due to
+                     lead pacing settings."
+                     Metadata: eta: "2h"
+
+
+================================================================================
+5. NOTIFICATION DEFAULTS (mock profile)
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE 14 of 31: src/lib/notifications.ts
+Lines: 1-354 (354 lines)
+Status: REPLACE default profile with real user data from auth
+--------------------------------------------------------------------------------
+
+  Lines 123-128   Default account settings
+                  Contains hardcoded demo profile used as fallback:
+                  - account.profile.name: "Demo User"
+                  - account.profile.email: "demo@talk-lee.ai"
+                  - account.auth.twoFactorEnabled: false
+                  - account.linking.google: false
+                  - account.linking.github: false
+
+
+================================================================================
+6. SIDEBAR GUEST FALLBACK
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE 15 of 31: src/components/layout/sidebar.tsx
+Lines: 1-533 (533 lines)
+Status: KEEP as fallback, but ensure real user data loads
+--------------------------------------------------------------------------------
+
+  Lines 180-186   Guest profile fallback object
+                  Used when user data hasn't loaded yet:
+                  - id: "guest"
+                  - email: "guest@talk-lee.ai"
+                  - name: "Guest"
+                  - business_name: brandName (defaults to "Talk-Lee")
+                  - role: "user"
+                  NOTE: This is a legitimate loading-state fallback. It will
+                  be replaced by real user data once auth completes. May be
+                  kept as-is or replaced with a skeleton/spinner.
+
+
+================================================================================
+7. DUMMY CALL STATE (AI Options page)
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE 16 of 31: src/app/ai-options/page.tsx
+Lines: 1-1117 (1117 lines)
+Status: REPLACE dummyCall state with real WebSocket call flow
+--------------------------------------------------------------------------------
+
+  Lines 83-92     dummyCall state initialization
+                  Hardcoded mock call state object:
+                  - isActive: false
+                  - sessionId: null
+                  - callId: null
+                  - conversationState: "greeting"
+                  - agentName: "Alex"
+                  - companyName: "Your Company"
+                  - messages: []
+                  - latency: {}
+
+  Line 94         dummyCallConnecting state (boolean, default false)
+
+  Lines 603-710+  UI renders "Start Dummy Call" button and full mock call
+                  simulation interface with latency display, conversation
+                  transcript, and message input.
+
+
+================================================================================
+8. DASHBOARD SEEDED VISUALIZATION
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE 17 of 31: src/app/dashboard/page.tsx
+Lines: 1-1942 (1942 lines)
+Status: REPLACE seeded data with real API-driven data
+--------------------------------------------------------------------------------
+
+  Lines 340-343   seeded01() function
+                  Deterministic pseudo-random number generator using
+                  Math.sin(seed) * 10_000. Returns value between 0 and 1.
+                  Used to generate fake noise in dashboard visualizations.
+
+  Lines 556-562   Usage in StatusStackedBarsChart
+                  seeded01() used to add +/- 16% noise to bar chart values
+                  for visual variation.
+
+  Lines 1304-1311 seedTotals / heatValues
+                  Generates heat map data from mock campaign series.
+                  seedTotals: series.map(s => s.total_calls), fallback
+                  [0,0,0,0,0,0,0]. heatValues: 7x8 grid (Mon-Sun x
+                  3-hour blocks) using sine wave pattern over seedTotals.
+                  While the data derives from the already-documented
+                  dashboard-api.ts mock data, the seeded visualization
+                  noise is itself a form of mock data generation.
+
+
+================================================================================
+9. BILLING API FALLBACKS (billing-api.ts)
+================================================================================
+
+This file is NOT counted in the 31 primary files above (it does attempt real
+API calls). However, it falls back to mock data on failure, and it also
+imports all 20 mock data constants to serve as fallbacks.
+
+--------------------------------------------------------------------------------
+FILE 18 of 31: src/lib/billing-api.ts
+Lines: 1-415 (415 lines)
+Status: REMOVE mock data fallbacks after backend is stable
+--------------------------------------------------------------------------------
+
+  Lines 4-10      Imports from billing-mock-data.ts:
+                  CURRENT_TENANT_PLAN, CURRENT_USAGE, DAILY_USAGE, INVOICES,
+                  PLANS, ADJUSTMENTS, OVERAGE_ALERTS, PARTNER_BILLING,
+                  TENANT_BILLING, API_KEYS, WEBHOOK_ENDPOINTS,
+                  WEBHOOK_DELIVERIES, RATE_LIMIT_RULES, CALL_GUARD_RULES,
+                  TENANT_LIMITS, PARTNER_LIMITS, ABUSE_EVENTS,
+                  BLOCKED_ENTITIES, SECRETS
+                  (19 of 20 imports; OVERAGE_ALERTS imported but used via
+                  OverageAlerts constant)
+
+  Lines 36-57     billingKeys object
+                  Defines 20 query key patterns for React Query cache.
+
+  Lines 61-262    20 Query Hooks (each falls back to mock data):
+                  Pattern: try { billingFetch(endpoint) } catch { MOCK_FALLBACK }
+
+                  Billing hooks (lines 61-160):
+                  - useBillingPlan() -> falls back to CURRENT_TENANT_PLAN
+                  - useBillingUsage() -> falls back to CURRENT_USAGE
+                  - useDailyUsage() -> falls back to DAILY_USAGE
+                  - useBillingInvoices() -> falls back to INVOICES
+                  - useBillingInvoice(id) -> falls back to INVOICES.find()
+                  - useBillingPlans() -> falls back to PLANS
+                  - useBillingAdjustments() -> falls back to ADJUSTMENTS
+                  - useOverageAlerts() -> falls back to OVERAGE_ALERTS
+                  - usePartnerBilling() -> falls back to PARTNER_BILLING
+                  - useTenantBilling() -> falls back to TENANT_BILLING
+
+                  Admin hooks (lines 164-262):
+                  - useApiKeys() -> falls back to API_KEYS
+                  - useWebhookEndpoints() -> falls back to WEBHOOK_ENDPOINTS
+                  - useWebhookDeliveries() -> falls back to WEBHOOK_DELIVERIES
+                  - useRateLimitRules() -> falls back to RATE_LIMIT_RULES
+                  - useCallGuardRules() -> falls back to CALL_GUARD_RULES
+                  - useTenantLimits() -> falls back to TENANT_LIMITS
+                  - usePartnerLimits() -> falls back to PARTNER_LIMITS
+                  - useAbuseEvents() -> falls back to ABUSE_EVENTS
+                  - useBlockedEntities() -> falls back to BLOCKED_ENTITIES
+                  - useSecrets() -> falls back to SECRETS
+
+  Lines 266-415   15 Mutation Hooks (all attempt real API calls):
+                  - useCreateApiKey() -> POST /admin/api-keys
+                  - useRevokeApiKey() -> POST /admin/api-keys/{id}/revoke
+                  - useCreateWebhook() -> POST /admin/webhooks
+                  - useDeleteWebhook() -> DELETE /admin/webhooks/{id}
+                  - useTestWebhook() -> POST /admin/webhooks/{id}/test
+                  - useCreateRateLimitRule() -> POST /admin/rate-limits
+                  - useToggleRateLimitRule() -> PATCH /admin/rate-limits/{id}
+                  - useToggleCallGuard() -> PATCH /admin/call-guards/{id}
+                  - useUpdateTenantLimit() -> PUT /admin/tenant-limits/{id}
+                  - useUpdatePartnerLimit() -> PUT /admin/partner-limits/{id}
+                  - useBlockEntity() -> POST /admin/blocked-entities
+                  - useUnblockEntity() -> DELETE /admin/blocked-entities/{id}
+                  - useRotateSecret() -> POST /admin/secrets/{id}/rotate
+                  - useChangePlan() -> POST /billing/plan/change
+                  - useCreateAdjustment() -> POST /billing/adjustment
+
+
+================================================================================
+10. ADMIN PAGES (import from billing-mock-data.ts)
+================================================================================
+
+These 9 admin pages import mock data constants from billing-mock-data.ts.
+When the backend is connected, these imports should be replaced with API
+hooks (similar to how billing-api.ts hooks work).
+
+--------------------------------------------------------------------------------
+FILE 19 of 31: src/app/admin/abuse-detection/page.tsx
+Lines: 1-358 (358 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 13         import { ABUSE_EVENTS, BLOCKED_ENTITIES }
+                  from "@/lib/billing-mock-data"
+  Line 14         import type { AbuseEvent, BlockedEntity, AbuseSeverity }
+                  from "@/lib/billing-types"
+  Line 88         Hardcoded "admin@talkly.ai" as blockedBy value
+                  when creating new blocked entities.
+
+--------------------------------------------------------------------------------
+FILE 20 of 31: src/app/admin/api-keys/page.tsx
+Lines: 1-382 (382 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 9          import { API_KEYS } from "@/lib/billing-mock-data"
+  Line 10         import type { ApiKey } from "@/lib/billing-types"
+  Line 85         Hardcoded "admin@talkly.ai" as createdBy value
+                  when creating new API keys.
+
+--------------------------------------------------------------------------------
+FILE 21 of 31: src/app/admin/audit-logs/page.tsx
+Lines: 1-117 (117 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 8          import { AUDIT_LOGS } from "@/lib/billing-mock-data"
+  Line 9          import type { AuditLogEntry } from "@/lib/billing-types"
+
+--------------------------------------------------------------------------------
+FILE 22 of 31: src/app/admin/billing/page.tsx
+Lines: 1-134 (134 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 8          import { PARTNER_BILLING } from "@/lib/billing-mock-data"
+  Line 9          import type { BillingState } from "@/lib/billing-types"
+
+--------------------------------------------------------------------------------
+FILE 23 of 31: src/app/admin/billing/tenants/page.tsx
+Lines: 1-126 (126 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 8          import { TENANT_BILLING } from "@/lib/billing-mock-data"
+  Line 9          import type { BillingState, InvoiceStatus }
+                  from "@/lib/billing-types"
+
+--------------------------------------------------------------------------------
+FILE 24 of 31: src/app/admin/rate-limiting/page.tsx
+Lines: 1-339 (339 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 12         import { RATE_LIMIT_RULES }
+                  from "@/lib/billing-mock-data"
+  Line 13         import type { RateLimitRule } from "@/lib/billing-types"
+  Line 73         Hardcoded placeholder:
+                  const totalBlocked = 1_247; // placeholder count
+
+--------------------------------------------------------------------------------
+FILE 25 of 31: src/app/admin/secrets/page.tsx
+Lines: 1-321 (321 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 12         import { SECRETS } from "@/lib/billing-mock-data"
+  Line 13         import type { SecretEntry, SecretCategory }
+                  from "@/lib/billing-types"
+  Line 92         Hardcoded "admin@talkly.ai" as updatedBy value
+                  when creating/rotating secrets.
+
+--------------------------------------------------------------------------------
+FILE 26 of 31: src/app/admin/voice-security/page.tsx
+Lines: 1-459 (459 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 11         import { CALL_GUARD_RULES, TENANT_LIMITS, PARTNER_LIMITS }
+                  from "@/lib/billing-mock-data"
+  Line 12         import type { CallGuardRule, TenantLimit, PartnerLimit }
+                  from "@/lib/billing-types"
+
+--------------------------------------------------------------------------------
+FILE 27 of 31: src/app/admin/webhooks/page.tsx
+Lines: 1-473 (473 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 26         import { WEBHOOK_ENDPOINTS, WEBHOOK_DELIVERIES }
+                  from "@/lib/billing-mock-data"
+  Line 27         import type { WebhookEndpoint, WebhookDelivery,
+                  WebhookEventType } from "@/lib/billing-types"
+
+
+================================================================================
+11. BILLING PAGES (import from billing-mock-data.ts)
+================================================================================
+
+These 4 billing pages import mock data from billing-mock-data.ts.
+
+--------------------------------------------------------------------------------
+FILE 28 of 31: src/app/billing/page.tsx
+Lines: 1-398 (398 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 8          import { CURRENT_TENANT_PLAN, CURRENT_USAGE, DAILY_USAGE,
+                  OVERAGE_ALERTS, ADJUSTMENTS, INVOICES }
+                  from "@/lib/billing-mock-data"
+  Line 9          import type { BillingState, InvoiceStatus,
+                  OverageAlert, BillingAdjustment }
+                  from "@/lib/billing-types"
+                  This is the heaviest consumer - imports 6 mock data
+                  constants.
+
+--------------------------------------------------------------------------------
+FILE 29 of 31: src/app/billing/plans/page.tsx
+Lines: 1-97 (97 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 9          import { PLANS, CURRENT_TENANT_PLAN }
+                  from "@/lib/billing-mock-data"
+
+--------------------------------------------------------------------------------
+FILE 30 of 31: src/app/billing/invoices/page.tsx
+Lines: 1-96 (96 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 8          import { INVOICES } from "@/lib/billing-mock-data"
+  Line 9          import type { InvoiceStatus } from "@/lib/billing-types"
+
+--------------------------------------------------------------------------------
+FILE 31 of 31: src/app/billing/invoices/[id]/page.tsx
+Lines: 1-185 (185 lines)
+Status: SWAP imports to API hooks
+--------------------------------------------------------------------------------
+  Line 9          import { INVOICES } from "@/lib/billing-mock-data"
+  Line 10         import type { InvoiceStatus } from "@/lib/billing-types"
+                  Finds invoice by ID from the mock INVOICES array.
+
+
+================================================================================
+12. MASTER FILE-BY-FILE REFERENCE (all 31 production files)
+================================================================================
+
+Quick-reference table of all 31 files with mock data locations:
+
+  #  | File                                                        | Total Lines | Mock Lines        | Action
+-----|-------------------------------------------------------------|-------------|-------------------|--------
+   1 | src/lib/billing-mock-data.ts                                | 382         | 1-382 (all)       | DELETE
+   2 | src/lib/dashboard-api.ts                                    | 420         | 1-420 (all)       | REWRITE
+   3 | src/lib/extended-api.ts                                     | 110         | 1-110 (all)       | REWRITE
+   4 | src/lib/api.ts                                              | 314         | 6-8, 10-55,       | REMOVE
+     |                                                             |             | 174-180,           | stub
+     |                                                             |             | 192-200,           | blocks
+     |                                                             |             | 213-227,           |
+     |                                                             |             | 240-242            |
+   5 | src/server/auth-core.ts                                     | 1372        | 527-539,          | REMOVE
+     |                                                             |             | 635-639            | stub
+   6 | src/middleware.ts                                            | 350         | 21-24,            | REMOVE
+     |                                                             |             | 319-332            |
+   7 | src/components/home/navbar.tsx                               | 525         | 103-108           | REMOVE
+   8 | src/components/dashboard/PartnerDashboard.tsx                | 73          | 8-14, 16-34       | REPLACE
+   9 | src/app/white-label/[partner]/analytics/                     | 510         | 22-28, 66-129     | REPLACE
+     |   partner-analytics-client.tsx                               |             |                   |
+  10 | src/app/white-label/[partner]/billing/page.tsx               | 222         | 72-90             | REPLACE
+  11 | src/app/white-label/[partner]/tenants/tenants-client.tsx     | 645         | 60-114            | REPLACE
+  12 | src/components/campaigns/event-stream.tsx                    | 416         | 310-416           | REPLACE
+  13 | src/components/campaigns/alert-timeline.tsx                  | 584         | 63-105            | REPLACE
+  14 | src/lib/notifications.ts                                     | 354         | 123-128           | REPLACE
+  15 | src/components/layout/sidebar.tsx                            | 533         | 180-186           | KEEP*
+  16 | src/app/ai-options/page.tsx                                  | 1117        | 83-94             | REPLACE
+  17 | src/app/dashboard/page.tsx                                   | 1942        | 340-343,          | REPLACE
+     |                                                             |             | 556-562,           |
+     |                                                             |             | 1304-1311          |
+  18 | src/lib/billing-api.ts                                       | 415         | 4-10,             | REMOVE
+     |                                                             |             | 61-415             | fallbacks
+  19 | src/app/admin/abuse-detection/page.tsx                       | 358         | 13-14, 88         | SWAP
+  20 | src/app/admin/api-keys/page.tsx                              | 382         | 9-10, 85          | SWAP
+  21 | src/app/admin/audit-logs/page.tsx                            | 117         | 8-9               | SWAP
+  22 | src/app/admin/billing/page.tsx                               | 134         | 8-9               | SWAP
+  23 | src/app/admin/billing/tenants/page.tsx                       | 126         | 8-9               | SWAP
+  24 | src/app/admin/rate-limiting/page.tsx                         | 339         | 12-13, 73         | SWAP
+  25 | src/app/admin/secrets/page.tsx                               | 321         | 12-13, 92         | SWAP
+  26 | src/app/admin/voice-security/page.tsx                        | 459         | 11-12             | SWAP
+  27 | src/app/admin/webhooks/page.tsx                              | 473         | 26-27             | SWAP
+  28 | src/app/billing/page.tsx                                     | 398         | 8-9               | SWAP
+  29 | src/app/billing/plans/page.tsx                               | 97          | 9                 | SWAP
+  30 | src/app/billing/invoices/page.tsx                            | 96          | 8-9               | SWAP
+  31 | src/app/billing/invoices/[id]/page.tsx                       | 185         | 9-10              | SWAP
+
+  * File #15 (sidebar.tsx) has a guest fallback that may be kept as a
+    loading-state placeholder. All others must be cleaned up.
+
+Action Legend:
+  DELETE   = Entire file should be deleted
+  REWRITE  = File needs complete rewrite (swap dummy returns for HTTP calls)
+  REMOVE   = Remove specific mock/stub code blocks (keep the rest)
+  REPLACE  = Replace inline hardcoded data with API call
+  SWAP     = Change import from billing-mock-data to API hook
+  KEEP     = Acceptable fallback, can remain
+
+
+================================================================================
+13. TOTAL MOCK DATA STATISTICS (Production Files Only)
+================================================================================
+
+Total production files with mock data:          31 files
+Files that are entirely mock data:               3 files
+Files with dev auth stubs:                       4 files
+Files with inline hardcoded fake data:           6 files
+Files with seed/generated fake events:           2 files
+Files with mock profile defaults:                1 file
+Files with guest fallback:                       1 file
+Files with dummy call state:                     1 file
+Files with seeded visualization data:            1 file
+Files importing from billing-mock-data.ts:      13 files (9 admin + 4 billing)
+Billing API fallback file:                       1 file
+
+Total lines of mock data code:                ~2,000 lines
+Total fake data constants defined:                20 (in billing-mock-data.ts)
+Total fake user profiles:                          9 (across api.ts + auth-core.ts)
+Total dev token patterns:                          4 (dev-token, e2e-token,
+                                                    wl-admin-token, partner-*-token)
+
+Mock Data by Category:
+  Billing plans:            4 plans
+  Invoices:                 6 (3 main + 3 white-label)
+  Campaigns:                4 campaigns
+  Calls:                    8 call records
+  Contacts:                 3 contacts
+  Recordings:               5 recordings
+  Analytics data points:    7 daily entries
+  Audit logs:              12 entries
+  API keys:                 5 keys
+  Webhook endpoints:        4 endpoints
+  Webhook deliveries:       8 records
+  Rate limit rules:         7 rules
+  Call guard rules:         7 rules
+  Tenant limits:            6 entries
+  Partner limits:           4 entries
+  Abuse events:             8 events
+  Blocked entities:         6 entities
+  Secrets:                 12 entries
+  Billing adjustments:      4 adjustments
+  Partner billing:          4 summaries
+  Tenant billing:           6 summaries
+  Daily usage:             14 data points (randomized)
+  Campaign seed events:     5 events
+  Campaign seed alerts:     3 alerts
+  White-label tenants:      3 (Clinic AI, Dental Bot, Salon Assistant)
+  Dummy call state:         1 (Alex / Your Company)
+  Placeholder counts:       1 (totalBlocked = 1,247)
 
 ================================================================================
 END OF DUMMY DATA INVENTORY
