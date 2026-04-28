@@ -243,7 +243,7 @@ export async function middleware(req: NextRequest) {
             !pathname.startsWith("/favicon") &&
             !pathname.startsWith("/site.webmanifest");
 
-        if (shouldCheckRole) {
+        if (shouldCheckRole && !devBypassAuth()) {
             const ctx = await fetchUserContextFromBackend({ req, token });
             const role = ctx?.role ?? null;
             const partnerId = ctx?.partnerId ?? null;

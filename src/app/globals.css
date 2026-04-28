@@ -858,6 +858,30 @@ details > summary.home-menu-toggle {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
+.chart-axis-text {
+  fill: hsl(var(--muted-foreground) / 0.8);
+}
+
+.chart-axis-label {
+  fill: hsl(var(--muted-foreground) / 0.7);
+}
+
+.chart-grid-line {
+  stroke: hsl(var(--border) / 0.5);
+}
+
+.dark .chart-axis-text {
+  fill: rgba(255, 255, 255, 0.85);
+}
+
+.dark .chart-axis-label {
+  fill: rgba(255, 255, 255, 0.7);
+}
+
+.dark .chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
 /* Subtle Float Animation */
 @keyframes subtle-float {
 

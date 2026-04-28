@@ -131,7 +131,7 @@ export function HoverTooltip({
         <div
             ref={ref}
             className={cn(
-                "fixed z-[60] pointer-events-none select-none rounded-xl border border-gray-200/70 bg-white/95 backdrop-blur px-3 py-2 text-xs font-semibold text-gray-900 shadow-lg transition-opacity duration-300 ease-in-out",
+                "fixed z-[60] pointer-events-none select-none rounded-xl border border-gray-200/70 bg-white/95 backdrop-blur px-3 py-2 text-xs font-semibold text-gray-900 shadow-lg transition-opacity duration-300 ease-in-out dark:border-gray-700/70 dark:bg-gray-900/95 dark:text-gray-100",
                 className
             )}
             style={{ left: 0, top: 0, transform: "translate3d(0px, 0px, 0)" }}

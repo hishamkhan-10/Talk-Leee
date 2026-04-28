@@ -128,6 +128,16 @@ function makeMockData(partnerId: string): {
     return { minutesBySubTenant, concurrencyPeaks, dailyUsage };
 }
 
+const BAR_COLORS = [
+    { solid: "#6366f1", light: "#a5b4fc", gradient0: "rgba(99,102,241,0.92)", gradient1: "rgba(99,102,241,0.55)" },
+    { solid: "#06b6d4", light: "#67e8f9", gradient0: "rgba(6,182,212,0.92)", gradient1: "rgba(6,182,212,0.55)" },
+    { solid: "#8b5cf6", light: "#c4b5fd", gradient0: "rgba(139,92,246,0.92)", gradient1: "rgba(139,92,246,0.55)" },
+    { solid: "#14b8a6", light: "#5eead4", gradient0: "rgba(20,184,166,0.92)", gradient1: "rgba(20,184,166,0.55)" },
+    { solid: "#f59e0b", light: "#fcd34d", gradient0: "rgba(245,158,11,0.92)", gradient1: "rgba(245,158,11,0.55)" },
+    { solid: "#ec4899", light: "#f9a8d4", gradient0: "rgba(236,72,153,0.92)", gradient1: "rgba(236,72,153,0.55)" },
+    { solid: "#3b82f6", light: "#93c5fd", gradient0: "rgba(59,130,246,0.92)", gradient1: "rgba(59,130,246,0.55)" },
+];
+
 function BarChart({
     title,
     subtitle,
@@ -142,14 +152,15 @@ function BarChart({
     const tooltip = useHoverTooltip();
     const maxValue = Math.max(1, ...items.map((x) => x.value));
     const total = items.reduce((acc, x) => acc + x.value, 0);
+    const avg = items.length > 0 ? Math.round(total / items.length) : 0;
 
-    const height = 240;
-    const top = 18;
-    const bottom = 56;
-    const left = 64;
-    const right = 18;
-    const barW = 56;
-    const gap = 22;
+    const height = 280;
+    const top = 24;
+    const bottom = 62;
+    const left = 68;
+    const right = 24;
+    const barW = 52;
+    const gap = 28;
     const plotH = height - top - bottom;
     const plotW = items.length * barW + Math.max(0, items.length - 1) * gap;
     const width = Math.max(560, left + right + plotW);
@@ -160,18 +171,36 @@ function BarChart({
         return v;
     });
 
+    const niceLabel = (label: string) => label.length > 13 ? `${label.slice(0, 11)}…` : label;
+
     return (
-        <div className="content-card">
-            <div className="flex flex-col gap-1">
-                <div className="text-sm font-semibold text-foreground">{title}</div>
-                <div className="text-sm text-muted-foreground">{subtitle}</div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-gray-700/60 dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-0.5">
+                    <div className="text-sm font-semibold text-foreground">{title}</div>
+                    <div className="text-xs text-muted-foreground">{subtitle}</div>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                    <span>Total: <span className="font-semibold text-foreground">{total.toLocaleString()}</span></span>
+                    <span>Avg: <span className="font-semibold text-foreground">{avg.toLocaleString()}</span></span>
+                </div>
             </div>
 
             <div className="mt-4 relative">
                 <HoverTooltip tooltip={tooltip} />
                 <div className="overflow-x-auto">
                     <svg width={width} height={height} className="min-w-full">
-                        <rect x={left} y={top} width={width - left - right} height={plotH} rx={14} fill="hsl(var(--muted) / 0.45)" />
+                        <defs>
+                            {BAR_COLORS.map((c, i) => (
+                                <linearGradient key={i} id={`barGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={c.gradient0} />
+                                    <stop offset="100%" stopColor={c.gradient1} />
+                                </linearGradient>
+                            ))}
+                            <filter id="barShadow" x="-10%" y="-5%" width="120%" height="115%">
+                                <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.08)" />
+                            </filter>
+                        </defs>
 
                         {yTicks.map((t) => {
                             const y = top + plotH - (t / maxValue) * plotH;
@@ -182,15 +211,16 @@ function BarChart({
                                         x2={width - right}
                                         y1={y}
                                         y2={y}
-                                        stroke="hsl(var(--border) / 0.9)"
-                                        strokeWidth={1}
-                                        strokeDasharray={t === 0 ? undefined : "4 6"}
+                                        className="chart-grid-line"
+                                        strokeWidth={0.8}
+                                        strokeDasharray={t === 0 ? undefined : "3 5"}
                                     />
                                     <text
-                                        x={left - 12}
+                                        x={left - 10}
                                         y={y + 4}
                                         textAnchor="end"
-                                        style={{ fontSize: 11, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                                        className="chart-axis-text"
+                                        style={{ fontSize: 10.5, fontWeight: 500 }}
                                     >
                                         {t.toLocaleString()}
                                     </text>
@@ -199,28 +229,30 @@ function BarChart({
                         })}
 
                         <text
-                            x={18}
+                            x={14}
                             y={top + plotH / 2}
-                            transform={`rotate(-90 18 ${top + plotH / 2})`}
-                            style={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }}
+                            transform={`rotate(-90 14 ${top + plotH / 2})`}
+                            className="chart-axis-label"
+                            style={{ fontSize: 10, fontWeight: 600 }}
                         >
                             {yLabel}
                         </text>
 
                         {items.map((item, i) => {
+                            const color = BAR_COLORS[i % BAR_COLORS.length]!;
                             const x = left + i * (barW + gap);
-                            const h = (item.value / maxValue) * plotH;
+                            const h = Math.max(4, (item.value / maxValue) * plotH);
                             const y = top + plotH - h;
                             const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
 
                             const content = (
-                                <div className="space-y-1">
-                                    <div className="text-sm font-black text-gray-900">{item.label}</div>
-                                    <div className="flex items-center justify-between gap-6 text-sm">
-                                        <span className="text-gray-700 font-semibold">Minutes</span>
-                                        <span className="tabular-nums font-black text-gray-900">{item.value.toLocaleString()}</span>
+                                <div className="space-y-1.5">
+                                    <div className="text-xs font-bold" style={{ color: color.solid }}>{item.label}</div>
+                                    <div className="flex items-center justify-between gap-8 text-xs">
+                                        <span className="text-gray-500 dark:text-gray-400">{yLabel}</span>
+                                        <span className="tabular-nums font-bold text-gray-900 dark:text-gray-100">{item.value.toLocaleString()}</span>
                                     </div>
-                                    <div className="text-xs font-semibold text-gray-600">Share: {pct}%</div>
+                                    <div className="text-[10px] font-medium text-gray-400 dark:text-gray-500">{pct}% of total</div>
                                 </div>
                             );
 
@@ -243,25 +275,35 @@ function BarChart({
                                     onBlur={() => tooltip.hide()}
                                     className="cursor-default"
                                 >
-                                    <rect x={x} y={y} width={barW} height={h} rx={12} fill="url(#minutesBarGradient)" />
+                                    <rect x={x} y={y} width={barW} height={h} rx={8} fill={`url(#barGrad-${i % BAR_COLORS.length})`} filter="url(#barShadow)" />
                                     <text
                                         x={x + barW / 2}
-                                        y={top + plotH + 20}
+                                        y={y - 8}
                                         textAnchor="middle"
-                                        style={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }}
+                                        style={{ fontSize: 10, fontWeight: 700, fill: color.solid }}
                                     >
-                                        {item.label.length > 12 ? `${item.label.slice(0, 10)}…` : item.label}
+                                        {item.value.toLocaleString()}
+                                    </text>
+                                    <text
+                                        x={x + barW / 2}
+                                        y={top + plotH + 18}
+                                        textAnchor="middle"
+                                        className="chart-axis-text"
+                                        style={{ fontSize: 10.5, fontWeight: 600 }}
+                                    >
+                                        {niceLabel(item.label)}
+                                    </text>
+                                    <text
+                                        x={x + barW / 2}
+                                        y={top + plotH + 32}
+                                        textAnchor="middle"
+                                        style={{ fontSize: 9, fontWeight: 500, fill: color.solid }}
+                                    >
+                                        {pct}%
                                     </text>
                                 </g>
                             );
                         })}
-
-                        <defs>
-                            <linearGradient id="minutesBarGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="rgba(16,185,129,0.95)" />
-                                <stop offset="100%" stopColor="rgba(52,211,153,0.65)" />
-                            </linearGradient>
-                        </defs>
                     </svg>
                 </div>
             </div>
@@ -276,8 +318,10 @@ function LineChart({
     yLabel,
     points,
     highlightMax = true,
-    lineColor = "rgba(59,130,246,0.92)",
-    areaColor = "rgba(59,130,246,0.14)",
+    lineColor = "#6366f1",
+    accentColor = "#a5b4fc",
+    areaFrom = "rgba(99,102,241,0.18)",
+    areaTo = "rgba(99,102,241,0.01)",
 }: {
     title: string;
     subtitle: string;
@@ -286,26 +330,31 @@ function LineChart({
     points: Array<{ label: string; value: number }>;
     highlightMax?: boolean;
     lineColor?: string;
-    areaColor?: string;
+    accentColor?: string;
+    areaFrom?: string;
+    areaTo?: string;
 }) {
     const tooltip = useHoverTooltip();
 
-    const height = 240;
-    const top = 18;
-    const bottom = 56;
-    const left = 64;
-    const right = 18;
+    const height = 280;
+    const top = 24;
+    const bottom = 58;
+    const left = 68;
+    const right = 24;
     const plotH = height - top - bottom;
 
     const values = points.map((p) => p.value);
     const minVal = Math.min(...values, 0);
     const maxVal = Math.max(...values, 1);
     const range = Math.max(1, maxVal - minVal);
+    const avg = points.length > 0 ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0;
 
-    const width = Math.max(560, left + right + Math.max(0, points.length - 1) * 72);
+    const spacing = points.length > 10 ? 52 : 72;
+    const width = Math.max(560, left + right + Math.max(0, points.length - 1) * spacing);
     const plotW = width - left - right;
 
     const maxIdx = points.length > 0 ? values.indexOf(maxVal) : -1;
+    const minIdx = points.length > 0 ? values.indexOf(Math.min(...values)) : -1;
 
     const xFor = (i: number) => {
         if (points.length <= 1) return left + plotW / 2;
@@ -330,20 +379,45 @@ function LineChart({
         return Math.round(v);
     });
 
-    const xTickIdxs = Array.from(new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])).filter((i) => i >= 0);
+    const xTickStep = Math.max(1, Math.ceil(points.length / 8));
+    const xTickIdxs = Array.from({ length: Math.ceil(points.length / xTickStep) }).map((_, i) => Math.min(i * xTickStep, points.length - 1));
+    if (xTickIdxs.length > 0 && xTickIdxs[xTickIdxs.length - 1] !== points.length - 1) xTickIdxs.push(points.length - 1);
+
+    const gradId = `areaGrad-${title.replace(/\s/g, "")}`;
 
     return (
-        <div className="content-card">
-            <div className="flex flex-col gap-1">
-                <div className="text-sm font-semibold text-foreground">{title}</div>
-                <div className="text-sm text-muted-foreground">{subtitle}</div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-gray-700/60 dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-0.5">
+                    <div className="text-sm font-semibold text-foreground">{title}</div>
+                    <div className="text-xs text-muted-foreground">{subtitle}</div>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                    <span>Peak: <span className="font-semibold text-foreground">{maxVal.toLocaleString()}</span></span>
+                    <span>Avg: <span className="font-semibold text-foreground">{avg.toLocaleString()}</span></span>
+                    {highlightMax && minVal > 0 && (
+                        <span>Low: <span className="font-semibold text-foreground">{Math.min(...values).toLocaleString()}</span></span>
+                    )}
+                </div>
             </div>
 
             <div className="mt-4 relative">
                 <HoverTooltip tooltip={tooltip} />
                 <div className="overflow-x-auto">
                     <svg width={width} height={height} className="min-w-full">
-                        <rect x={left} y={top} width={plotW} height={plotH} rx={14} fill="hsl(var(--muted) / 0.45)" />
+                        <defs>
+                            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={areaFrom} />
+                                <stop offset="100%" stopColor={areaTo} />
+                            </linearGradient>
+                            <filter id={`glow-${title.replace(/\s/g, "")}`}>
+                                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                                <feMerge>
+                                    <feMergeNode in="blur" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                        </defs>
 
                         {yTicks.map((t) => {
                             const y = yFor(t);
@@ -354,15 +428,16 @@ function LineChart({
                                         x2={width - right}
                                         y1={y}
                                         y2={y}
-                                        stroke="hsl(var(--border) / 0.9)"
-                                        strokeWidth={1}
-                                        strokeDasharray={t === minVal ? undefined : "4 6"}
+                                        className="chart-grid-line"
+                                        strokeWidth={0.8}
+                                        strokeDasharray={t === minVal ? undefined : "3 5"}
                                     />
                                     <text
-                                        x={left - 12}
+                                        x={left - 10}
                                         y={y + 4}
                                         textAnchor="end"
-                                        style={{ fontSize: 11, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                                        className="chart-axis-text"
+                                        style={{ fontSize: 10.5, fontWeight: 500 }}
                                     >
                                         {t.toLocaleString()}
                                     </text>
@@ -370,39 +445,54 @@ function LineChart({
                             );
                         })}
 
+                        {highlightMax && (
+                            <line
+                                x1={left}
+                                x2={width - right}
+                                y1={yFor(avg)}
+                                y2={yFor(avg)}
+                                stroke={lineColor}
+                                strokeWidth={0.8}
+                                strokeDasharray="6 4"
+                                opacity={0.4}
+                            />
+                        )}
+
                         <text
-                            x={18}
+                            x={14}
                             y={top + plotH / 2}
-                            transform={`rotate(-90 18 ${top + plotH / 2})`}
-                            style={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }}
+                            transform={`rotate(-90 14 ${top + plotH / 2})`}
+                            className="chart-axis-label"
+                            style={{ fontSize: 10, fontWeight: 600 }}
                         >
                             {yLabel}
                         </text>
 
-                        <text
-                            x={left + plotW / 2}
-                            y={height - 14}
-                            textAnchor="middle"
-                            style={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }}
-                        >
-                            {xLabel}
-                        </text>
-
-                        <path d={areaD} fill={areaColor} />
-                        <path d={d} fill="none" stroke={lineColor} strokeWidth={2.75} strokeLinejoin="round" strokeLinecap="round" />
+                        <path d={areaD} fill={`url(#${gradId})`} />
+                        <path
+                            d={d}
+                            fill="none"
+                            stroke={lineColor}
+                            strokeWidth={2.5}
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            filter={`url(#glow-${title.replace(/\s/g, "")})`}
+                        />
 
                         {chartPoints.map((pt, i) => {
                             const p = points[i]!;
                             const isMax = highlightMax && i === maxIdx;
+                            const isMin = highlightMax && i === minIdx && minIdx !== maxIdx;
 
                             const content = (
-                                <div className="space-y-1">
-                                    <div className="text-sm font-black text-gray-900">{p.label}</div>
-                                    <div className="flex items-center justify-between gap-6 text-sm">
-                                        <span className="text-gray-700 font-semibold">{yLabel}</span>
-                                        <span className="tabular-nums font-black text-gray-900">{p.value.toLocaleString()}</span>
+                                <div className="space-y-1.5">
+                                    <div className="text-xs font-bold text-gray-900 dark:text-gray-100">{p.label}</div>
+                                    <div className="flex items-center justify-between gap-8 text-xs">
+                                        <span className="text-gray-500 dark:text-gray-400">{yLabel}</span>
+                                        <span className="tabular-nums font-bold text-gray-900 dark:text-gray-100">{p.value.toLocaleString()}</span>
                                     </div>
-                                    {isMax ? <div className="text-xs font-semibold text-amber-700">Peak</div> : null}
+                                    {isMax && <div className="text-[10px] font-semibold" style={{ color: lineColor }}>Peak</div>}
+                                    {isMin && <div className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">Lowest</div>}
                                 </div>
                             );
 
@@ -425,34 +515,48 @@ function LineChart({
                                     onBlur={() => tooltip.hide()}
                                     className="cursor-default"
                                 >
-                                    {isMax ? (
-                                        <circle cx={pt.x} cy={pt.y} r={9} fill="rgba(234,179,8,0.34)" />
-                                    ) : null}
+                                    {isMax && (
+                                        <circle cx={pt.x} cy={pt.y} r={12} fill={lineColor} opacity={0.1} />
+                                    )}
                                     <motion.circle
                                         initial={{ r: 0 }}
-                                        animate={{ r: isMax ? 5.25 : 4.25 }}
-                                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.12 + i * 0.03 }}
+                                        animate={{ r: isMax ? 5.5 : isMin ? 4.5 : 3.5 }}
+                                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.08 + i * 0.025 }}
                                         cx={pt.x}
                                         cy={pt.y}
-                                        fill={lineColor}
-                                        stroke="rgba(255,255,255,0.85)"
-                                        strokeWidth={1.5}
+                                        fill={isMax ? lineColor : isMin ? accentColor : "hsl(var(--card))"}
+                                        stroke={isMax ? lineColor : isMin ? accentColor : lineColor}
+                                        strokeWidth={isMax ? 2 : 1.8}
                                     />
                                 </g>
                             );
                         })}
 
-                        {xTickIdxs.map((i) => (
-                            <text
-                                key={`x-${i}`}
-                                x={xFor(i)}
-                                y={top + plotH + 20}
-                                textAnchor="middle"
-                                style={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }}
-                            >
-                                {points[i]?.label ?? ""}
-                            </text>
-                        ))}
+                        {xTickIdxs.map((i) => {
+                            const showLabel = points.length <= 14 || i % 2 === 0 || i === points.length - 1;
+                            return (
+                                <text
+                                    key={`x-${i}`}
+                                    x={xFor(i)}
+                                    y={top + plotH + 18}
+                                    textAnchor="middle"
+                                    className="chart-axis-text"
+                                    style={{ fontSize: showLabel ? 10 : 9, fontWeight: showLabel ? 600 : 400 }}
+                                >
+                                    {points[i]?.label ?? ""}
+                                </text>
+                            );
+                        })}
+
+                        <text
+                            x={left + plotW / 2}
+                            y={height - 10}
+                            textAnchor="middle"
+                            className="chart-axis-label"
+                            style={{ fontSize: 10, fontWeight: 600 }}
+                        >
+                            {xLabel}
+                        </text>
                     </svg>
                 </div>
             </div>
@@ -491,8 +595,10 @@ export function PartnerAnalyticsClient({ partnerId }: { partnerId: string }) {
                 yLabel="Concurrent calls"
                 points={concurrencyItems}
                 highlightMax
-                lineColor="rgba(16,185,129,0.92)"
-                areaColor="rgba(16,185,129,0.14)"
+                lineColor="#14b8a6"
+                accentColor="#5eead4"
+                areaFrom="rgba(20,184,166,0.18)"
+                areaTo="rgba(20,184,166,0.01)"
             />
 
             <LineChart
@@ -502,8 +608,10 @@ export function PartnerAnalyticsClient({ partnerId }: { partnerId: string }) {
                 yLabel="Minutes"
                 points={dailyItems}
                 highlightMax={false}
-                lineColor="rgba(59,130,246,0.92)"
-                areaColor="rgba(59,130,246,0.14)"
+                lineColor="#6366f1"
+                accentColor="#a5b4fc"
+                areaFrom="rgba(99,102,241,0.18)"
+                areaTo="rgba(99,102,241,0.01)"
             />
         </div>
     );

@@ -386,6 +386,7 @@ export default function WhiteLabelTenantAgentSettingsPage() {
                     <Button
                         type="button"
                         variant="secondary"
+                        className="dark:bg-teal-600/80 dark:text-white dark:hover:bg-teal-600 dark:border-teal-600/80 dark:hover:border-teal-600"
                         onClick={() => {
                             if (!baseline) return;
                             setSystemPrompt(baseline.systemPrompt);

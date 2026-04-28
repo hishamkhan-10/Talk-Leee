@@ -456,12 +456,12 @@ function TenantTable({
                         <div className="hidden text-right tabular-nums md:block">{t.subConcurrency.toLocaleString()}</div>
                         <div className="hidden md:block">{tenantStatusPill(t.status)}</div>
                         <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
-                            <Button type="button" variant="secondary" size="sm" asChild>
+                            <Button type="button" variant="secondary" size="sm" asChild className="dark:bg-white dark:text-black dark:hover:bg-white dark:border-white dark:hover:border-white">
                                 <Link href={`/white-label/${encodeURIComponent(partnerId)}/tenants/${encodeURIComponent(t.id)}/agent-settings`}>
                                     Agent Settings
                                 </Link>
                             </Button>
-                            <Button type="button" variant="outline" size="sm" onClick={() => onEdit(t)}>
+                            <Button type="button" variant="outline" size="sm" onClick={() => onEdit(t)} className="dark:bg-white dark:text-black dark:hover:bg-white dark:border-white dark:hover:border-white">
                                 Edit
                             </Button>
                             {t.status === "active" ? (
@@ -469,7 +469,7 @@ function TenantTable({
                                     Suspend
                                 </Button>
                             ) : (
-                                <Button type="button" variant="secondary" size="sm" onClick={() => onResume(t)}>
+                                <Button type="button" variant="secondary" size="sm" onClick={() => onResume(t)} className="dark:bg-teal-600/80 dark:text-white dark:hover:bg-teal-600 dark:border-teal-600/80 dark:hover:border-teal-600">
                                     Resume
                                 </Button>
                             )}
