@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -159,8 +159,8 @@ export default function AbuseDetectionPage() {
 
           <Tabs defaultValue="events" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="events">Abuse Events</TabsTrigger>
-              <TabsTrigger value="blocked">Blocked Entities</TabsTrigger>
+              <TabsTrigger value="events" className="data-[state=active]:dark:bg-white data-[state=active]:dark:text-black">Abuse Events</TabsTrigger>
+              <TabsTrigger value="blocked" className="data-[state=active]:dark:bg-white data-[state=active]:dark:text-black">Blocked Entities</TabsTrigger>
             </TabsList>
 
             {/* Abuse Events Tab */}
@@ -207,8 +207,8 @@ export default function AbuseDetectionPage() {
                           <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No events match the selected filter.</td></tr>
                         )}
                         {filteredEvents.map((ev) => (
-                          <>
-                            <tr key={ev.id} className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors">
+                          <React.Fragment key={ev.id}>
+                            <tr className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors">
                               <td className="px-4 py-3">{severityBadge(ev.severity)}</td>
                               <td className="px-4 py-3 font-medium text-foreground">{formatLabel(ev.type)}</td>
                               <td className="px-4 py-3 text-foreground">{ev.tenantName}</td>
@@ -253,7 +253,7 @@ export default function AbuseDetectionPage() {
                                 </td>
                               </tr>
                             )}
-                          </>
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>

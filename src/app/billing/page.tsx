@@ -90,7 +90,7 @@ function PlanDisplay() {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200">
             <Link href="/billing/plans">Change Plan <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></Link>
           </Button>
           <span className="text-xs text-muted-foreground">Next invoice: {formatDate(nextInvoiceDate)}</span>
@@ -340,7 +340,7 @@ function RecentInvoices() {
             <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" aria-hidden /> Recent Invoices</CardTitle>
             <CardDescription>Your latest billing invoices</CardDescription>
           </div>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200">
             <Link href="/billing/invoices">View All <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></Link>
           </Button>
         </div>

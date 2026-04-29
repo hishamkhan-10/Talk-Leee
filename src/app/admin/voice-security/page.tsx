@@ -175,13 +175,13 @@ export default function VoiceSecurityPage() {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
-              <TabsTrigger value="call-guards" className="gap-1.5">
+              <TabsTrigger value="call-guards" className="gap-1.5 data-[state=active]:dark:bg-white data-[state=active]:dark:text-black">
                 <ShieldCheck className="h-4 w-4" aria-hidden /> Call Guards
               </TabsTrigger>
-              <TabsTrigger value="tenant-limits" className="gap-1.5">
+              <TabsTrigger value="tenant-limits" className="gap-1.5 data-[state=active]:dark:bg-white data-[state=active]:dark:text-black">
                 <Users className="h-4 w-4" aria-hidden /> Tenant Limits
               </TabsTrigger>
-              <TabsTrigger value="partner-limits" className="gap-1.5">
+              <TabsTrigger value="partner-limits" className="gap-1.5 data-[state=active]:dark:bg-white data-[state=active]:dark:text-black">
                 <Building2 className="h-4 w-4" aria-hidden /> Partner Limits
               </TabsTrigger>
             </TabsList>
